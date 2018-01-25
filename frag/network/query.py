@@ -32,6 +32,14 @@ def find_double_edge(tx, input_str):
                                                              "order by split(nm.label, '|')[4], split(ne.label, '|')[2];",
                   smiles=input_str)
 
+def add_follow_ups(tx, input_str):
+    return tx.run("MATCH (sta:F2 {smiles:$smiles})-[nm:F2EDGE]-(mid:F2)-[ne:F2EDGE]-(end:EM) where" \
+                  " abs(sta.hac-end.hac) <= 3 and abs(sta.chac-end.chac) <= 1" \
+                  " and sta.smiles <> end.smiles " \
+                  " MERGE (end)-[:FOLLOW_UP]->(sta)",
+                  smiles=input_str)
+
+
 def find_proximal(tx, input_str):
     return tx.run("match p = (n:F2{smiles:$smiles})-[nm]-(m:EM) "
                   "where abs(n.hac-m.hac) <= 3 and abs(n.chac-m.chac) <= 1 "
