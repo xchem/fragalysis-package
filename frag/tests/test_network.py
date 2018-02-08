@@ -92,4 +92,4 @@ class NetworksTest(unittest.TestCase):
         output_data = [1912,1406,9999]
         for i,data in enumerate(input_data):
             self.assertEqual(get_comb_index(data[0],data[1]),output_data[i])
-            self.assertListEqual(ret_comb_index(output_data[i]),data)
+            self.assertTupleEqual(ret_comb_index(output_data[i]),data)
