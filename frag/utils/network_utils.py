@@ -46,7 +46,7 @@ def get_comb_index(bi_1,bi_2):
     :param bi_2:
     :return:
     """
-    return bi_1+100*bi_2
+    return bi_1+(100*(bi_2+1))
 
 def ret_comb_index(bi_tot):
     """
@@ -56,7 +56,7 @@ def ret_comb_index(bi_tot):
     """
     bi_1 = int(str(bi_tot)[-2:])
     bi_2 = int(str(bi_tot)[0:-2])
-    return (bi_1,bi_2)
+    return (bi_1-1,bi_2)
 
 def get_fragments(input_mol,iso_labels=True):
     """
