@@ -89,7 +89,7 @@ class NetworksTest(unittest.TestCase):
         :return:
         """
         input_data = [(12,19),(6,14),(99,98),(4,0)]
-        output_data = [2012,1506,9998,104]
+        output_data = [2012,1506,9999,104]
         for i,data in enumerate(input_data):
             self.assertEqual(get_comb_index(data[0],data[1]),output_data[i])
             self.assertTupleEqual(ret_comb_index(output_data[i]),data)
