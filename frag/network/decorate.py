@@ -48,7 +48,7 @@ def decorate_mol(get_new_mol,mol_parse,mol_data,three_d_mol=False):
         this_mol = Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(newer_mol,isomericSmiles=True)),isomericSmiles=True)
         if three_d_mol:
             if this_mol in new_mols:
-                new_mols.append(atom_pairs)
+                new_mols[this_mol].append(atom_pairs)
             else:
                 new_mols[this_mol] = [atom_pairs]
         else:
