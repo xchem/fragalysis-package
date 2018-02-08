@@ -3,8 +3,11 @@ import unittest
 from rdkit import Chem
 
 from frag.network.models import NodeHolder,Node,Attr
-from frag.utils.network_utils import rebuild_smi,make_child_mol,get_fragments,build_network
+from frag.utils.network_utils import rebuild_smi,make_child_mol,get_fragments,build_network,get_comb_index,ret_comb_index
 from frag.network.decorate import decorate_smi
+
+
+
 
 def parse_node(input_str):
     """
@@ -79,3 +82,14 @@ class NetworksTest(unittest.TestCase):
                        ['[At]c1ccccc1'],['[At]c1cccnc1', '[At]c1ccccn1', '[At]c1ccncc1'],['[At]c1cccnc1', '[At]c1ccccn1', '[At]c1ccncc1']]
         for i,smi in enumerate(input_data):
             self.assertListEqual(list(decorate_smi(smi).keys()),output_data[i])
+
+    def test_comb_index(self):
+        """
+        Test we combine indices
+        :return:
+        """
+        input_data = [(12,19),(6,14),(99,99)]
+        output_data = [1912,1406,9999]
+        for i,data in enumerate(input_data):
+            self.assertEqual(get_comb_index(data[0],data[1]),output_data[i])
+            self.assertListEqual(ret_comb_index(output_data[i]),data)

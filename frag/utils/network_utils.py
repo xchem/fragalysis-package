@@ -38,6 +38,26 @@ def get_frag_list(str_find,input_mol):
     """
     return [x.replace(str_find, "Xe") for x in Chem.MolToSmiles(input_mol, isomericSmiles=True).split(".")]
 
+
+def get_comb_index(bi_1,bi_2):
+    """
+
+    :param bi_1:
+    :param bi_2:
+    :return:
+    """
+    return bi_1+100*bi_2
+
+def ret_comb_index(bi_tot):
+    """
+
+    :param bi_tot:
+    :return:
+    """
+    bi_1 = int(str(bi_tot)[-2:])
+    bi_2 = int(str(bi_tot)[0:-2])
+    return (bi_1,bi_2)
+
 def get_fragments(input_mol,iso_labels=True):
     """
     Find the frgments for a given molecule
@@ -61,9 +81,10 @@ def get_fragments(input_mol,iso_labels=True):
         for bi in atom_indices:
             b = input_mol.GetBondBetweenAtoms(bi[0],bi[1])
             bs.append(b.GetIdx())
-            labels.append((1,1))
+            comb_index = get_comb_index(bi[0],bi[1])
+            labels.append((comb_index,comb_index))
         input_mol = Chem.FragmentOnBonds(input_mol, bs,dummyLabels=labels)
-        return get_frag_list(str_find="1*",input_mol=input_mol)
+        return get_frag_list(str_find="*",input_mol=input_mol)
     return get_frag_list(str_find="*",input_mol=input_mol)
 
 
@@ -206,7 +227,7 @@ def get_driver():
     driver = GraphDatabase.driver("bolt://neo4j:7687")
     return driver
 
-def get_ring_ring_splits(input_mol):
+def get_ring_ring_splits(input_mol,labels=False):
     """
     Get and break Atom-Atom pairs in two different rings.
     :param input_mol:
@@ -232,9 +253,13 @@ def get_ring_ring_splits(input_mol):
                         bs.append(bond.GetIdx())
     if bs:
         for b in bs:
-            nm = Chem.FragmentOnBonds(input_mol,[b],dummyLabels=[(1,1)])
-            # Only takes first
-            mols = [x.replace("1*", "Xe") for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")]
+            if labels:
+                nm = Chem.FragmentOnBonds(input_mol,[b],dummyLabels=[(b.GetBeginAtomIdx(),b.GetEndAtomIdx())])
+                mols = [x.replace("*", "Xe") for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")]
+            else:
+                nm = Chem.FragmentOnBonds(input_mol,[b],dummyLabels=[(1,1)])
+                # Only takes first
+                mols = [x.replace("1*", "Xe") for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")]
             out_mols.append(mols)
         return out_mols
 

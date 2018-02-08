@@ -1,10 +1,14 @@
 from rdkit import Chem
-from rdkit.Chem import AllChem,RWMol,Atom
-from frag.utils.network_utils import rebuild_smi,get_ring_ring_splits,get_fragments
+from rdkit.Geometry.rdGeometry import Point3D
+from rdkit.Chem import AllChem,RWMol,Atom,Bond
+from frag.utils.network_utils import rebuild_smi,get_ring_ring_splits,get_fragments,ret_comb_index
+import re
 
+XE_PATT = r"[0-9]{3,}Xe"
 
-def get_mol(input_smi):
-    return RWMol(AllChem.AddHs(Chem.MolFromSmiles(input_smi)))
+def get_mol(mol_parser,mol_data):
+    rd_mol = mol_parser(mol_data)
+    return RWMol(AllChem.AddHs(rd_mol))
 
 def decorate_smi(input_smi):
     """
@@ -14,31 +18,102 @@ def decorate_smi(input_smi):
     :return: a list of SMILES around a given molecule.
     """
     # Add replacement groups (e.g. At) to all Ring positions in turn.
-    mol = get_mol(input_smi)
-    # Find matches
+    return decorate_mol(get_mol,Chem.MolFromSmiles,input_smi)
+
+def decorate_3d_mol(input_mol_file):
+    res_dict = decorate_mol(get_mol,Chem.MolFromMolBlock,input_mol_file)
+    out_dict = {}
+    for res in res_dict:
+        atom_pair = res_dict[res]
+        mol = AllChem.AddHs(Chem.MolFromMolBlock(input_mol_file),addCoords=True)
+        conf = mol.GetConformer()
+        atom_one = conf.GetAtomPosition(atom_pair[0])
+        atom_two = conf.GetAtomPosition(atom_pair[1])
+        out_dict[conv_at_xe(res)] = [(atom_one.x,atom_one.y,atom_one.z),(atom_two.x,atom_two.y,atom_two.z)]
+    return out_dict
+
+def decorate_mol(get_new_mol,mol_parse,mol_data):
+    mol = get_new_mol(mol_parse,mol_data)
     patt = Chem.MolFromSmarts("[*;R]-;!@[H]")
     # Get the list of atom Indices to replace
-    out_atom_repls = [x[1] for x in mol.GetSubstructMatches(patt)]
+    out_atom_repls = [x for x in mol.GetSubstructMatches(patt)]
     # Now replace with At - an produce a new mol everytime
     new_mols = {}
-    for atom in out_atom_repls:
-        rw_mol = get_mol(input_smi)
+    for atom_pairs in out_atom_repls:
+        atom = atom_pairs[1]
+        rw_mol = get_new_mol(mol_parse,mol_data)
         rw_mol.ReplaceAtom(atom,Atom(85))
         newer_mol = rw_mol.GetMol()
         this_mol = Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(newer_mol,isomericSmiles=True)),isomericSmiles=True)
-        new_mols[this_mol] = atom
+        new_mols[this_mol] = atom_pairs
     return new_mols
 
+def deletion_linker_smi(input_smi,iso_labels=True):
+    mol = Chem.MolFromSmiles(input_smi)
+    return deletion_linker_mol(mol,iso_labels)
 
-def deletion_linker_smi(input_smi):
+def deletion_linker_sd(input_mol,iso_labels=True):
+    mol = Chem.MolFromMolBlock(input_mol)
+    return deletion_linker_mol(mol,iso_labels)
+
+
+def get_3d_vects_for_mol(input_mol):
+    tot_dict = del_link_coord(input_mol)
+    tot_dict["additions"] = decorate_3d_mol(input_mol)
+    return tot_dict
+
+def convert_dict_to_mols(tot_dict):
+    """
+    :param tot_dict:
+    :return:
+    """
+    mol_list = []
+    for smiles in tot_dict:
+        # Now generate the molecules for that
+        mol = RWMol()
+        atoms = tot_dict[smiles]
+        print(atoms)
+        for atom in atoms:
+            atom = Atom(6)
+            mol.AddAtom(atom)
+        # for i in range(len(atoms)-1):
+        #     mol.AddBond(i,i+1)
+        mol = mol.GetMol()
+        AllChem.EmbedMolecule(mol)
+        conf = mol.GetConformer()
+        for i,atom in enumerate(atoms):
+            point_3d = Point3D(atom[0],atom[1],atom[2])
+            conf.SetAtomPosition(i,point_3d)
+        mol = conf.GetOwningMol()
+        mol.SetProp("_Name", smiles)
+        mol_list.append(mol)
+    return mol_list
+
+def del_link_coord(input_mol):
+    tot_vals = deletion_linker_sd(input_mol,iso_labels=False)
+    deletions = [Chem.MolToSmiles(x,isomericSmiles=True) for x in tot_vals[0]]
+    linkers =  [Chem.MolToSmiles(x,isomericSmiles=True) for x in tot_vals[1]]
+    ring =  [Chem.MolToSmiles(x,isomericSmiles=True) for x in tot_vals[2]]
+    out_d = {"linkers": {},"deletions": {}, "ring": {}}
+    for x in linkers:
+        ret_ans = get_atom_coords(x,Chem.MolFromMolBlock(input_mol))
+        out_d["linkers"][ret_ans[0]] = ret_ans[1:]
+    for x in deletions:
+        ret_ans = get_atom_coords(x,Chem.MolFromMolBlock(input_mol))
+        out_d["deletions"][ret_ans[0]] = ret_ans[1:]
+    for x in ring:
+        ret_ans = get_atom_coords(x,Chem.MolFromMolBlock(input_mol))
+        out_d["ring"][ret_ans[0]] = ret_ans[1:]
+    return out_d
+
+def deletion_linker_mol(mol,iso_labels=True):
     """
     Produce all the linker deletion SMILES and replace with Li
     :param input_smi: the input SMI
     :return:
     """
-    mol = Chem.MolFromSmiles(input_smi)
     nr = mol.GetRingInfo().NumRings()
-    fragments = get_fragments(mol)
+    fragments = get_fragments(mol,iso_labels=iso_labels)
     out_mols = []
     linker_mol_list = []
     ring_repl_list = []
@@ -75,6 +150,39 @@ def deletion_linker_smi(input_smi):
         out_mols.append(new_mol)
     return out_mols,linker_mol_list,ring_repl_list
 
+
+def find_atom_pairs(smiles_input):
+    """
+    Find the indices of the atom pairs from a SMILES input
+    :param smiles_input:
+    :return:
+    """
+    matches = re.findall(XE_PATT,smiles_input)
+    ind_list = []
+    for match in matches:
+        index = int(match[:-2])
+        indices = ret_comb_index(index)
+        ind_list.append(indices)
+    return ind_list
+
+
+def get_atom_coords(smiles_input,mol):
+    """
+    Get a
+    :param smiles_input:
+    :param mol:
+    :return:
+    """
+    ind_list = find_atom_pairs(smiles_input)
+    clean_smi = re.sub(XE_PATT,"Xe",smiles_input)
+    out_list = [clean_smi]
+    conf = mol.GetConformer()
+    for atom_pair in ind_list:
+        atom_one = conf.GetAtomPosition(atom_pair[0])
+        atom_two = conf.GetAtomPosition(atom_pair[1])
+        out_list.extend([(atom_one.x,atom_one.y,atom_one.z),(atom_two.x,atom_two.y,atom_two.z)])
+    return out_list
+
 def link_li(rebuilt_smi):
     mol = Chem.MolFromSmiles(rebuilt_smi)
     mol = RWMol(mol)
@@ -100,6 +208,17 @@ def get_ring_removals(smi):
         out_mols[Chem.MolToSmiles(new_mol,isomericSmiles=True)] = ring
     return out_mols
 
+def conv_at_xe(x):
+    return Chem.MolToSmiles(Chem.MolFromSmiles(x.replace("[At]", "[Xe]")))
+
+def conv_smiles(additions,deletions,linkers,ring_removals):
+    additions = [conv_at_xe(Chem.MolToSmiles(x)) for x in additions]
+    deletions = [Chem.MolToSmiles(x) for x in deletions]
+    linkers = [Chem.MolToSmiles(x) for x in linkers]
+    ring_removals = [Chem.MolToSmiles(x) for x in ring_removals]
+    linkers.extend(ring_removals)
+    return additions,deletions,linkers,ring_removals
+
 def get_add_del_link(smi,asSmiles=True):
     additions = addition_smi(smi)
     res = deletion_linker_smi(smi)
@@ -107,9 +226,5 @@ def get_add_del_link(smi,asSmiles=True):
     ring_removals = res[2]
     deletions = res[0]
     if asSmiles:
-        additions = [Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(x).replace("[At]","[Xe]"))) for x in additions]
-        deletions = [Chem.MolToSmiles(x) for x in deletions]
-        linkers = [Chem.MolToSmiles(x) for x in linkers]
-        ring_removals = [Chem.MolToSmiles(x) for x in ring_removals]
-        linkers.extend(ring_removals)
+        additions,deletions,linkers,ring_removals = conv_smiles(additions,deletions,linkers,ring_removals)
     return [additions,deletions,linkers]
