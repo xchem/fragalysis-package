@@ -88,11 +88,14 @@ class NetworksTest(unittest.TestCase):
         Test we combine indices
         :return:
         """
-        input_data = [(12,19),(6,14),(98,98),(4,0)]
-        output_data = [1912,1406,9898,4]
+        input_data = [(12,19),(6,14),(98,99),(4,0)]
+        output_data = [2012,1506,9998,104]
         for i,data in enumerate(input_data):
             self.assertEqual(get_comb_index(data[0],data[1]),output_data[i])
             self.assertTupleEqual(ret_comb_index(output_data[i]),data)
+            self.assertTupleEqual(
+                ret_comb_index(get_comb_index(data[0],data[1])),
+                                  data)
 
     def test_vects_from_mol(self):
         sd_info = """
