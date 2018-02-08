@@ -21,18 +21,19 @@ def decorate_smi(input_smi):
     return decorate_mol(get_mol,Chem.MolFromSmiles,input_smi)
 
 def decorate_3d_mol(input_mol_file):
-    res_dict = decorate_mol(get_mol,Chem.MolFromMolBlock,input_mol_file)
+    res_dict = decorate_mol(get_mol,Chem.MolFromMolBlock,input_mol_file,three_d_mol=True)
     out_dict = {}
     for res in res_dict:
-        atom_pair = res_dict[res]
+        atom_pairs = res_dict[res]
         mol = AllChem.AddHs(Chem.MolFromMolBlock(input_mol_file),addCoords=True)
         conf = mol.GetConformer()
-        atom_one = conf.GetAtomPosition(atom_pair[0])
-        atom_two = conf.GetAtomPosition(atom_pair[1])
-        out_dict[conv_at_xe(res)] = [(atom_one.x,atom_one.y,atom_one.z),(atom_two.x,atom_two.y,atom_two.z)]
+        for i,atom_pair in enumerate(atom_pairs):
+            atom_one = conf.GetAtomPosition(atom_pair[0])
+            atom_two = conf.GetAtomPosition(atom_pair[1])
+            out_dict[conv_at_xe(res)+"__"+str(i)] = [(atom_one.x,atom_one.y,atom_one.z),(atom_two.x,atom_two.y,atom_two.z)]
     return out_dict
 
-def decorate_mol(get_new_mol,mol_parse,mol_data):
+def decorate_mol(get_new_mol,mol_parse,mol_data,three_d_mol=False):
     mol = get_new_mol(mol_parse,mol_data)
     patt = Chem.MolFromSmarts("[*;R]-;!@[H]")
     # Get the list of atom Indices to replace
@@ -45,7 +46,13 @@ def decorate_mol(get_new_mol,mol_parse,mol_data):
         rw_mol.ReplaceAtom(atom,Atom(85))
         newer_mol = rw_mol.GetMol()
         this_mol = Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(newer_mol,isomericSmiles=True)),isomericSmiles=True)
-        new_mols[this_mol] = atom_pairs
+        if three_d_mol:
+            if this_mol in new_mols:
+                new_mols.append(atom_pairs)
+            else:
+                new_mols[this_mol] = [atom_pairs]
+        else:
+            new_mols[this_mol] = atom_pairs
     return new_mols
 
 def deletion_linker_smi(input_smi,iso_labels=True):
