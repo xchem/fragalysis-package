@@ -19,7 +19,7 @@ class StructHolder(object):
             if water_pdb == None:
                 self.water_pdb = new_water_pdb
 
-class Cluster_Things(object):
+class ClusterStuff(object):
     """
     A class to cluster stuff.
     Probably also need a write output function too. Once I've got my head around that...

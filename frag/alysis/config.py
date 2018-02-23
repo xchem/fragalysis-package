@@ -1,11 +1,11 @@
 from frag.alysis.cluster import dp_means
 from frag.utils.parser import parse_waters, parse_ligand_ph4s, parse_ligands, parse_residues
-from frag.alysis.models import Cluster_Things
+from frag.alysis.models import ClusterStuff
 
-CLUSTER_DICT = {"waters": Cluster_Things(parser=parse_waters, lamb=0.7, cluster=dp_means),
-                "ph4": Cluster_Things(parser=parse_ligand_ph4s, lamb=0.7, cluster=dp_means),
-                "residues": Cluster_Things(parser=parse_residues, lamb=0.7, cluster=dp_means),
-                "sites": Cluster_Things(parser=parse_ligands, lamb=0.7, cluster=dp_means)}
+CLUSTER_DICT = {"waters": ClusterStuff(parser=parse_waters, lamb=0.7, cluster=dp_means),
+                "ph4": ClusterStuff(parser=parse_ligand_ph4s, lamb=0.7, cluster=dp_means),
+                "residues": ClusterStuff(parser=parse_residues, lamb=0.7, cluster=dp_means),
+                "sites": ClusterStuff(parser=parse_ligands, lamb=0.7, cluster=dp_means)}
 
 
 def run_cluster(input_list):
