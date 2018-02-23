@@ -37,6 +37,5 @@ HETATM 2024  O   HOH B 199      62.006 -56.842  90.642  1.00 50.69           O""
         self.assertAlmostEqual(water_coords[0][1],-39.489)
 
 
-
 if __name__ == '__main__':
     unittest.main()

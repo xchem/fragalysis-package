@@ -1,5 +1,5 @@
 import os
-
+import math
 from rdkit.Chem import ChemicalFeatures
 from rdkit import Chem
 
@@ -72,10 +72,13 @@ def _get_c_of_mass(rdmol):
     return x_coord / numatoms, y_coord / numatoms, z_coord / numatoms
 
 
-def _get_waters(lines):
-    """Helper function to extract waters from a PDB file"""
-    return [line for line in lines]# if line[17:20] == "HOH"]
-
+def _get_waters(input_lines):
+    """
+    Very strict but efficient way of getting waters
+    :param input_lines: the lines of a PDB file we want to consider
+    :return:
+    """
+    return [x for x in input_lines if x[17:20]=="HOH"]
 
 def _get_water_coords(waters):
     """Helper function to get the coordinates from a load of waters."""
@@ -110,3 +113,83 @@ def _parse_mols(input_file,input_format):
 
 def _parse_pdb(data):
     return Chem.MolFromPDBFile(data)
+
+
+
+def find_dist(mol_1_x,mol_1_y, mol_1_z, mol_2_x, mol_2_y, mol_2_z):
+    """Function to find the square distance between two points in 3D
+    Takes two len=3 tuples
+    Returns a float"""
+    return pow((mol_1_x-mol_2_x),2) + pow((mol_1_y-mol_2_y),2) + pow((mol_1_z-mol_2_z),2)
+
+
+def _get_res_rmsds(input_res_list):
+    """
+    Helper function to get the RMSDs for a list of Residues.
+    :param input_res_list: The list of RDKit molecules of residues
+    :return: a list of lists of RMSDS.
+    """
+    # Calculate RMSD from corresponding
+    num_res = len(input_res_list)
+    tot_res_rmsd_list = []
+    for i in range(num_res):
+        this_res_rmsd_list = []
+        for j in range(i,num_res):
+            res_one = input_res_list[i]
+            res_two = input_res_list[j]
+            tot_dist = 0.0
+            num_matches = 0
+            for atom in res_one:
+                atm1 = res_one[atom]
+                if atom in res_two:
+                    atm2 = res_two[atom]
+                    # Find the distance
+                    dist = find_dist(atm1[0], atm1[1], atm1[2],
+                                 atm2[0], atm2[1], atm2[2])
+                    tot_dist += dist
+                    num_matches +=1
+            # Find the mean square distance
+            mean_dist = float(tot_dist) / float(num_matches)
+            # Append the root mean square distance
+            root_mean_sqr = math.sqrt(mean_dist)
+            this_res_rmsd_list.append(root_mean_sqr)
+        tot_res_rmsd_list.append(this_res_rmsd_list)
+    return tot_res_rmsd_list
+
+
+def get_res_atom_name(atom, conf):
+    """
+    Get the information for each atom
+    :param atom: the input atom
+    :param conf: the molecular conformer
+    :return: the unqiue residue level name, the atom name and the position
+    """
+    res_info = atom.GetPDBResidueInfo()
+    atom_pos =  conf.GetAtomPosition(atom.GetIdx())
+    position = [atom_pos.x,atom_pos.y,atom_pos.z]
+    identifiers =  [res_info.GetResidueNumber(),res_info.GetChainId(),
+                            res_info.GetResidueName(), res_info.GetAltLoc()]
+    unique_name = "_".join([x for x in identifiers if x != ' '])
+    atom_name = res_info.GetName().strip()
+    return unique_name, atom_name, position
+
+
+def _get_res(input_data):
+    """
+    Get a list of residues with RDKit mols (RDMol,RES_NAME)
+    :param input_data:
+    :return:
+    """
+    out_dict = {}
+    # Loop through the residues
+    mol = _parse_pdb(input_data)
+    conf = mol.GetConformer()
+    atoms = mol.GetAtoms()
+    for atom in atoms:
+        # Get res_name
+        res_name,atom_name,position = get_res_atom_name(atom,conf)
+        if res_name in out_dict:
+            out_dict[res_name][atom_name] = position
+        else:
+            out_dict[res_name] = {atom_name: position}
+    return out_dict
