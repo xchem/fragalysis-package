@@ -134,7 +134,9 @@ def _get_res_rmsds(input_res_list):
     tot_res_rmsd_list = []
     for i in range(num_res):
         this_res_rmsd_list = []
-        for j in range(i,num_res):
+        for j in range(num_res):
+            if i == j:
+                continue
             res_one = input_res_list[i]
             res_two = input_res_list[j]
             tot_dist = 0.0
@@ -169,20 +171,18 @@ def get_res_atom_name(atom, conf):
     position = [atom_pos.x,atom_pos.y,atom_pos.z]
     identifiers =  [res_info.GetResidueNumber(),res_info.GetChainId(),
                             res_info.GetResidueName(), res_info.GetAltLoc()]
-    unique_name = "_".join([x for x in identifiers if x != ' '])
+    unique_name = "_".join([str(x) for x in identifiers if x != ' '])
     atom_name = res_info.GetName().strip()
     return unique_name, atom_name, position
 
 
-def _get_res(input_data):
+def _get_res(mol):
     """
     Get a list of residues with RDKit mols (RDMol,RES_NAME)
     :param input_data:
     :return:
     """
     out_dict = {}
-    # Loop through the residues
-    mol = _parse_pdb(input_data)
     conf = mol.GetConformer()
     atoms = mol.GetAtoms()
     for atom in atoms:

@@ -1,6 +1,6 @@
 # Series of functions to parse input files
 from frag.alysis.models import Object,Owner
-from frag.utils.rdkit_utils import _parse_ligand_sdf, _get_c_of_mass, RDKitPh4, _get_water_coords,_get_waters,_get_res,_get_res_rmsds
+from frag.utils.rdkit_utils import _parse_ligand_sdf, _get_c_of_mass, RDKitPh4, _get_water_coords,_get_waters,_get_res,_get_res_rmsds,_parse_pdb
 import math
 
 def parse_ligands(input_file,input_type="sdf"):
@@ -57,7 +57,9 @@ def parse_residues(input_pdbs, input_mol=None, max_dist=10.0):
     owner_list = []
     res_dict = {}
     for input_pdb in input_pdbs:
-        this_res_dict = _get_res(input_pdb)
+        # Loop through the residues
+        mol = _parse_pdb(input_pdb)
+        this_res_dict = _get_res(mol)
         for key in this_res_dict:
             if key in res_dict:
                 res_dict[key].append(res_dict[key])

@@ -66,7 +66,7 @@ class CentreOfMassTest(unittest.TestCase):
 class MathTest(unittest.TestCase):
 
     def test_square_dist(self):
-        self.assertEqual(find_dist(8,22,32,4,6,6),11.0)
+        self.assertEqual(find_dist(8,22,12,4,6,6),308.0)
 
 class ResTest(unittest.TestCase):
 
@@ -79,12 +79,19 @@ class ResTest(unittest.TestCase):
                        {"A": [2.0, 3.0, 4.0],
                         "B": [1.0, 2.0, 3.0],
                         "C": [4.0, 3.0, 2.0],
+                        },
+                        {"A": [-0.2375, 1.2479, -0.2221],
+                         "B": [-1.5033, 1.0878, 0.3249],
+                         "C": [-1.9231, -0.1960, 0.6598],
                         }
         ]
-        output_data = [[1.0],[2.0]]
+        output_data = [[2.160246899469287, 3.8977444101257674],
+                       [2.160246899469287, 5.392922351255084],
+                       [3.8977444101257674, 5.392922351255084]]
         test_output = _get_res_rmsds(input_data)
+        print(test_output)
         for i,output in enumerate(test_output):
-            self.assertEqual(len(output),1)
+            self.assertEqual(len(output),2)
             self.assertEqual(output_data[i][0],output[0])
 
     def test_get_res_name(self):
@@ -94,12 +101,13 @@ class ResTest(unittest.TestCase):
         for atom in atoms:
             atom
         unique_name, atom_name, position = get_res_atom_name(atom,conf)
-        self.assertEqual(unique_name,"175_A_HIS")
+        self.assertEqual(unique_name,"174_A_HIS")
         self.assertEqual(atom_name,"NE2")
         self.assertAlmostEqual(position[0],28.725)
-        self.assertAlmostEqual(position[0],-43.467)
-        self.assertAlmostEqual(position[0],95.945)
+        self.assertAlmostEqual(position[1],-43.467)
+        self.assertAlmostEqual(position[2],95.945)
 
     def test_get_res(self):
-        out_dict = _get_res(PDB_DATA)
-        self.assertListEqual(out_dict.keys(),["175_A_HIS"])
+        mol  = Chem.MolFromPDBBlock(PDB_DATA)
+        out_dict = _get_res(mol)
+        self.assertListEqual(out_dict.keys(),["174_A_HIS"])
