@@ -17,7 +17,7 @@ def build_type_dict(mol_ph4_list,identifiers):
                 type_dict[ph4_type]["coords"].append((x,y,z))
                 type_dict[ph4_type]["mols"].append(identifiers[i])
             else:
-                type_dict[ph4_type]={"coords":[(x,y,z)],"mols":[i]}
+                type_dict[ph4_type]={"coords":[(x,y,z)],"mols":[identifiers[i]]}
     return type_dict
 
 def map_cluster(dp_means_cluster,mol_id_list):

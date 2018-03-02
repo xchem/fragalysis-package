@@ -1,2 +1,3 @@
 include README.md CHANGELOG.md LICENSE.txt
 include setup.py
+include frag/utils/data/RDKitPh4.fdef
