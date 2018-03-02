@@ -3,27 +3,35 @@ from frag.alysis.models import Object,Owner
 from frag.utils.rdkit_utils import _parse_ligand_sdf, _get_c_of_mass, RDKitPh4, _get_water_coords,_get_waters,_get_res,_get_res_rmsds,_parse_pdb
 import math
 
-def parse_ligands(input_file,input_type="sdf"):
-    mols = _parse_ligand_sdf(input_file=input_file)
-    # Now return them with their name and centre of mass
+
+def _get_c_of_mass_list(mols):
     c_of_mass_list = []
     for m in mols:
         c_of_mass_list.append(_get_c_of_mass(m))
     return c_of_mass_list
 
+def parse_ligands(input_file, input_type="sdf"):
+    mols = _parse_ligand_sdf(input_file=input_file)
+    # Now return them with their name and centre of mass
+    return _get_c_of_mass_list(mols)
 
-def parse_ligand_ph4s(input_file, input_type="sdf"):
+
+def parse_ligand_ph4s(input_mols):
     """
     Function to return a series of ligand based pharmacophores.
-    :param input_file: the file to parse
-    :param input_type: the type of ligands
+    :param input_mols: the RDKit molecules
     :return: the molecule based pharmacophores
     """
     rdkit_ph4 = RDKitPh4()
-    mols = _parse_ligand_sdf(input_file=input_file)
     output_pharma_list = []
-    for mol in mols:
-        pharma_list = rdkit_ph4.generate_ph4_for_mol(rdmol=mol)
+    for mol in input_mols:
+        if not mol:
+            pharma_list = []
+        else:
+            pharma_list = rdkit_ph4.generate_ph4_for_mol(rdmol=mol)
+            x,y,z = _get_c_of_mass(rdmol=mol)
+            c_of_m_feat = (x,y,z,"c_of_m",)
+            pharma_list.append(c_of_m_feat)
         output_pharma_list.append(pharma_list)
     return output_pharma_list
 
@@ -34,18 +42,12 @@ def parse_waters(input_pdbs, input_mol=None, max_dist=10.0):
     :param input_mol: the input molecule (to use as a reference around which to limit)
     :return: tuple threes of coordinates of the waters
     """
-    owner_list = []
+    output_water_list = []
     # First just get the waters from the file
     for input_pdb in input_pdbs:
         waters = _get_waters(open(input_pdb).readlines())
-        water_coords = _get_water_coords(waters)
-        out_l = []
-        for water in water_coords:
-            water = Object(water,"water")
-            out_l.append(water)
-        owner = Owner(out_l,input_pdb)
-        owner_list.append(owner)
-    return owner_list
+        output_water_list.append(_get_water_coords(waters))
+    return output_water_list
 
 
 def parse_residues(input_pdbs, input_mol=None, max_dist=10.0):

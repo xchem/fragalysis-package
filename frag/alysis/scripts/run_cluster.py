@@ -1,4 +1,4 @@
-from frag.alysis.config import run_cluster
+from frag.alysis.run_clustering import run_cluster
 from frag.alysis.models import StructHolder
 ### Example of how it would work
 

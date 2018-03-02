@@ -36,11 +36,11 @@ class ClusterStuff(object):
         self.owner_list = self.parser(input_data)
         # Now convert o
         data_set = self.owner_list_conv()
-        for type in data_set:
+        for this_type in data_set:
             # Add clusters to objects
-            self.out_clusters[type] = []
-            self.add_clust_to_obj(self.cluster(data_set[type]["data"],type),
-                                  data_set[type]["objects"],type)
+            self.out_clusters[this_type] = []
+            self.add_clust_to_obj(self.cluster(data_set[this_type]["data"],this_type),
+                                  data_set[this_type]["objects"],this_type)
 
 
     def add_clust_to_obj(self,cluster_obj,object_list,type):

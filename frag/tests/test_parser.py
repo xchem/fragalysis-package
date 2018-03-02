@@ -1,7 +1,7 @@
 import unittest
 from frag.utils import parser
-
-
+from frag.utils.parser import _get_c_of_mass_list
+from rdkit import Chem
 
 class ParserTest(unittest.TestCase):
     water_data = """HETATM 2008  O   HOH B 184      53.034 -39.489  96.872  1.00 67.70           O
@@ -20,6 +20,64 @@ HETATM 2023  O   HOH B 198      40.498 -49.338  59.760  1.00 74.54           O
 HETATM 2024  O   HOH B 199      62.006 -56.842  90.642  1.00 50.69           O"""
     single_water = """HETATM 2008  O   HOH B 184      53.034 -39.489  96.872  1.00 67.70           O"""
 
+    ligand_data = """
+     RDKit
+
+ 14 15  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  2  0
+  2  3  1  0
+  2  4  1  0
+  4  5  1  0
+  5  6  1  0
+  6  7  1  0
+  7  8  2  0
+  7  9  1  0
+  9 10  2  0
+ 10 11  1  0
+ 11 12  2  0
+ 12 13  1  0
+ 13 14  2  0
+ 14  5  1  0
+ 14  9  1  0
+M  END
+$$$$
+
+     RDKit          3D
+
+  8  8  0  0  0  0  0  0  0  0999 V2000
+   -0.2375    1.2479   -0.2221 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.5033    1.0878    0.3249 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.9231   -0.1960    0.6598 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.4265   -1.1855   -0.1809 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.0741   -1.1112   -0.4792 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.5447    0.1297   -0.4205 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.0371    0.2224   -0.4859 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.5826   -0.1950    0.8038 N   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  2  0
+  2  3  1  0
+  3  4  2  0
+  4  5  1  0
+  5  6  2  0
+  6  7  1  0
+  7  8  1  0
+  6  1  1  0
+M  END"""
+
+
     def test_water_parser(self):
         out_data = parser._get_waters(self.water_data.split("\n"))
         self.assertEqual(len(out_data),14)
@@ -35,6 +93,16 @@ HETATM 2024  O   HOH B 199      62.006 -56.842  90.642  1.00 50.69           O""
         water_coords = parser._get_water_coords(out_data)
         self.assertEqual(len(water_coords), 1)
         self.assertAlmostEqual(water_coords[0][1],-39.489)
+
+    def test_com_parser(self):
+        mols = [Chem.MolFromMolBlock(x) for x in self.ligand_data.split("$$$$")]
+        out_data = _get_c_of_mass_list(mols)
+        self.assertEqual(len(out_data),2)
+        self.assertEqual(len(out_data[0]),3)
+        centre_of_mass = out_data[1]
+        self.assertAlmostEqual(centre_of_mass[0],-1.2499999999970868e-05)
+        self.assertAlmostEqual(centre_of_mass[1],1.2499999999995154e-05)
+        self.assertAlmostEqual(centre_of_mass[2],-1.2499999999984746e-05)
 
 
 if __name__ == '__main__':
