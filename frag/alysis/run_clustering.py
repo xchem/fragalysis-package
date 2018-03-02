@@ -61,7 +61,7 @@ def run_lig_cluster(mols, identifiers):
     # Then we cluster coords
     clusters = {}
     for ph4_type in type_dict:
-        if ph4_type != "c_of_m":
+        if ph4_type == "c_of_m":
             clusters[ph4_type]= cluster_dp(type_dict[ph4_type]["coords"],C_OF_M_LAMBDA,type_dict[ph4_type]["mols"])
         else:
             clusters[ph4_type]= cluster_dp(type_dict[ph4_type]["coords"],PH4_LAMBDA,type_dict[ph4_type]["mols"])
