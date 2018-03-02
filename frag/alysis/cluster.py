@@ -139,6 +139,7 @@ class DPMeans(KMeans):
         # init k-means with 1 cluster
         KMeans.__init__(self, _X, 1, _xVal, _stop)
         self.lam = _lam
+        print("DPMeanes clustering with parameter: "+str(self.lam))
 
     def assign(self):
         for i in range(0, self.size):
