@@ -94,16 +94,5 @@ M  END"""
         self.assertEqual(len(water_coords), 1)
         self.assertAlmostEqual(water_coords[0][1],-39.489)
 
-    def test_com_parser(self):
-        mols = [Chem.MolFromMolBlock(x) for x in self.ligand_data.split("$$$$")]
-        out_data = _get_c_of_mass_list(mols)
-        self.assertEqual(len(out_data),2)
-        self.assertEqual(len(out_data[0]),3)
-        centre_of_mass = out_data[1]
-        self.assertAlmostEqual(centre_of_mass[0],-1.2499999999970868e-05)
-        self.assertAlmostEqual(centre_of_mass[1],1.2499999999995154e-05)
-        self.assertAlmostEqual(centre_of_mass[2],-1.2499999999984746e-05)
-
-
 if __name__ == '__main__':
     unittest.main()
