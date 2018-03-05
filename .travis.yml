@@ -10,4 +10,6 @@ after_success:
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push abradle/fragalysis;
     fi
-  - coveralls
+  - pip install coveralls
+  coverage run --source=mypkg setup.py test
+  coveralls
