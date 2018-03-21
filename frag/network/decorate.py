@@ -124,15 +124,13 @@ def deletion_linker_mol(mol,iso_labels=True):
     out_mols = []
     linker_mol_list = []
     ring_repl_list = []
-    ring_ring_splits = get_ring_ring_splits(mol)
+    ring_ring_splits = get_ring_ring_splits(mol,do_comb_index=True)
     if ring_ring_splits:
         for ring_ring_split in ring_ring_splits:
             rebuilt_smi = rebuild_smi(ring_ring_split,ring_ring=True)
             new_mol = Chem.MolFromSmiles(rebuilt_smi)
-            rebuilt_smi = rebuilt_smi.replace("Xe","Li")
             if new_mol.GetRingInfo().NumRings() < nr:
                  continue
-            new_mol = link_li(rebuilt_smi)
             linker_mol_list.append(new_mol)
     for i in range(len(fragments)):
         new_list = []
@@ -193,7 +191,7 @@ def get_atom_coords(smiles_input,mol):
 def link_li(rebuilt_smi):
     mol = Chem.MolFromSmiles(rebuilt_smi)
     mol = RWMol(mol)
-    bons =  [x[0] for x in mol.GetSubstructMatches(Chem.MolFromSmarts("[Li]"))]
+    bons =  [x[0] for x in mol.GetSubstructMatches(Chem.MolFromSmarts("[Xe]"))]
     mol.AddBond(bons[0],bons[1])
     return mol.GetMol()
 

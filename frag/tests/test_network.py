@@ -4,7 +4,7 @@ from rdkit import Chem
 
 from frag.network.models import NodeHolder,Node,Attr
 from frag.utils.network_utils import rebuild_smi,make_child_mol,get_fragments,build_network,get_comb_index,ret_comb_index
-from frag.network.decorate import decorate_smi
+from frag.network.decorate import decorate_smi,deletion_linker_mol,deletion_linker_smi,del_link_coord
 
 
 
@@ -96,4 +96,63 @@ class NetworksTest(unittest.TestCase):
             self.assertTupleEqual(
                 ret_comb_index(get_comb_index(data[0],data[1])),
                                   data)
+    def test_ring_ring_smi(self):
+        input_smi = "CC(=O)NC=1C=CC(=CC1)C2=CSC(N)=N2"
+        res = deletion_linker_smi("CC(=O)NC=1C=CC(=CC1)C2=CSC(N)=N2")
+        self.assertListEqual([Chem.MolToSmiles(x, isomericSmiles=True) for x in res[0]],
+                             ['Nc1nc(-c2ccc([100Xe])cc2)cs1', 'CC(=O)Nc1ccc(-c2csc([102Xe])n2)cc1'])
+        self.assertListEqual([Chem.MolToSmiles(x, isomericSmiles=True) for x in res[1]],
+                             ['CC(=O)Nc1ccc([1107Xe])cc1.Nc1nc([1107Xe])cs1'])
+        self.assertListEqual([Chem.MolToSmiles(x, isomericSmiles=True) for x in res[2]],
+                             ['CC(=O)N[100Xe].Nc1nc([101Xe])cs1', 'CC(=O)Nc1ccc([101Xe])cc1.N[102Xe]'])
+
+    def test_ring_ring_mol(self):
+        input_sd = """
+     RDKit          3D
+
+ 16 17  0  0  0  0  0  0  0  0999 V2000
+  -10.1430  -10.6060  -10.9420 C   0  0  0  0  0  0  0  0  0  0  0  0
+  -11.4350  -10.5270  -11.7010 C   0  0  0  0  0  0  0  0  0  0  0  0
+  -12.5150  -10.4940  -11.1270 O   0  0  0  0  0  0  0  0  0  0  0  0
+  -11.3000  -10.4840  -13.0450 N   0  0  0  0  0  0  0  0  0  0  0  0
+  -12.2950  -10.4260  -14.0500 C   0  0  0  0  0  0  0  0  0  0  0  0
+  -11.8760  -10.0530  -15.3220 C   0  0  0  0  0  0  0  0  0  0  0  0
+  -12.7770   -9.9750  -16.3610 C   0  0  0  0  0  0  0  0  0  0  0  0
+  -14.1220  -10.2670  -16.1660 C   0  0  0  0  0  0  0  0  0  0  0  0
+  -14.5380  -10.6530  -14.8930 C   0  0  0  0  0  0  0  0  0  0  0  0
+  -13.6380  -10.7330  -13.8470 C   0  0  0  0  0  0  0  0  0  0  0  0
+  -15.0650  -10.1850  -17.2930 C   0  0  0  0  0  0  0  0  0  0  0  0
+  -16.4170  -10.0960  -17.2170 C   0  0  0  0  0  0  0  0  0  0  0  0
+  -17.1150   -9.9510  -18.7790 S   0  0  0  0  0  0  0  0  0  0  0  0
+  -15.5150  -10.0790  -19.4610 C   0  0  0  0  0  0  0  0  0  0  0  0
+  -15.3280  -10.0290  -20.7950 N   0  0  0  0  0  0  0  0  0  0  0  0
+  -14.5560  -10.2150  -18.5880 N   0  0  0  0  0  0  0  0  0  0  0  0
+  2  1  1  0
+  3  2  2  0
+  4  2  1  0
+  5  4  1  0
+  6  5  2  0
+  7  6  1  0
+  8  7  2  0
+  9  8  1  0
+ 10  9  2  0
+ 10  5  1  0
+ 11  8  1  0
+ 12 11  2  0
+ 13 12  1  0
+ 14 13  1  0
+ 15 14  1  0
+ 16 14  2  0
+ 16 11  1  0
+M  END
+
+"""
+        res = del_link_coord(input_sd)
+        values = res["linkers"]['CC(=O)Nc1ccc([Xe])cc1.Nc1nc([Xe])cs1']
+        self.assertEqual(len(values),4)
+        self.assertEqual(type(values[0][2]),float)
+        self.assertEqual(type(values[2][1]), float)
+
+
+
 

@@ -227,7 +227,7 @@ def get_driver():
     driver = GraphDatabase.driver("bolt://neo4j:7687")
     return driver
 
-def get_ring_ring_splits(input_mol,labels=False):
+def get_ring_ring_splits(input_mol,labels=False,do_comb_index=False):
     """
     Get and break Atom-Atom pairs in two different rings.
     :param input_mol:
@@ -250,14 +250,20 @@ def get_ring_ring_splits(input_mol,labels=False):
                     if ring==ring_two:
                         continue
                     if id_two in ring_two:
-                        bs.append(bond.GetIdx())
+                        bs.append(bond)
     if bs:
         for b in bs:
             if labels:
-                nm = Chem.FragmentOnBonds(input_mol,[b],dummyLabels=[(b.GetBeginAtomIdx(),b.GetEndAtomIdx())])
+                nm = Chem.FragmentOnBonds(input_mol,[b.GetIdx()],dummyLabels=[(b.GetBeginAtomIdx(),b.GetEndAtomIdx())])
+                mols = [x.replace("*", "Xe") for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")]
+            elif do_comb_index:
+                print(b)
+
+                comb_index = get_comb_index(b.GetBeginAtomIdx(), b.GetEndAtomIdx())
+                nm = Chem.FragmentOnBonds(input_mol,[b.GetIdx()],dummyLabels=[(comb_index,comb_index)])
                 mols = [x.replace("*", "Xe") for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")]
             else:
-                nm = Chem.FragmentOnBonds(input_mol,[b],dummyLabels=[(1,1)])
+                nm = Chem.FragmentOnBonds(input_mol,[b.GetIdx()],dummyLabels=[(1,1)])
                 # Only takes first
                 mols = [x.replace("1*", "Xe") for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")]
             out_mols.append(mols)
