@@ -151,12 +151,15 @@ def _get_res_rmsds(input_res_list):
             tot_dist = 0.0
             num_matches = 0
             for atom in res_one:
-                atm1 = res_one[atom]
                 if atom in res_two:
-                    atm2 = res_two[atom]
                     # Find the distance
                     dist = find_dist(
-                        atm1[0], atm1[1], atm1[2], atm2[0], atm2[1], atm2[2]
+                        res_one[atom][0],
+                        res_one[atom][1],
+                        res_one[atom][2],
+                        res_two[atom][0],
+                        res_two[atom][1],
+                        res_two[atom][2],
                     )
                     tot_dist += dist
                     num_matches += 1
