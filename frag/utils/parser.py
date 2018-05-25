@@ -1,7 +1,17 @@
 # Series of functions to parse input files
-from frag.alysis.models import Object,Owner
-from frag.utils.rdkit_utils import _parse_ligand_sdf, _get_c_of_mass, RDKitPh4, _get_water_coords,_get_waters,_get_res,_get_res_rmsds,_parse_pdb
+from frag.alysis.models import Object, Owner
+from frag.utils.rdkit_utils import (
+    _parse_ligand_sdf,
+    _get_c_of_mass,
+    RDKitPh4,
+    _get_water_coords,
+    _get_waters,
+    _get_res,
+    _get_res_rmsds,
+    _parse_pdb,
+)
 import math
+from rdkit import Chem
 
 
 def _get_c_of_mass_list(mols):
@@ -9,6 +19,7 @@ def _get_c_of_mass_list(mols):
     for m in mols:
         c_of_mass_list.append(_get_c_of_mass(m))
     return c_of_mass_list
+
 
 def parse_ligands(input_file, input_type="sdf"):
     mols = _parse_ligand_sdf(input_file=input_file)
@@ -29,11 +40,12 @@ def parse_ligand_ph4s(input_mols):
             pharma_list = []
         else:
             pharma_list = rdkit_ph4.generate_ph4_for_mol(rdmol=mol)
-            x,y,z = _get_c_of_mass(rdmol=mol)
-            c_of_m_feat = (x,y,z,"c_of_m",)
+            x, y, z = _get_c_of_mass(rdmol=mol)
+            c_of_m_feat = (x, y, z, "c_of_m")
             pharma_list.append(c_of_m_feat)
         output_pharma_list.append(pharma_list)
     return output_pharma_list
+
 
 def parse_waters(input_pdbs, input_mol=None, max_dist=10.0):
     """
@@ -70,8 +82,8 @@ def parse_residues(input_pdbs, input_mol=None, max_dist=10.0):
     for res in res_dict:
         rmsd_coords = _get_res_rmsds(res_dict[res])
         out_l = []
-        res = Object(rmsd_coords,res)
+        res = Object(rmsd_coords, res)
         out_l.append(res)
-        owner = Owner(out_l,input_pdb)
+        owner = Owner(out_l, input_pdb)
         owner_list.append(owner)
     return owner_list

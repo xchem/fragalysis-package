@@ -23,7 +23,6 @@ class RDKitPh4(object):
             self.factory = ChemicalFeatures.BuildFeatureFactory(data_path)
         return self.factory
 
-
     def generate_ph4_for_mol(self, rdmol):
         """
         Generate a pharmacophore from an input molecule and a feature factory.
@@ -32,7 +31,11 @@ class RDKitPh4(object):
         :return: a list of 4 tuples (x,y,z, feature)
         """
         feats = self.get_factory().GetFeaturesForMol(rdmol)
-        return [(feat.GetPos().x,feat.GetPos().y,feat.GetPos().z,feat.GetType()) for feat in feats]
+        return [
+            (feat.GetPos().x, feat.GetPos().y, feat.GetPos().z, feat.GetType())
+            for feat in feats
+        ]
+
 
 def _parse_ligand_sdf(input_file):
     """
@@ -78,7 +81,8 @@ def _get_waters(input_lines):
     :param input_lines: the lines of a PDB file we want to consider
     :return:
     """
-    return [x for x in input_lines if x[17:20]=="HOH"]
+    return [x for x in input_lines if x[17:20] == "HOH"]
+
 
 def _get_water_coords(waters):
     """Helper function to get the coordinates from a load of waters."""
@@ -95,32 +99,37 @@ def _get_water_coords(waters):
             if rd_waters.GetAtomWithIdx(i).GetSmarts() != "O":
                 print("Warning - skipping a water")
                 continue
-            out_list.append((cp.x,cp.y,cp.z))
+            out_list.append((cp.x, cp.y, cp.z))
     return out_list
 
 
-def _get_file(file_path,output_format,file_counter):
-    if output_format=="smi":
-        return Chem.SmilesWriter(file_path+"_"+str(file_counter)+".smi")
+def _get_file(file_path, output_format, file_counter):
+    if output_format == "smi":
+        return Chem.SmilesWriter(file_path + "_" + str(file_counter) + ".smi")
     else:
-        return Chem.SDWriter(file_path+"_"+str(file_counter)+".sdf")
+        return Chem.SDWriter(file_path + "_" + str(file_counter) + ".sdf")
 
-def _parse_mols(input_file,input_format):
-    if input_format=="smi":
-        return Chem.SmilesMolSupplier(input_file)
+
+def _parse_mols(input_file, input_format):
+    if input_format == "smi":
+        return Chem.SmilesMolSupplier(input_file, delimiter=",")
     else:
         return Chem.SDMolSupplier(input_file)
+
 
 def _parse_pdb(data):
     return Chem.MolFromPDBFile(data)
 
 
-
-def find_dist(mol_1_x,mol_1_y, mol_1_z, mol_2_x, mol_2_y, mol_2_z):
+def find_dist(mol_1_x, mol_1_y, mol_1_z, mol_2_x, mol_2_y, mol_2_z):
     """Function to find the square distance between two points in 3D
     Takes two len=3 tuples
     Returns a float"""
-    return pow((mol_1_x-mol_2_x),2) + pow((mol_1_y-mol_2_y),2) + pow((mol_1_z-mol_2_z),2)
+    return (
+        pow((mol_1_x - mol_2_x), 2)
+        + pow((mol_1_y - mol_2_y), 2)
+        + pow((mol_1_z - mol_2_z), 2)
+    )
 
 
 def _get_res_rmsds(input_res_list):
@@ -146,10 +155,11 @@ def _get_res_rmsds(input_res_list):
                 if atom in res_two:
                     atm2 = res_two[atom]
                     # Find the distance
-                    dist = find_dist(atm1[0], atm1[1], atm1[2],
-                                 atm2[0], atm2[1], atm2[2])
+                    dist = find_dist(
+                        atm1[0], atm1[1], atm1[2], atm2[0], atm2[1], atm2[2]
+                    )
                     tot_dist += dist
-                    num_matches +=1
+                    num_matches += 1
             # Find the mean square distance
             mean_dist = float(tot_dist) / float(num_matches)
             # Append the root mean square distance
@@ -167,11 +177,15 @@ def get_res_atom_name(atom, conf):
     :return: the unqiue residue level name, the atom name and the position
     """
     res_info = atom.GetPDBResidueInfo()
-    atom_pos =  conf.GetAtomPosition(atom.GetIdx())
-    position = [atom_pos.x,atom_pos.y,atom_pos.z]
-    identifiers =  [res_info.GetResidueNumber(),res_info.GetChainId(),
-                            res_info.GetResidueName(), res_info.GetAltLoc()]
-    unique_name = "_".join([str(x) for x in identifiers if x != ' '])
+    atom_pos = conf.GetAtomPosition(atom.GetIdx())
+    position = [atom_pos.x, atom_pos.y, atom_pos.z]
+    identifiers = [
+        res_info.GetResidueNumber(),
+        res_info.GetChainId(),
+        res_info.GetResidueName(),
+        res_info.GetAltLoc(),
+    ]
+    unique_name = "_".join([str(x) for x in identifiers if x != " "])
     atom_name = res_info.GetName().strip()
     return unique_name, atom_name, position
 
@@ -187,7 +201,7 @@ def _get_res(mol):
     atoms = mol.GetAtoms()
     for atom in atoms:
         # Get res_name
-        res_name,atom_name,position = get_res_atom_name(atom,conf)
+        res_name, atom_name, position = get_res_atom_name(atom, conf)
         if res_name in out_dict:
             out_dict[res_name][atom_name] = position
         else:
