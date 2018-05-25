@@ -132,6 +132,26 @@ def find_dist(mol_1_x, mol_1_y, mol_1_z, mol_2_x, mol_2_y, mol_2_z):
     )
 
 
+def _get_mean_dist(res_one, res_two):
+    tot_dist = 0.0
+    num_matches = 0
+    for atom in res_one:
+        if atom in res_two:
+            # Find the distance
+            dist = find_dist(
+                res_one[atom][0],
+                res_one[atom][1],
+                res_one[atom][2],
+                res_two[atom][0],
+                res_two[atom][1],
+                res_two[atom][2],
+            )
+            tot_dist += dist
+            num_matches += 1
+    # Find the mean square distance
+    return float(tot_dist) / float(num_matches)
+
+
 def _get_res_rmsds(input_res_list):
     """
     Helper function to get the RMSDs for a list of Residues.
@@ -146,25 +166,7 @@ def _get_res_rmsds(input_res_list):
         for j in range(num_res):
             if i == j:
                 continue
-            res_one = input_res_list[i]
-            res_two = input_res_list[j]
-            tot_dist = 0.0
-            num_matches = 0
-            for atom in res_one:
-                if atom in res_two:
-                    # Find the distance
-                    dist = find_dist(
-                        res_one[atom][0],
-                        res_one[atom][1],
-                        res_one[atom][2],
-                        res_two[atom][0],
-                        res_two[atom][1],
-                        res_two[atom][2],
-                    )
-                    tot_dist += dist
-                    num_matches += 1
-            # Find the mean square distance
-            mean_dist = float(tot_dist) / float(num_matches)
+            mean_dist = _get_mean_dist(input_res_list[i], input_res_list[j])
             # Append the root mean square distance
             root_mean_sqr = math.sqrt(mean_dist)
             this_res_rmsd_list.append(root_mean_sqr)
