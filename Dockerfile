@@ -1,4 +1,4 @@
-FROM informaticsmatters/rdkit-python-debian:Release_2018_03_02
+FROM informaticsmatters/rdkit-python-debian:Release_2018_03_01
 ADD requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 RUN apt-get update && apt-get install -y git
