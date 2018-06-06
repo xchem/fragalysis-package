@@ -2,11 +2,21 @@ import unittest
 
 from rdkit import Chem
 
-from frag.network.models import NodeHolder,Node,Attr
-from frag.utils.network_utils import rebuild_smi,make_child_mol,get_fragments,build_network,get_comb_index,ret_comb_index
-from frag.network.decorate import decorate_smi,deletion_linker_mol,deletion_linker_smi,del_link_coord
-
-
+from frag.network.models import NodeHolder, Node, Attr
+from frag.utils.network_utils import (
+    rebuild_smi,
+    make_child_mol,
+    get_fragments,
+    build_network,
+    get_comb_index,
+    ret_comb_index,
+)
+from frag.network.decorate import (
+    decorate_smi,
+    deletion_linker_mol,
+    deletion_linker_smi,
+    del_link_coord,
+)
 
 
 def parse_node(input_str):
@@ -26,30 +36,47 @@ def parse_node(input_str):
 
 
 def conv_smi(input_smi):
-    return Chem.MolToSmiles(Chem.MolFromSmiles(input_smi))
+    return Chem.MolToSmiles(Chem.MolFromSmiles(input_smi), isomericSmiles=False)
+
 
 class NetworksTest(unittest.TestCase):
 
     def test_rebuild(self):
-        input_list = [['O[100Xe]','[100Xe]c1ccc([101Xe])cc1'],
-                      ['O[100Xe]', '[101Xe]c1ccccc1'],
-                      ['[101Xe]c1ccccc1','[100Xe]c1ccc([101Xe])cc1']]
-        rebuild_list = ["Oc1ccc([Xe])cc1","O[Xe].[Xe]c1ccccc1", "[Xe]c1ccc(cc1)c2ccccc2"]
+        input_list = [
+            ["O[100Xe]", "[100Xe]c1ccc([101Xe])cc1"],
+            ["O[100Xe]", "[101Xe]c1ccccc1"],
+            ["[101Xe]c1ccccc1", "[100Xe]c1ccc([101Xe])cc1"],
+        ]
+        rebuild_list = [
+            "Oc1ccc([Xe])cc1",
+            "O[Xe].[Xe]c1ccccc1",
+            "[Xe]c1ccc(cc1)c2ccccc2",
+        ]
         for i in range(len(input_list)):
-            self.assertEqual(conv_smi(rebuild_smi(input_list[i],ring_ring=False)),
-                             conv_smi(rebuild_list[i]))
+            self.assertEqual(
+                conv_smi(rebuild_smi(input_list[i], ring_ring=False)),
+                conv_smi(rebuild_list[i]),
+            )
+
     def test_child(self):
-        rebuild_list = ["Oc1ccc([Xe])cc1", "O[Xe].[Xe]c1ccccc1", "[Xe]c1ccc(cc1)c2ccccc2"]
-        child_list = ["Oc1ccccc1","O.c1ccccc1","c1ccc(cc1)c2ccccc2"]
+        rebuild_list = [
+            "Oc1ccc([Xe])cc1",
+            "O[Xe].[Xe]c1ccccc1",
+            "[Xe]c1ccc(cc1)c2ccccc2",
+        ]
+        child_list = ["Oc1ccccc1", "O.c1ccccc1", "c1ccc(cc1)c2ccccc2"]
         for i in range(len(child_list)):
-            self.assertEqual(conv_smi(make_child_mol(rebuild_list[i])),
-                         conv_smi(child_list[i]))
+            self.assertEqual(
+                conv_smi(make_child_mol(rebuild_list[i])), conv_smi(child_list[i])
+            )
 
     def test_get(self):
-        input_list = ["CC.CC","CC.c1ccccc1C","CCC"]
-        output_list = [["CC","CC"],['CC', '[100Xe]C', '[100Xe]c1ccccc1'],["CCC"]]
+        input_list = ["CC.CC", "CC.c1ccccc1C", "CCC"]
+        output_list = [["CC", "CC"], ["CC", "[100Xe]C", "[100Xe]c1ccccc1"], ["CCC"]]
         for i in range(len(input_list)):
-            self.assertListEqual(output_list[i],get_fragments(Chem.MolFromSmiles(input_list[i])))
+            self.assertListEqual(
+                output_list[i], get_fragments(Chem.MolFromSmiles(input_list[i]))
+            )
 
     def test_generate_nodes(self):
         """
@@ -59,7 +86,10 @@ class NetworksTest(unittest.TestCase):
         try:
             nodes = [x for x in open("frag/tests/data/nodes.txt").readlines()]
             edges = [x.split() for x in open("frag/tests/data/edges.txt").readlines()]
-            attrs = [Attr(input_str=x) for x in open("frag/tests/data/attributes.txt").readlines()]
+            attrs = [
+                Attr(input_str=x)
+                for x in open("frag/tests/data/attributes.txt").readlines()
+            ]
         except IOError:
             nodes = [x for x in open("data/nodes.txt").readlines()]
             edges = [x.split() for x in open("data/edges.txt").readlines()]
@@ -67,44 +97,61 @@ class NetworksTest(unittest.TestCase):
         node_holder = NodeHolder()
         node_holder = build_network(attrs, node_holder)
         # Create the nodes and test with output
-        self.assertEqual(len(node_holder.node_list),len(nodes))
+        self.assertEqual(len(node_holder.node_list), len(nodes))
         # This doesn't work yet(we get 3695 edges - should be 3691
         # Close enough - and the output looks right...
-        self.assertEqual(len(node_holder.get_edges()),3695)
+        self.assertEqual(len(node_holder.get_edges()), 3695)
 
     def test_decorate(self):
         """
         Test we can decorate a series of input SMILEs
         :return:
         """
-        input_data = ["Oc1ccc(cc1)c2ccccc2","c1ccccc1","c1ccncc1","c1cccnc1"]
-        output_data = [['Oc1ccc(-c2ccccc2[At])cc1', 'Oc1ccc(-c2ccccc2)c([At])c1', 'Oc1ccc(-c2ccc([At])cc2)cc1', 'Oc1ccc(-c2ccccc2)cc1[At]', 'Oc1ccc(-c2cccc([At])c2)cc1'],
-                       ['[At]c1ccccc1'],['[At]c1cccnc1', '[At]c1ccccn1', '[At]c1ccncc1'],['[At]c1cccnc1', '[At]c1ccccn1', '[At]c1ccncc1']]
-        for i,smi in enumerate(input_data):
-            self.assertListEqual(list(decorate_smi(smi).keys()),output_data[i])
+        input_data = ["Oc1ccc(cc1)c2ccccc2", "c1ccccc1", "c1ccncc1", "c1cccnc1"]
+        output_data = [
+            [
+                "Oc1ccc(-c2ccccc2[At])cc1",
+                "Oc1ccc(-c2ccccc2)c([At])c1",
+                "Oc1ccc(-c2ccc([At])cc2)cc1",
+                "Oc1ccc(-c2ccccc2)cc1[At]",
+                "Oc1ccc(-c2cccc([At])c2)cc1",
+            ],
+            ["[At]c1ccccc1"],
+            ["[At]c1cccnc1", "[At]c1ccccn1", "[At]c1ccncc1"],
+            ["[At]c1cccnc1", "[At]c1ccccn1", "[At]c1ccncc1"],
+        ]
+        for i, smi in enumerate(input_data):
+            self.assertListEqual(list(decorate_smi(smi).keys()), output_data[i])
 
     def test_comb_index(self):
         """
         Test we combine indices
         :return:
         """
-        input_data = [(12,19),(6,14),(99,98),(4,0)]
-        output_data = [2012,1506,9999,104]
-        for i,data in enumerate(input_data):
-            self.assertEqual(get_comb_index(data[0],data[1]),output_data[i])
-            self.assertTupleEqual(ret_comb_index(output_data[i]),data)
+        input_data = [(12, 19), (6, 14), (99, 98), (4, 0)]
+        output_data = [2012, 1506, 9999, 104]
+        for i, data in enumerate(input_data):
+            self.assertEqual(get_comb_index(data[0], data[1]), output_data[i])
+            self.assertTupleEqual(ret_comb_index(output_data[i]), data)
             self.assertTupleEqual(
-                ret_comb_index(get_comb_index(data[0],data[1])),
-                                  data)
+                ret_comb_index(get_comb_index(data[0], data[1])), data
+            )
+
     def test_ring_ring_smi(self):
         input_smi = "CC(=O)NC=1C=CC(=CC1)C2=CSC(N)=N2"
         res = deletion_linker_smi("CC(=O)NC=1C=CC(=CC1)C2=CSC(N)=N2")
-        self.assertListEqual([Chem.MolToSmiles(x, isomericSmiles=True) for x in res[0]],
-                             ['Nc1nc(-c2ccc([100Xe])cc2)cs1', 'CC(=O)Nc1ccc(-c2csc([102Xe])n2)cc1'])
-        self.assertListEqual([Chem.MolToSmiles(x, isomericSmiles=True) for x in res[1]],
-                             ['CC(=O)Nc1ccc([1107Xe])cc1.Nc1nc([1107Xe])cs1'])
-        self.assertListEqual([Chem.MolToSmiles(x, isomericSmiles=True) for x in res[2]],
-                             ['CC(=O)N[100Xe].Nc1nc([101Xe])cs1', 'CC(=O)Nc1ccc([101Xe])cc1.N[102Xe]'])
+        self.assertListEqual(
+            [Chem.MolToSmiles(x, isomericSmiles=True) for x in res[0]],
+            ["Nc1nc(-c2ccc([100Xe])cc2)cs1", "CC(=O)Nc1ccc(-c2csc([102Xe])n2)cc1"],
+        )
+        self.assertListEqual(
+            [Chem.MolToSmiles(x, isomericSmiles=True) for x in res[1]],
+            ["CC(=O)Nc1ccc([1107Xe])cc1.Nc1nc([1107Xe])cs1"],
+        )
+        self.assertListEqual(
+            [Chem.MolToSmiles(x, isomericSmiles=True) for x in res[2]],
+            ["CC(=O)N[100Xe].Nc1nc([101Xe])cs1", "CC(=O)Nc1ccc([101Xe])cc1.N[102Xe]"],
+        )
 
     def test_ring_ring_mol(self):
         input_sd = """
@@ -148,11 +195,7 @@ M  END
 
 """
         res = del_link_coord(input_sd)
-        values = res["linkers"]['CC(=O)Nc1ccc([Xe])cc1.Nc1nc([Xe])cs1']
-        self.assertEqual(len(values),4)
-        self.assertEqual(type(values[0][2]),float)
+        values = res["linkers"]["CC(=O)Nc1ccc([Xe])cc1.Nc1nc([Xe])cs1"]
+        self.assertEqual(len(values), 4)
+        self.assertEqual(type(values[0][2]), float)
         self.assertEqual(type(values[2][1]), float)
-
-
-
-
