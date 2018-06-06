@@ -1,13 +1,15 @@
 from rdkit import Chem
+
 try:
     from rdkit.Chem import fdMCS as MCS
 except ImportError:
     from rdkit.Chem import MCS
-from rdkit.Chem import AllChem,Draw
+from rdkit.Chem import AllChem, Draw
 from tqdm import tqdm
 import os
 
 SMARTS_PATTERN = "[*;R]-;!@[*]"
+
 
 def write_results(input_dict):
     """
@@ -24,29 +26,35 @@ def write_results(input_dict):
         if len(mols) > 2:
             p = Chem.MolFromSmarts(MCS.FindMCS(mols).smarts)
             AllChem.Compute2DCoords(p)
-            for m in mols: AllChem.GenerateDepictionMatching2DStructure(m, p)
-        out_imgs[mol] = Draw.MolsToGridImage(mols,useSVG=True)
+            for m in mols:
+                AllChem.GenerateDepictionMatching2DStructure(m, p)
+        out_imgs[mol] = Draw.MolsToGridImage(mols, useSVG=True)
         # Write out the image
     return out_imgs
 
-def get_frag_list(str_find,input_mol):
+
+def get_frag_list(str_find, input_mol):
     """
     Get the list of fragments
     :param str_find:
     :param input_mol:
     :return:
     """
-    return [x.replace(str_find, "Xe") for x in Chem.MolToSmiles(input_mol, isomericSmiles=True).split(".")]
+    return [
+        x.replace(str_find, "Xe")
+        for x in Chem.MolToSmiles(input_mol, isomericSmiles=True).split(".")
+    ]
 
 
-def get_comb_index(bi_1,bi_2):
+def get_comb_index(bi_1, bi_2):
     """
 
     :param bi_1:
     :param bi_2:
     :return:
     """
-    return bi_1+(100*(bi_2+1))
+    return bi_1 + (100 * (bi_2 + 1))
+
 
 def ret_comb_index(bi_tot):
     """
@@ -56,9 +64,10 @@ def ret_comb_index(bi_tot):
     """
     bi_1 = int(str(bi_tot)[-2:])
     bi_2 = int(str(bi_tot)[0:-2])
-    return (bi_1,bi_2-1)
+    return (bi_1, bi_2 - 1)
 
-def get_fragments(input_mol,iso_labels=True):
+
+def get_fragments(input_mol, iso_labels=True):
     """
     Find the frgments for a given molecule
     :param input_mol:
@@ -70,8 +79,8 @@ def get_fragments(input_mol,iso_labels=True):
         labels = []
         bs = []
         for bi in atom_indices:
-            b = input_mol.GetBondBetweenAtoms(bi[0],bi[1])
-            labels.append((counter,counter))
+            b = input_mol.GetBondBetweenAtoms(bi[0], bi[1])
+            labels.append((counter, counter))
             bs.append(b.GetIdx())
             counter += 1
         input_mol = Chem.FragmentOnBonds(input_mol, bs, dummyLabels=labels)
@@ -79,13 +88,13 @@ def get_fragments(input_mol,iso_labels=True):
         bs = []
         labels = []
         for bi in atom_indices:
-            b = input_mol.GetBondBetweenAtoms(bi[0],bi[1])
+            b = input_mol.GetBondBetweenAtoms(bi[0], bi[1])
             bs.append(b.GetIdx())
-            comb_index = get_comb_index(bi[0],bi[1])
-            labels.append((comb_index,comb_index))
-        input_mol = Chem.FragmentOnBonds(input_mol, bs,dummyLabels=labels)
-        return get_frag_list(str_find="*",input_mol=input_mol)
-    return get_frag_list(str_find="*",input_mol=input_mol)
+            comb_index = get_comb_index(bi[0], bi[1])
+            labels.append((comb_index, comb_index))
+        input_mol = Chem.FragmentOnBonds(input_mol, bs, dummyLabels=labels)
+        return get_frag_list(str_find="*", input_mol=input_mol)
+    return get_frag_list(str_find="*", input_mol=input_mol)
 
 
 def get_num_ring_atoms(input_mol):
@@ -95,15 +104,15 @@ def get_num_ring_atoms(input_mol):
     :return:
     """
     num_ring_atoms = 0
-    split_index =0
+    split_index = 0
     split_indices = []
     for atom in input_mol.GetAtoms():
         if atom.IsInRing():
-            num_ring_atoms+=1
+            num_ring_atoms += 1
         else:
             split_indices.append(split_index)
         split_index += 1
-    return num_ring_atoms,split_indices
+    return num_ring_atoms, split_indices
 
 
 def simplified_graph(input_smiles):
@@ -123,7 +132,7 @@ function dt_molgraph to
             atom.SetIsAromatic(False)
         for bond in atom.GetBonds():
             bond.SetBondType(Chem.BondType.SINGLE)
-    return Chem.MolToSmiles(mol,isomericSmiles=True)
+    return Chem.MolToSmiles(mol, isomericSmiles=True)
 
 
 def recombine_edges(output_edges):
@@ -137,7 +146,7 @@ def recombine_edges(output_edges):
     # Dictionary of atom's to bond together and delete if they come in pairs
     iso_dict = {}
     for atom in mol.GetAtoms():
-        if atom.GetAtomicNum()==54:
+        if atom.GetAtomicNum() == 54:
             # Get the isotope
             iso = atom.GetIsotope()
             if iso in iso_dict:
@@ -148,19 +157,19 @@ def recombine_edges(output_edges):
     # Add bonds first
     del_indices = []
     for isotope in iso_dict:
-        if len(iso_dict[isotope])>1:
-            mw.AddBond(iso_dict[isotope][0][1],
-                       iso_dict[isotope][1][1],
-                       Chem.BondType.SINGLE)
+        if len(iso_dict[isotope]) > 1:
+            mw.AddBond(
+                iso_dict[isotope][0][1], iso_dict[isotope][1][1], Chem.BondType.SINGLE
+            )
             del_indices.append(iso_dict[isotope][0][0])
             del_indices.append(iso_dict[isotope][1][0])
     # Now delete atoms
     del_count = 0
     for atom_index in sorted(del_indices):
-        mw.RemoveAtom(atom_index-del_count)
-        del_count+=1
+        mw.RemoveAtom(atom_index - del_count)
+        del_count += 1
     Chem.SanitizeMol(mw)
-    return Chem.MolToSmiles(mw,isomericSmiles=True)
+    return Chem.MolToSmiles(mw, isomericSmiles=True)
 
 
 def rebuild_smi(input_list, ring_ring):
@@ -184,13 +193,13 @@ def make_child_mol(rebuilt_smi):
     :return:
     """
     mol = Chem.MolFromSmiles(rebuilt_smi)
-    #TODO proper warning messages for thsee two exceptions
+    # TODO proper warning messages for thsee two exceptions
     if mol is None:
         return None
     # TODO - check that non isomeric is ok here
-    new_smi = Chem.MolToSmiles(mol).replace("[Xe]", "[H]")
+    new_smi = Chem.MolToSmiles(mol, isomericSmiles=False).replace("[Xe]", "[H]")
     mol = Chem.MolFromSmiles(new_smi)
-    #TODO proper warning messages for thsee two exceptions
+    # TODO proper warning messages for thsee two exceptions
     if mol is None:
         return None
     return Chem.CanonSmiles(new_smi)
@@ -202,7 +211,7 @@ def get_info(atom):
     :param atom:
     :return:
     """
-    return [atom.GetIdx(),atom.GetNeighbors()[0].GetIdx()]
+    return [atom.GetIdx(), atom.GetNeighbors()[0].GetIdx()]
 
 
 def get_type(smiles):
@@ -224,65 +233,85 @@ def get_driver():
     """
     # No auth on the database
     from neo4j.v1 import GraphDatabase
+
     driver = GraphDatabase.driver("bolt://neo4j:7687")
     return driver
 
-def get_ring_ring_splits(input_mol,labels=False,do_comb_index=False):
+
+def get_ring_ring_splits(input_mol, labels=False, do_comb_index=False):
     """
     Get and break Atom-Atom pairs in two different rings.
     :param input_mol:
     :return:
     """
-    #TODO Fix for fused e.g.s
+    # TODO Fix for fused e.g.s
     RI = input_mol.GetRingInfo()
     rings = RI.AtomRings()
     out_mols = []
     bonds = [item for sublist in RI.BondRings() for item in sublist]
     bs = []
     for bond in input_mol.GetBonds():
-        if bond.GetIdx() in bonds: continue
+        if bond.GetIdx() in bonds:
+            continue
         id_one = bond.GetBeginAtomIdx()
         id_two = bond.GetEndAtomIdx()
         # Now find all pairs that are in both
         for ring in rings:
             if id_one in ring:
                 for ring_two in rings:
-                    if ring==ring_two:
+                    if ring == ring_two:
                         continue
                     if id_two in ring_two:
                         bs.append(bond)
     if bs:
         for b in bs:
             if labels:
-                nm = Chem.FragmentOnBonds(input_mol,[b.GetIdx()],dummyLabels=[(b.GetBeginAtomIdx(),b.GetEndAtomIdx())])
-                mols = [x.replace("*", "Xe") for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")]
+                nm = Chem.FragmentOnBonds(
+                    input_mol,
+                    [b.GetIdx()],
+                    dummyLabels=[(b.GetBeginAtomIdx(), b.GetEndAtomIdx())],
+                )
+                mols = [
+                    x.replace("*", "Xe")
+                    for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")
+                ]
             elif do_comb_index:
                 print(b)
 
                 comb_index = get_comb_index(b.GetBeginAtomIdx(), b.GetEndAtomIdx())
-                nm = Chem.FragmentOnBonds(input_mol,[b.GetIdx()],dummyLabels=[(comb_index,comb_index)])
-                mols = [x.replace("*", "Xe") for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")]
+                nm = Chem.FragmentOnBonds(
+                    input_mol, [b.GetIdx()], dummyLabels=[(comb_index, comb_index)]
+                )
+                mols = [
+                    x.replace("*", "Xe")
+                    for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")
+                ]
             else:
-                nm = Chem.FragmentOnBonds(input_mol,[b.GetIdx()],dummyLabels=[(1,1)])
+                nm = Chem.FragmentOnBonds(input_mol, [b.GetIdx()], dummyLabels=[(1, 1)])
                 # Only takes first
-                mols = [x.replace("1*", "Xe") for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")]
+                mols = [
+                    x.replace("1*", "Xe")
+                    for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")
+                ]
             out_mols.append(mols)
         return out_mols
 
 
-def add_child_and_edge(new_list, input_node, excluded_smi, node_holder, ring_ring=False):
+def add_child_and_edge(
+    new_list, input_node, excluded_smi, node_holder, ring_ring=False
+):
     """
     :param input_pair:
     :return:
     """
     # Rebuild the molecule
-    rebuilt_smi = rebuild_smi(new_list,ring_ring)
+    rebuilt_smi = rebuild_smi(new_list, ring_ring)
     # Turn into child molecule
     child_smi = make_child_mol(rebuilt_smi)
     if child_smi is None:
         return
     # Now generate the edges with input and this node
-    new_node,is_new = node_holder.create_or_retrieve_node(child_smi)
+    new_node, is_new = node_holder.create_or_retrieve_node(child_smi)
     node_holder.create_or_retrieve_edge(excluded_smi, rebuilt_smi, input_node, new_node)
     # Now generate the children for this too
     if is_new:
@@ -290,7 +319,8 @@ def add_child_and_edge(new_list, input_node, excluded_smi, node_holder, ring_rin
 
 
 def canon_input(smi):
-    return Chem.MolToSmiles(Chem.MolFromSmiles(smi),isomericSmiles=True)
+    return Chem.MolToSmiles(Chem.MolFromSmiles(smi), isomericSmiles=True)
+
 
 def create_children(input_node, node_holder):
     """
@@ -302,35 +332,39 @@ def create_children(input_node, node_holder):
     ring_ring_splits = get_ring_ring_splits(input_node.RDMol)
     if ring_ring_splits:
         for ring_ring_split in ring_ring_splits:
-            add_child_and_edge(ring_ring_split,input_node,"[Xe]", node_holder,ring_ring=True)
+            add_child_and_edge(
+                ring_ring_split, input_node, "[Xe]", node_holder, ring_ring=True
+            )
     fragments = get_fragments(input_node.RDMol)
-    if len(fragments)<2:
+    if len(fragments) < 2:
         return
     # Now remove one item on each iteration
     for i in range(len(fragments)):
         new_list = []
-        for j,item in enumerate(fragments):
-            if i==j:
+        for j, item in enumerate(fragments):
+            if i == j:
                 excluded_smi = item
                 continue
             new_list.append(item)
         add_child_and_edge(new_list, input_node, excluded_smi, node_holder)
 
+
 def write_data(output_dir, node_holder, attrs):
-    out_f = open(os.path.join(output_dir,"nodes.txt"),"w")
+    out_f = open(os.path.join(output_dir, "nodes.txt"), "w")
     for node in node_holder.node_list:
         out_f.write(str(node))
         out_f.write("\n")
-    out_f = open(os.path.join(output_dir,"edges.txt"),"w")
+    out_f = open(os.path.join(output_dir, "edges.txt"), "w")
     for edge in node_holder.get_edges():
         out_f.write(str(edge))
         out_f.write("\n")
-    out_f = open(os.path.join(output_dir,"attributes.txt"),"w")
+    out_f = open(os.path.join(output_dir, "attributes.txt"), "w")
     for attr in attrs:
         out_f.write(str(attr))
         out_f.write("\n")
 
-def build_network(attrs,node_holder):
+
+def build_network(attrs, node_holder):
     # Create the nodes and test with output
     for attr in tqdm(attrs):
         node, is_node = node_holder.create_or_retrieve_node(attr.SMILES)
@@ -339,14 +373,28 @@ def build_network(attrs,node_holder):
     return node_holder
 
 
-def add_node(tx, smiles,hac,chac,osmiles):
-    tx.run("MERGE (:F2 { smiles: $smiles, hac: toInt($hac), chac: toInt($chac), osmiles: $osmiles})",
-           smiles=smiles,hac=hac,chac=chac,osmiles=osmiles)
+def add_node(tx, smiles, hac, chac, osmiles):
+    tx.run(
+        "MERGE (:F2 { smiles: $smiles, hac: toInt($hac), chac: toInt($chac), osmiles: $osmiles})",
+        smiles=smiles,
+        hac=hac,
+        chac=chac,
+        osmiles=osmiles,
+    )
 
-def add_edge(tx,smiles,smiles_two,edge_meta):
-    tx.run("MATCH (n1:F2 { smiles: $smiles}), (n2:F2 { smiles: $smiles_two}) MERGE (n1)-[:F2EDGE{label:$edge_meta}]->(n2)",
-           smiles=smiles, smiles_two=smiles_two, edge_meta=edge_meta)
 
-def add_attr(tx,smiles,attr):
-    tx.run("MATCH (n:F2 { smiles: $smiles} ) set n:MOL, n:EM, n.EM=$attr",
-           smiles=smiles,attr=attr)
+def add_edge(tx, smiles, smiles_two, edge_meta):
+    tx.run(
+        "MATCH (n1:F2 { smiles: $smiles}), (n2:F2 { smiles: $smiles_two}) MERGE (n1)-[:F2EDGE{label:$edge_meta}]->(n2)",
+        smiles=smiles,
+        smiles_two=smiles_two,
+        edge_meta=edge_meta,
+    )
+
+
+def add_attr(tx, smiles, attr):
+    tx.run(
+        "MATCH (n:F2 { smiles: $smiles} ) set n:MOL, n:EM, n.EM=$attr",
+        smiles=smiles,
+        attr=attr,
+    )
