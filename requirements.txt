@@ -3,6 +3,4 @@ tqdm
 neo4j-driver
 numpy
 nose
-pprint
-socketIO_client_nexus
 coveralls
