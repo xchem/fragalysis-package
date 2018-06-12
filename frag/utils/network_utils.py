@@ -42,13 +42,13 @@ def _InitialiseNeutralisationReactions():
 _reactions = None
 
 
-def NeutraliseCharges(smiles, reactions=None):
+def NeutraliseCharges(mol, reactions=None, as_mol=False):
     global _reactions
+    smiles = Chem.MolToSmiles(mol, True)
     if reactions is None:
         if _reactions is None:
             _reactions = _InitialiseNeutralisationReactions()
         reactions = _reactions
-    mol = Chem.MolFromSmiles(smiles)
     replaced = False
     for i, (reactant, product) in enumerate(reactions):
         while mol.HasSubstructMatch(reactant):
@@ -56,9 +56,19 @@ def NeutraliseCharges(smiles, reactions=None):
             rms = AllChem.ReplaceSubstructs(mol, reactant, product)
             mol = rms[0]
     if replaced:
-        return (Chem.MolToSmiles(mol, True), True)
+        if as_mol:
+            return (mol, True)
+        else:
+            return (Chem.MolToSmiles(mol, True), True)
     else:
-        return (smiles, False)
+        if as_mol:
+            return (mol, True)
+        else:
+            return (smiles, False)
+
+
+def conv_at_xe(x):
+    return NeutraliseCharges(Chem.MolFromSmiles(x.replace("[At]", "[Xe]")))[0]
 
 
 def write_results(input_dict):
@@ -370,9 +380,7 @@ def add_child_and_edge(
 
 def canon_input(smi):
     # Decharge in this step too
-    return NeutraliseCharges(
-        Chem.MolToSmiles(Chem.MolFromSmiles(smi), isomericSmiles=True)
-    )[0]
+    return NeutraliseCharges(Chem.MolFromSmiles(smi))[0]
 
 
 def create_children(input_node, node_holder):
@@ -400,6 +408,11 @@ def create_children(input_node, node_holder):
                 continue
             new_list.append(item)
         add_child_and_edge(new_list, input_node, excluded_smi, node_holder)
+
+
+def neutralise_3d_mol(input_mol):
+    neutral_mol = NeutraliseCharges(Chem.MolFromMolBlock(input_mol), as_mol=True)[0]
+    return AllChem.ConstrainedEmbed(neutral_mol, Chem.MolFromMolBlock(input_mol))
 
 
 def write_data(output_dir, node_holder, attrs):
