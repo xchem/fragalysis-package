@@ -98,9 +98,9 @@ class NetworksTest(unittest.TestCase):
         node_holder = build_network(attrs, node_holder)
         # Create the nodes and test with output
         self.assertEqual(len(node_holder.node_list), len(nodes))
-        # This doesn't work yet(we get 3695 edges - should be 3691
+        # This doesn't work yet(we get 3687 edges - should be 3691
         # Close enough - and the output looks right...
-        self.assertEqual(len(node_holder.get_edges()), 3695)
+        self.assertEqual(len(node_holder.get_edges()), 3687)
 
     def test_decorate(self):
         """

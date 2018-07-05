@@ -13,15 +13,15 @@ class NodeHolder(object):
     """
 
     def __init__(self):
-        self.node_list = []
-        self.edge_list = []
+        self.node_list = set()
+        self.edge_list = set()
 
     def create_or_retrieve_node(self, child_smi):
         new_node = Node(Chem.MolFromSmiles(child_smi))
-        new_node_list = [x for x in self.node_list if x == new_node]
-        if new_node_list:
-            return new_node_list[0], False
-        self.node_list.append(new_node)
+        new_set = self.node_list.union([new_node])
+        if len(new_set) > 0:
+            return new_node, False
+        self.node_list.add(new_node)
         return new_node, True
 
     def create_or_retrieve_edge(self, excluded_smi, child_smi, input_node, new_node):
