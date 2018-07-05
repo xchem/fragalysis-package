@@ -18,11 +18,10 @@ class NodeHolder(object):
 
     def create_or_retrieve_node(self, child_smi):
         new_node = Node(Chem.MolFromSmiles(child_smi))
-        new_set = self.node_list.union([new_node])
-        if len(new_set) > 0:
-            return new_node, False
-        self.node_list.add(new_node)
-        return new_node, True
+        if new_node not in self.node_list:
+            self.node_list.add(new_node)
+            return new_node, True
+        return new_node, False
 
     def create_or_retrieve_edge(self, excluded_smi, child_smi, input_node, new_node):
         """
@@ -35,7 +34,7 @@ class NodeHolder(object):
         """
         new_edge = Edge(excluded_smi, child_smi, input_node, new_node)
         new_edge.NODES = [input_node, new_node]
-        self.edge_list.append(new_edge)
+        self.edge_list.add(new_edge)
         return new_edge
 
     def get_edges(self):
@@ -52,6 +51,9 @@ class Node(object):
 
     def __eq__(self, other):
         return self.SMILES == other.SMILES
+
+    def __hash__(self):
+        return hash(self.SMILES)
 
     def __init__(self, input_mol=None):
         if not input_mol:
@@ -79,9 +81,6 @@ class Edge(object):
     def __eq__(self, other):
         return str(self) == str(other)
 
-    def __hash__(self):
-        return hash(str(self))
-
     def __init__(self, excluded_smi, rebuilt_smi, node_one, node_two):
         self.EXCLUDE_SMILES = Chem.MolToSmiles(
             Chem.MolFromSmiles(excluded_smi), isomericSmiles=False
@@ -96,33 +95,20 @@ class Edge(object):
         self.NODES = [node_one, node_two]
 
     def get_label(self):
-        return "".join(
+        return "|".join(
             [
                 self.EXCLUDE_TYPE,
-                "|",
                 self.EXCLUDE_SMILES,
-                "|",
                 self.EXCLUDED_RING_SMILES,
-                "|",
                 self.REBUILT_TYPE,
-                "|",
                 self.REBUILT_SMILES,
-                "|",
                 self.REBUILT_RING_SMILES,
             ]
         )
 
     def __str__(self):
-        return "".join(
-            [
-                "EDGE",
-                " ",
-                self.NODES[0].SMILES,
-                " ",
-                self.NODES[1].SMILES,
-                " ",
-                self.get_label(),
-            ]
+        return " ".join(
+            ["EDGE", self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
         )
 
 
