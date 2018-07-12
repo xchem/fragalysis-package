@@ -25,7 +25,6 @@ class NodeHolder(object):
 
     def create_or_retrieve_edge(self, excluded_smi, child_smi, input_node, new_node):
         """
-
         :param excluded_smi:
         :param child_smi:
         :param input_node:
@@ -80,7 +79,7 @@ class Edge(object):
     """
 
     def __eq__(self, other):
-        return self.REPR == other.REPR
+        return self.HASH == other.HASH
 
     def __hash__(self):
         return self.HASH
@@ -100,7 +99,11 @@ class Edge(object):
         self.REPR = " ".join(
             ["EDGE", self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
         )
-        self.HASH = hash(self.REPR)
+        self.HASH = hash(
+            "||".join(
+                ["EDGE", self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
+            )
+        )
 
     def get_label(self):
         return "|".join(
