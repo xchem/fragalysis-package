@@ -50,10 +50,10 @@ class Node(object):
     """
 
     def __eq__(self, other):
-        return self.SMILES == other.SMILES
+        return self.HASH == other.HASH
 
     def __hash__(self):
-        return hash(self.SMILES)
+        return self.HASH
 
     def __init__(self, input_mol=None):
         if not input_mol:
@@ -66,6 +66,7 @@ class Node(object):
         self.RING_SMILES = simplified_graph(self.SMILES)
         self.RDMol = input_mol
         self.EDGES = []
+        self.HASH = hash(self.SMILES)
 
     def __str__(self):
         return " ".join(
@@ -79,7 +80,10 @@ class Edge(object):
     """
 
     def __eq__(self, other):
-        return str(self) == str(other)
+        return self.REPR == other.REPR
+
+    def __hash__(self):
+        return self.HASH
 
     def __init__(self, excluded_smi, rebuilt_smi, node_one, node_two):
         self.EXCLUDE_SMILES = Chem.MolToSmiles(
@@ -93,6 +97,10 @@ class Edge(object):
         self.REBUILT_TYPE = get_type(rebuilt_smi)
         self.EXCLUDED_RING_SMILES = simplified_graph(excluded_smi)
         self.NODES = [node_one, node_two]
+        self.REPR = " ".join(
+            ["EDGE", self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
+        )
+        self.HASH = hash(self.REPR)
 
     def get_label(self):
         return "|".join(
@@ -107,9 +115,7 @@ class Edge(object):
         )
 
     def __str__(self):
-        return " ".join(
-            ["EDGE", self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
-        )
+        return self.REPR
 
 
 class Attr(object):
