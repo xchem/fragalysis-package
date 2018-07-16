@@ -14,7 +14,7 @@ July 2018
 import argparse
 
 
-def header_slit(input_file, output_base, output_size, extension='.smi'):
+def header_slit(input_file, output_base, output_size, extension=".smi"):
     """Splits the lines in an input file (including a header)
     into a series of output files.
 
@@ -46,7 +46,7 @@ def header_slit(input_file, output_base, output_size, extension='.smi'):
             if file_line_count == 0:
                 # Start a new file and write the header
                 name = output_base + "_" + str(file_number) + extension
-                output_file = open(name, 'w')
+                output_file = open(name, "w")
                 output_file.write(header)
                 file_line_count = 0
 
@@ -69,27 +69,37 @@ def header_slit(input_file, output_base, output_size, extension='.smi'):
             output_file.close()
 
 
-if __name__ == "__main__":
-
-    PARSER = argparse.ArgumentParser(description='File splitter.'
-                                                 ' Given a file this utility'
-                                                 ' splits the lines'
-                                                 ' replicating its header'
-                                                 ' to new files.')
-    PARSER.add_argument('-i', '--input_file',
-                        help='The name of the input file.',
-                        required=True)
-    PARSER.add_argument('-o', '--output_base',
-                        help='The basename you want to use for your output'
-                             ' files. Each output file will use this as a base'
-                             ' name and will append a unique decimal number to'
-                             ' the end before adding a .smi extension.',
-                        required=True)
-    PARSER.add_argument('-s', '--output_size',
-                        help='The (maximum) number of lines in each output'
-                             ' file.',
-                        required=True,
-                        type=int)
+def main():
+    PARSER = argparse.ArgumentParser(
+        description="File splitter."
+        " Given a file this utility"
+        " splits the lines"
+        " replicating its header"
+        " to new files."
+    )
+    PARSER.add_argument(
+        "-i", "--input_file", help="The name of the input file.", required=True
+    )
+    PARSER.add_argument(
+        "-o",
+        "--output_base",
+        help="The basename you want to use for your output"
+        " files. Each output file will use this as a base"
+        " name and will append a unique decimal number to"
+        " the end before adding a .smi extension.",
+        required=True,
+    )
+    PARSER.add_argument(
+        "-s",
+        "--output_size",
+        help="The (maximum) number of lines in each output" " file.",
+        required=True,
+        type=int,
+    )
     ARGS = PARSER.parse_args()
 
     header_slit(ARGS.input_file, ARGS.output_base, int(ARGS.output_size))
+
+
+if __name__ == "__main__":
+    main()

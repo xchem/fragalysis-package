@@ -9,8 +9,8 @@ from frag.utils.parser import get_file, parse_mols
 
 from tqdm import tqdm
 
-if __name__ == "__main__":
 
+def main():
     # Read in a SD or SMILES file - then write out into a specified directory
     parser = argparse.ArgumentParser(
         description="Convert a SMILES or SDFile to input for Astex Fragment network."
@@ -39,3 +39,7 @@ if __name__ == "__main__":
     node_holder = build_network(attrs, node_holder)
     # Write the data out
     write_data(args.base_dir, node_holder, attrs)
+
+
+if __name__ == "__main__":
+    main()
