@@ -37,6 +37,9 @@ pipeline {
     }
 
     failure {
+      slackSend channel: "#${SLACK_BUILD_CHANNEL}",
+                color: 'danger',
+                message: "${JOB_NAME} build ${env.BUILD_NUMBER} - failed (${BUILD_URL})"
       slackSend channel: "#${SLACK_ALERT_CHANNEL}",
                 color: 'danger',
                 message: "${JOB_NAME} build ${BUILD_NUMBER} - failed (${BUILD_URL})"
