@@ -19,7 +19,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version="0.0.7",
+    version="0.0.8",
     description="Library for fragment based analysis",
     long_description=long_description,
     # The project's main homepage.
@@ -93,6 +93,7 @@ setup(
         "console_scripts": [
             "build_db=frag.network.scripts.build_db:main",
             "header_shred=frag.network.scripts.header_shred:main",
+            "colate=frag.network.scripts.colate_all:main",
         ]
     },
 )

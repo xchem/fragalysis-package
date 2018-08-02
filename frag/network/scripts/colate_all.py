@@ -1,10 +1,13 @@
 import os
 import shutil
+import argparse
+
 
 def do_for_dir(input_dir):
     os.chdir(input_dir)
-    prop_dict = {"nodes.txt":[None,"smiles:ID(F2)", "hac:INT", "chac:INT", "osmiles"],
-    "edges.txt":[None,":START_ID(F2)",":END_ID(F2)","label"],
+    prop_dict = {
+        "nodes.txt": [None, "smiles:ID(F2)", "hac:INT", "chac:INT", "osmiles"],
+        "edges.txt": [None, ":START_ID(F2)", ":END_ID(F2)", "label"],
     }
     attr_smis = []
     attr_ids = []
@@ -13,11 +16,11 @@ def do_for_dir(input_dir):
         attr_ids.append(x.split()[3])
 
     for f_name in prop_dict:
-        out_f = open(f_name.replace(".txt",".csv"),"w")
+        out_f = open(f_name.replace(".txt", ".csv"), "w")
         for line in open(f_name).readlines():
             line_spl = line.split()
             out_l = []
-            for i,x in enumerate(prop_dict[f_name]):
+            for i, x in enumerate(prop_dict[f_name]):
                 if x:
                     out_l.append(line_spl[i])
             if f_name == "nodes.txt":
@@ -29,22 +32,60 @@ def do_for_dir(input_dir):
                 else:
                     out_l.append("")
                     out_l.append("F2")
-                out_f.write(",".join(out_l)+"\n")
-            elif f_name =="edges.txt":
-                out_f.write(",".join(out_l)+"\n")
+                out_f.write(",".join(out_l) + "\n")
+            elif f_name == "edges.txt":
+                out_f.write(",".join(out_l) + "\n")
         out_f.flush()
         out_f.close()
 
-node_list = ["nodes-header.csv"]
-edge_list = ["edges-header.csv"]
-with open("edges-header.csv","w") as out_f:
-    out_f.write(",".join([x for x in [":START_ID(F2)",":END_ID(F2)","label"]]))
-with open("nodes-header.csv", "w") as out_f:
-    out_f.write(",".join([x for x in ["smiles:ID(F2)", "hac:INT", "chac:INT",
-                                      "osmiles", "cmpd_id", ":LABEL"] if x]) + "\n")
-do_for_dir(".")
-node_list.append("nodes.csv")
-edge_list.append("edges.csv")
-# Now this is the command to run
-print(" ".join(["/var/lib/neo4j/bin/neo4j-admin import","--database", "new.db", "--nodes",'"'+",".join(node_list)+'"',
-                "--relationships:F2EDGE",'"'+",".join(edge_list)+'"']))
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Convert text files output from build_db into CSV files for neo4j."
+    )
+    parser.add_argument("--input_dir")
+    args = parser.parse_args()
+
+    node_list = ["nodes-header.csv"]
+    edge_list = ["edges-header.csv"]
+    with open("edges-header.csv", "w") as out_f:
+        out_f.write(",".join([x for x in [":START_ID(F2)", ":END_ID(F2)", "label"]]))
+    with open("nodes-header.csv", "w") as out_f:
+        out_f.write(
+            ",".join(
+                [
+                    x
+                    for x in [
+                        "smiles:ID(F2)",
+                        "hac:INT",
+                        "chac:INT",
+                        "osmiles",
+                        "cmpd_id",
+                        ":LABEL",
+                    ]
+                    if x
+                ]
+            )
+            + "\n"
+        )
+    do_for_dir(args.input_dir)
+    node_list.append("nodes.csv")
+    edge_list.append("edges.csv")
+    # Now this is the command to run
+    print(
+        " ".join(
+            [
+                "/var/lib/neo4j/bin/neo4j-admin import",
+                "--database",
+                "new.db",
+                "--nodes",
+                '"' + ",".join(node_list) + '"',
+                "--relationships:F2EDGE",
+                '"' + ",".join(edge_list) + '"',
+            ]
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()
