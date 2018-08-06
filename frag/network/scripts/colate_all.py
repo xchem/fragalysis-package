@@ -1,5 +1,13 @@
 import os
+from datetime import datetime
 import argparse
+
+# Issue a reminder to stdout after every N lines...
+# (just to re-assure the user we're doing something on very large files)
+# On a 2.7GHz i7 we should see around 13Million node lines/min
+# and about 9Million edge lines/min.
+# Set to 0 for quiet operation.
+LINE_REMINDER = 0
 
 
 def do_for_dir(input_dir):
@@ -8,23 +16,35 @@ def do_for_dir(input_dir):
         "nodes.txt": [None, "smiles:ID(F2)", "hac:INT", "chac:INT", "osmiles"],
         "edges.txt": [None, ":START_ID(F2)", ":END_ID(F2)", "label"],
     }
-    attr_smis = []
-    attr_ids = []
+    # build a map of SMILES to chemical ID
+    # from the attributes file...
+    attrs = {}
     for x in open("attributes.txt").readlines():
-        attr_smis.append(x.split()[1])
-        attr_ids.append(x.split()[3])
+        attrs[x.split()[1]] = x.split()[3]
 
     for f_name in prop_dict:
+        if LINE_REMINDER:
+            print('%s Processing %s...' % (datetime.now(), f_name))
+        line_num = 0
         out_f = open(f_name.replace(".txt", ".csv"), "w")
         for line in open(f_name).readlines():
+
+            if LINE_REMINDER:
+                # Count the lines, simply to allow us
+                # to allow us to print a re-assuring update...
+                line_num += 1
+                if line_num % LINE_REMINDER == 0:
+                    print('%s ...%d' % (datetime.now(), line_num))
+
             line_spl = line.split()
             out_l = []
             for i, x in enumerate(prop_dict[f_name]):
                 if x:
                     out_l.append(line_spl[i])
             if f_name == "nodes.txt":
-                if line_spl[1] in attr_smis:
-                    cmpd_id = attr_ids[attr_smis.index(line_spl[1])]
+                attr_cmp_id = attrs.get(line_spl[1], None)
+                if attr_cmp_id:
+                    cmpd_id = attr_cmp_id
                     out_l.append(cmpd_id)
                     # This is where we can add tags - like CHEAP - EXPENSIVE
                     out_l.append("EM;MOL;F2")
@@ -34,6 +54,9 @@ def do_for_dir(input_dir):
                 out_f.write(",".join(out_l) + "\n")
             elif f_name == "edges.txt":
                 out_f.write(",".join(out_l) + "\n")
+
+        if LINE_REMINDER:
+            print('%s Processed.' % datetime.now())
         out_f.flush()
         out_f.close()
 
