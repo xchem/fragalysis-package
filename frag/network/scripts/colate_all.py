@@ -5,7 +5,7 @@ import argparse
 # Issue a reminder to stdout after every N lines...
 # (just to re-assure the user we're doing something on very large files)
 # On a 2.7GHz i7 we should see around 13Million node lines/min.
-# Set to 0 to for quiet operation.
+# Set to 0 for quiet operation.
 LINE_REMINDER = 0
 
 
