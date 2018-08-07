@@ -19,8 +19,10 @@ def do_for_dir(input_dir):
     # build a map of SMILES to chemical ID
     # from the attributes file...
     attrs = {}
-    for x in open("attributes.txt").readlines():
-        attrs[x.split()[1]] = x.split()[3]
+    with open("attributes.txt") as attr_f:
+        for line in attr_f:
+            line_parts = line.split()
+            attrs[line_parts[1]] = line_parts[3]
 
     for f_name in prop_dict:
         if LINE_REMINDER:
