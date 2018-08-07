@@ -31,8 +31,6 @@ def do_for_dir(input_dir):
             for line in in_f:
 
                 if LINE_REMINDER:
-                    # Count the lines, simply to allow us
-                    # to allow us to print a re-assuring update...
                     line_num += 1
                     if line_num % LINE_REMINDER == 0:
                         print('%s ...%d' % (datetime.now(), line_num))
@@ -57,7 +55,7 @@ def do_for_dir(input_dir):
                     out_f.write(",".join(out_l) + "\n")
 
         if LINE_REMINDER:
-            print('%s Processed.' % datetime.now())
+            print('%s Processed (%d)' % (datetime.now(), line_num))
         out_f.flush()
         out_f.close()
 
