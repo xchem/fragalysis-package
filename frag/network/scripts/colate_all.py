@@ -28,7 +28,7 @@ def do_for_dir(input_dir):
 
         if LINE_REMINDER:
             print('%s Processing %s/%s...' %
-                  (input_dir, datetime.now(), f_name))
+                  (datetime.now(), input_dir, f_name))
         line_num = 0
 
         out_f = open(f_name.replace(".txt", ".csv"), "w")
