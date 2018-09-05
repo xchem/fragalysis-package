@@ -1,10 +1,6 @@
 import uuid
 
 
-def split_res_water():
-    pass
-
-
 class StructHolder(object):
     """
     A class to holad
@@ -17,12 +13,6 @@ class StructHolder(object):
         self.water_pdb = water_pdb
         self.resid_pdb = resid_pdb
         self.ligand = ligand
-        if resid_pdb or water_pdb == None:
-            new_water_pdb, new_resid_pdb = split_res_water()
-            if resid_pdb == None:
-                self.resid_pdb == new_resid_pdb
-            if water_pdb == None:
-                self.water_pdb = new_water_pdb
 
 
 class ClusterStuff(object):
