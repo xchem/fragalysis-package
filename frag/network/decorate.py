@@ -1,6 +1,6 @@
 from rdkit import Chem
 from rdkit.Geometry.rdGeometry import Point3D
-from rdkit.Chem import AllChem, RWMol, Atom, Bond
+from rdkit.Chem import AllChem, RWMol, Atom
 from frag.utils.network_utils import (
     rebuild_smi,
     get_ring_ring_splits,
@@ -159,7 +159,6 @@ def deletion_linker_mol(mol, iso_labels=True):
         new_list = []
         for j, item in enumerate(fragments):
             if i == j:
-                excluded_smi = item
                 continue
             new_list.append(item)
         rebuilt_smi = rebuild_smi(new_list, ring_ring=False)
@@ -233,7 +232,6 @@ def get_ring_removals(smi):
     out_mols = {}
     for ring in rings:
         new_mol = Chem.MolFromSmiles(smi)
-        counter = 0
         for atom in ring:
             new_mol.GetAtomWithIdx(atom).SetAtomicNum(0)
         Chem.DeleteSubstructs(new_mol, Chem.MolFromSmarts("[#0]"))

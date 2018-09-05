@@ -10,7 +10,6 @@ from frag.utils.rdkit_utils import (
     _get_res_rmsds,
     _parse_pdb,
 )
-import math
 from rdkit import Chem
 
 

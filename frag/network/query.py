@@ -71,7 +71,6 @@ def get_type(r_group_form, sub_one, sub_two):
 
 def define_double_edge_type(record):
     mol_one = record["sta"]
-    first_label = str(record["nm"]["label"].split("|")[4])
     label = str(record["ne"]["label"].split("|")[4])
     mol_two = record["mid"]
     mol_three = record["end"]
