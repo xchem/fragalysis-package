@@ -51,6 +51,9 @@ class Node(object):
     def __eq__(self, other):
         return self.HASH == other.HASH
 
+    def __ne__(self, other):
+        return self.HASH != other.HASH
+
     def __hash__(self):
         return self.HASH
 
@@ -80,6 +83,9 @@ class Edge(object):
 
     def __eq__(self, other):
         return self.HASH == other.HASH
+
+    def __ne__(self, other):
+        return self.HASH != other.HASH
 
     def __hash__(self):
         return self.HASH
