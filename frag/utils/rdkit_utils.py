@@ -71,7 +71,6 @@ def _get_c_of_mass(rdmol):
     # Now we have all the coords -> we want to loop through
     if numatoms == 0:
         raise ValueError("No atoms in Molecules")
-        return None, None, None
     return x_coord / numatoms, y_coord / numatoms, z_coord / numatoms
 
 
