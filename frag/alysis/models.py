@@ -3,11 +3,16 @@ import uuid
 
 def split_res_water():
     pass
+
+
 class StructHolder(object):
     """
     A class to holad
     """
-    def __init__(self, struct_id, resid_pdb=None, ligand=None, water_pdb=None, apo_pdb=None):
+
+    def __init__(
+        self, struct_id, resid_pdb=None, ligand=None, water_pdb=None, apo_pdb=None
+    ):
         self.struct_id = struct_id
         self.water_pdb = water_pdb
         self.resid_pdb = resid_pdb
@@ -19,19 +24,21 @@ class StructHolder(object):
             if water_pdb == None:
                 self.water_pdb = new_water_pdb
 
+
 class ClusterStuff(object):
     """
     A class to cluster stuff.
     Probably also need a write output function too. Once I've got my head around that...
     """
-    def __init__(self, parser,lamb,cluster):
+
+    def __init__(self, parser, lamb, cluster):
         self.parser = parser
         self.lamb = lamb
         self.cluster = cluster
         self.owner_list = []
         self.out_clusters = {}
 
-    def run(self,input_data):
+    def run(self, input_data):
         # self.parser returns a list of Owner objects -
         self.owner_list = self.parser(input_data)
         # Now convert o
@@ -39,17 +46,19 @@ class ClusterStuff(object):
         for this_type in data_set:
             # Add clusters to objects
             self.out_clusters[this_type] = []
-            self.add_clust_to_obj(self.cluster(data_set[this_type]["data"],this_type),
-                                  data_set[this_type]["objects"],this_type)
+            self.add_clust_to_obj(
+                self.cluster(data_set[this_type]["data"], this_type),
+                data_set[this_type]["objects"],
+                this_type,
+            )
 
-
-    def add_clust_to_obj(self,cluster_obj,object_list,type):
+    def add_clust_to_obj(self, cluster_obj, object_list, type):
         """
         Given the output data -> assign an output cluster
         :return:
         """
         for i, cluster in enumerate(cluster_obj.clusters):
-            new_cluster = Cluster(cluster_obj.clusters[cluster],type,i)
+            new_cluster = Cluster(cluster_obj.clusters[cluster], type, i)
             self.out_clusters[type].append(new_cluster)
         for i, val in enumerate(cluster_obj.dataClusterId):
             this_clust = [x for x in self.out_clusters[type] if x.cluster == val][0]
@@ -77,7 +86,10 @@ class ClusterStuff(object):
                     out_d[obj.object_desc]["data"].append(obj.value_array)
                     out_d[obj.object_desc]["objects"].append(obj)
                 else:
-                    out_d[obj.object_desc] = {"data": [obj.value_array],"pks": [obj.uuid]}
+                    out_d[obj.object_desc] = {
+                        "data": [obj.value_array],
+                        "pks": [obj.uuid],
+                    }
         return out_d
 
 
@@ -106,6 +118,7 @@ class Owner(object):
         self.object_list = object_list
         self.title = title
 
+
 class Cluster(Object):
 
     def __init__(self, value_array, object_desc, index):
@@ -119,6 +132,7 @@ class Cluster(Object):
         self.uuid = str(uuid.uuid4())
         self.object_list = []
         self.cluster_ind = index
+        Object.__init__(self, self.object_list, object_desc)
 
     def get_size(self):
         return len(self.object_list)
