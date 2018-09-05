@@ -47,7 +47,7 @@ def add_follow_ups(tx, input_str):
 
 def find_proximal(tx, input_str):
     return tx.run(
-        "match p = (n:F2{smiles:$smiles})-[nm]-(m:EM) "
+        "match p = (n:F2{smiles:$smiles})-[nm]-(m:EM)"
         "where abs(n.hac-m.hac) <= 3 and abs(n.chac-m.chac) <= 1 "
         "return n, nm, m "
         "order by split(nm.label, '|')[4];",
@@ -70,11 +70,6 @@ def get_type(r_group_form, sub_one, sub_two):
 
 
 def define_double_edge_type(record):
-    """
-    Define the type returned for proximal systems
-    :param record:
-    :return:
-    """
     mol_one = record["sta"]
     first_label = str(record["nm"]["label"].split("|")[4])
     label = str(record["ne"]["label"].split("|")[4])
@@ -82,7 +77,6 @@ def define_double_edge_type(record):
     mol_three = record["end"]
     diff_one = mol_one["hac"] - mol_two["hac"]
     diff_two = mol_two["hac"] - mol_three["hac"]
-
     ret_obj = ReturnObject(mol_one["smiles"], mol_three["smiles"], label, 2)
     if "." in label:
         ret_obj.frag_type = "LINKER"
@@ -139,9 +133,9 @@ def organise(records, num_picks):
     return out_d
 
 
-def get_picks(smiles, num_picks):
+def get_picks(smiles, num_picks, graph_url="neo4j"):
     smiles = canon_input(smiles)
-    driver = get_driver()
+    driver = get_driver(graph_url)
     with driver.session() as session:
         records = []
         for record in session.read_transaction(find_proximal, smiles):
@@ -161,9 +155,9 @@ def get_picks(smiles, num_picks):
             print("Nothing found for input: " + smiles)
 
 
-def get_full_graph(smiles):
+def get_full_graph(smiles, graph_url="neo4j"):
     smiles = canon_input(smiles)
-    driver = get_driver()
+    driver = get_driver(graph_url)
     with driver.session() as session:
         records = []
         for record in session.read_transaction(find_proximal, smiles):
@@ -183,8 +177,8 @@ def get_full_graph(smiles):
             print("Nothing found for input: " + smiles)
 
 
-def custom_query(query):
-    driver = get_driver()
+def custom_query(query, graph_url="neo4j"):
+    driver = get_driver(graph_url)
     records = []
     with driver.session() as session:
         for record in session.read_transaction(find_custom, query):

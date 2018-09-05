@@ -286,7 +286,7 @@ def get_type(smiles):
     return "FG"
 
 
-def get_driver():
+def get_driver(url="neo4j"):
     """
     Get the driver to the network connection
     :return: the driver for the graphdabase
@@ -294,7 +294,7 @@ def get_driver():
     # No auth on the database
     from neo4j.v1 import GraphDatabase
 
-    driver = GraphDatabase.driver("bolt://neo4j:7687")
+    driver = GraphDatabase.driver("bolt://" + url + ":7687")
     return driver
 
 
