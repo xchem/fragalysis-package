@@ -1,6 +1,4 @@
 import argparse
-
-from rdkit import Chem
 from tqdm import tqdm
 from frag.utils.parser import get_file, parse_mols
 

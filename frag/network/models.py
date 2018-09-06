@@ -1,10 +1,5 @@
 from rdkit import Chem
-from frag.utils.network_utils import (
-    get_num_ring_atoms,
-    get_type,
-    simplified_graph,
-    add_child_and_edge,
-)
+from frag.utils.network_utils import get_num_ring_atoms, get_type, simplified_graph
 
 
 class NodeHolder(object):
@@ -51,6 +46,9 @@ class Node(object):
     def __eq__(self, other):
         return self.HASH == other.HASH
 
+    def __ne__(self, other):
+        return self.HASH != other.HASH
+
     def __hash__(self):
         return self.HASH
 
@@ -80,6 +78,9 @@ class Edge(object):
 
     def __eq__(self, other):
         return self.HASH == other.HASH
+
+    def __ne__(self, other):
+        return self.HASH != other.HASH
 
     def __hash__(self):
         return self.HASH

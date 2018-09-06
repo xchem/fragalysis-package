@@ -1,32 +1,13 @@
-from django.db import models
 from neomodel import (
-    config,
     StructuredNode,
     StructuredEdge,
     StringProperty,
     FloatProperty,
     IntegerProperty,
-    UniqueIdProperty,
     RelationshipTo,
     RelationshipFrom,
     BooleanProperty,
 )
-
-
-# NUMBERS
-# NODES:
-# Molecule library
-#   Molecule = 100 M (39 M ENAMINE + 60 M Molport)
-#   Fragments = 500 M - TBD
-# Follow-ups
-#   Conformers = 100 / Molecule - MAX 10 BN - but could be reduced by doing conformers on fragments
-#   Edges =
-# Protein Data
-#   Target = 20 K
-#   Protein = 200 K
-#   GeneralResidue = 50
-#   SpecificResidue = 200 M
-#   SpecificResidueFeature = 1 BN
 
 
 class F2Edge(StructuredEdge):
