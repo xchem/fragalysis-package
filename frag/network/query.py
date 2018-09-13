@@ -35,6 +35,36 @@ def find_double_edge(tx, input_str):
     )
 
 
+def find_triple_edge_growth(
+    tx,
+    input_str,
+    heavy_atom_diff_min=6,
+    heavy_atom_diff_max=10,
+    mid_heavy_atom_diff_min=-1,
+    mid_heavy_atom_diff_max=3,
+):
+    return tx.run(
+        "MATCH (sta:F2 {smiles:$smiles})-[nm:F2EDGE]-(mid_one:F2)-[ne:F2EDGE]-(mid:EM)-[nm2:F2EDGE]-(mid_two:F2)-[ne2:F2EDGE]-(end:EM) where"
+        " end.hac-sta.hac > $hacmin and end.hac-sta.hac <= $hacmax"
+        " and mid.hac-sta.hac > $chacmin and mid.hac-sta.hac <= $chacmax"
+        " and sta.smiles <> mid.smiles and sta.smiles <> end.smiles "
+        " WITH collect("
+        "{"
+        "end: end.smiles,"
+        "mid: mid.smiles,"
+        "frag_one: mid_one.smiles,"
+        "frag_two: mid_two.smiles"
+        "}"
+        ") AS edges"
+        " RETURN edges",
+        smiles=input_str,
+        hacmin=heavy_atom_diff_min,
+        hacmax=heavy_atom_diff_max,
+        chacmin=mid_heavy_atom_diff_min,
+        chacmax=mid_heavy_atom_diff_max,
+    )
+
+
 def add_follow_ups(tx, input_str):
     return tx.run(
         "MATCH (sta:F2 {smiles:$smiles})-[nm:F2EDGE]-(mid:F2)-[ne:F2EDGE]-(end:EM) where"
