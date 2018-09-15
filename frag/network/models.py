@@ -42,6 +42,12 @@ class NodeHolder(object):
         """
         return set(self.edge_list)
 
+    def size(self):
+        """Returns the size of the object as node and edge count.
+        """
+        return len(self.node_list), len(self.edge_list)
+
+
 
 class Node(object):
     """
