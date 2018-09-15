@@ -6,7 +6,6 @@ except ImportError:
     from rdkit.Chem import MCS
 from rdkit.Chem import AllChem, Draw
 from tqdm import tqdm
-from datetime import datetime
 import timeit
 import os
 
@@ -26,7 +25,7 @@ from rdkit.Chem import AllChem
 #
 # Alan Christie, Sep 2018
 ENABLE_BUILD_NETWORK_LOG = os.environ.get('ENABLE_BUILD_NETWORK_LOG')
-BUILD_NETWORK_LOG = 'build-network'
+BUILD_NETWORK_LOG = 'build-network.log'
 CHILD_DEPTH = 0
 
 
@@ -445,11 +444,11 @@ def write_data(output_dir, node_holder, attrs):
         out_f.write("\n")
 
 
-def build_network(attrs, node_holder):
+def build_network(attrs, node_holder, base_dir='.'):
 
     log_file = None
     if ENABLE_BUILD_NETWORK_LOG:
-        log_file_name = '%s.%s.log' % (BUILD_NETWORK_LOG, datetime.now().isoformat())
+        log_file_name = os.path.join(base_dir, BUILD_NETWORK_LOG)
         log_file = open(log_file_name, 'w')
 
     # Create the nodes and test with output
