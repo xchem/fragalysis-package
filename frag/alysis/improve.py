@@ -20,6 +20,7 @@ def combine_ph4(
         ph4s = rdkit_ph4.generate_ph4_for_mol(mol)
         molecule_ph4s.append([i, mol, ph4s])
     # Cluster and remove points that don't fit into a given cluster
+
     # Combine these combinatorially and generate duplicates with the smoothing
 
 
@@ -40,6 +41,22 @@ def combine_atoms(
     for i, mol in enumerate(mols):
         atoms = rdkit_atom.generate_atoms_for_mol(mol)
         molecule_atoms.append([i, mol, atoms])
+
+
+def bond_atoms(atom_list):
+    """
+    Attempt to merge allowed atoms given allowed rules and combinations.
+    This will be based off an R group of a given fragment.
+    Loss function to define a good molecule - More bonds, more interactions, less atoms.
+    Simply as ratios:
+    bonds-fulfilled / atom
+    interactions / atom
+    Need to keep the ratio as low
+    Just train on single molecules, then try merging two, then more and more.
+    :param atom_list: the list of allowed atoms, x,y,z and atom desc (atomic number and hybridization state)
+    :return:
+    """
+    pass
 
 
 def generate_exclusions(proteins):
