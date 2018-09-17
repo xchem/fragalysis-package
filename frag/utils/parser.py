@@ -4,6 +4,7 @@ from frag.utils.rdkit_utils import (
     _parse_ligand_sdf,
     _get_c_of_mass,
     RDKitPh4,
+    RDKitAtom,
     _get_water_coords,
     _get_waters,
     _get_res,
@@ -33,15 +34,18 @@ def parse_ligand_ph4s(input_mols):
     :return: the molecule based pharmacophores
     """
     rdkit_ph4 = RDKitPh4()
+    rdkit_atom = RDKitAtom()
     output_pharma_list = []
     for mol in input_mols:
         if not mol:
             pharma_list = []
         else:
             pharma_list = rdkit_ph4.generate_ph4_for_mol(rdmol=mol)
+            atom_list = rdkit_atom.generate_atoms_for_mol(mol)
             x, y, z = _get_c_of_mass(rdmol=mol)
             c_of_m_feat = (x, y, z, "c_of_m")
             pharma_list.append(c_of_m_feat)
+            pharma_list.extend(atom_list)
         output_pharma_list.append(pharma_list)
     return output_pharma_list
 

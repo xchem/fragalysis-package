@@ -5,22 +5,23 @@ PH4_LAMBDA = 1.0
 C_OF_M_LAMBDA = 6.0
 
 
-def build_type_dict(mol_ph4_list,identifiers):
+def build_type_dict(mol_ph4_list, identifiers):
     type_dict = {}
-    for i,mol in enumerate(mol_ph4_list):
+    for i, mol in enumerate(mol_ph4_list):
         for ph4 in mol:
             x = ph4[0]
             y = ph4[1]
             z = ph4[2]
             ph4_type = ph4[3]
             if ph4_type in type_dict:
-                type_dict[ph4_type]["coords"].append((x,y,z))
+                type_dict[ph4_type]["coords"].append((x, y, z))
                 type_dict[ph4_type]["mols"].append(identifiers[i])
             else:
-                type_dict[ph4_type]={"coords":[(x,y,z)],"mols":[identifiers[i]]}
+                type_dict[ph4_type] = {"coords": [(x, y, z)], "mols": [identifiers[i]]}
     return type_dict
 
-def map_cluster(dp_means_cluster,mol_id_list):
+
+def map_cluster(dp_means_cluster, mol_id_list):
     """
 
     :param dp_means_cluster:
@@ -29,9 +30,11 @@ def map_cluster(dp_means_cluster,mol_id_list):
     """
     out_dict = {}
     for cluster in dp_means_cluster.clusters:
-        out_dict[cluster] = {"centre_of_mass": dp_means_cluster.clusters[cluster],
-                             "mol_ids": []}
-    for i,cluster_id in enumerate(dp_means_cluster.dataClusterId):
+        out_dict[cluster] = {
+            "centre_of_mass": dp_means_cluster.clusters[cluster],
+            "mol_ids": [],
+        }
+    for i, cluster_id in enumerate(dp_means_cluster.dataClusterId):
         out_dict[cluster_id]["mol_ids"].append(mol_id_list[i])
     return out_dict
 
@@ -57,12 +60,18 @@ def run_lig_cluster(mols, identifiers):
     # First we get the list of mols with their Ph4s
     mol_ph4_list = parse_ligand_ph4s(mols)
     # Then we build a dict of type: coords: [coords list], mols: [mol_index]
-    type_dict = build_type_dict(mol_ph4_list,identifiers)
+    type_dict = build_type_dict(mol_ph4_list, identifiers)
     # Then we cluster coords
     clusters = {}
     for ph4_type in type_dict:
         if ph4_type == "c_of_m":
-            clusters[ph4_type]= cluster_dp(type_dict[ph4_type]["coords"],C_OF_M_LAMBDA,type_dict[ph4_type]["mols"])
+            clusters[ph4_type] = cluster_dp(
+                type_dict[ph4_type]["coords"],
+                C_OF_M_LAMBDA,
+                type_dict[ph4_type]["mols"],
+            )
         else:
-            clusters[ph4_type]= cluster_dp(type_dict[ph4_type]["coords"],PH4_LAMBDA,type_dict[ph4_type]["mols"])
+            clusters[ph4_type] = cluster_dp(
+                type_dict[ph4_type]["coords"], PH4_LAMBDA, type_dict[ph4_type]["mols"]
+            )
     return clusters

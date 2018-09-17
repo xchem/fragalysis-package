@@ -37,6 +37,33 @@ class RDKitPh4(object):
         ]
 
 
+class RDKitAtom(object):
+
+    def generate_atoms_for_mol(self, rdmol):
+        """
+        Generate the atoms from an input molecule and a feature factory.
+        :param rdmol: the input RDKit molecule
+        :return: a list of 4 tuples (x,y,z, atom description)
+        """
+        out_list = []
+        conf = rdmol.GetConformer()
+        for atom in conf.GetAtoms():
+            atom_desc = self.get_atom_description(atom)
+            atom_pos = conf.GetAtomPosition(atom.GetIdx())
+            out_list.append((atom_pos.x, atom_pos.y, atom_pos.z, atom_desc))
+        return out_list
+
+    def get_atom_descrtiption(self, atom):
+        """
+        Generate a unique description of an atom
+        :param atom: the input atom
+        :return: a hash string of atomic number and  hybridization state
+        """
+        return "_".join(
+            [str(x) for x in [atom.GetAtomicNum(), atom.GetHybridization()]]
+        )
+
+
 def _parse_ligand_sdf(input_file):
     """
     Function to parse a series of ligands - return RDKit mols.
