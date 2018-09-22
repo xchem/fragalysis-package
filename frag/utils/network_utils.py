@@ -127,12 +127,13 @@ def ret_comb_index(bi_tot):
     return (bi_1, bi_2 - 1)
 
 
-def get_fragments(input_mol, iso_labels=True):
+def get_fragments(input_mol, iso_labels=True, get_index_iso_map=False):
     """
     Find the frgments for a given molecule
     :param input_mol:
     :return:
     """
+    index_isotope_map = {}
     atom_indices = input_mol.GetSubstructMatches(Chem.MolFromSmarts(SMARTS_PATTERN))
     if atom_indices and iso_labels:
         counter = 100
@@ -140,6 +141,10 @@ def get_fragments(input_mol, iso_labels=True):
         bs = []
         for bi in atom_indices:
             b = input_mol.GetBondBetweenAtoms(bi[0], bi[1])
+            if b.GetIdx() in index_isotope_map:
+                index_isotope_map[b.GetIdx()].append(counter)
+            else:
+                index_isotope_map[b.GetIdx()] = [counter]
             labels.append((counter, counter))
             bs.append(b.GetIdx())
             counter += 1
@@ -154,7 +159,10 @@ def get_fragments(input_mol, iso_labels=True):
             labels.append((comb_index, comb_index))
         input_mol = Chem.FragmentOnBonds(input_mol, bs, dummyLabels=labels)
         return get_frag_list(str_find="*", input_mol=input_mol)
-    return get_frag_list(str_find="*", input_mol=input_mol)
+    if get_index_iso_map:
+        return get_frag_list(str_find="*", input_mol=input_mol), index_isotope_map
+    else:
+        return get_frag_list(str_find="*", input_mol=input_mol)
 
 
 def get_num_ring_atoms(input_mol):
