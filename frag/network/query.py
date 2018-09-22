@@ -4,7 +4,7 @@ from frag.utils.network_utils import write_results, get_driver, canon_input
 
 class ReturnObject(object):
 
-    def __init__(self, start_smi, end_smi, label, edge_count):
+    def __init__(self, start_smi, end_smi, label, edge_count, change_frag, iso_label):
         """
         Build this object.
         :param start_smi:
@@ -16,8 +16,10 @@ class ReturnObject(object):
         self.start_smi = start_smi
         self.end_smi = end_smi
         self.label = label
+        self.iso_label = iso_label
         self.frag_type = None
         self.edge_count = edge_count
+        self.change_frag = change_frag
 
     def __str__(self):
         out_list = [self.label, str(self.edge_count), self.frag_type]
@@ -102,11 +104,15 @@ def get_type(r_group_form, sub_one, sub_two):
 def define_double_edge_type(record):
     mol_one = record["sta"]
     label = str(record["ne"]["label"].split("|")[4])
+    iso_label = str(record["ne"]["label"].split("|")[5])
+    change_frag = str(record["ne"]["label"].split("|")[2])
     mol_two = record["mid"]
     mol_three = record["end"]
     diff_one = mol_one["hac"] - mol_two["hac"]
     diff_two = mol_two["hac"] - mol_three["hac"]
-    ret_obj = ReturnObject(mol_one["smiles"], mol_three["smiles"], label, 2)
+    ret_obj = ReturnObject(
+        mol_one["smiles"], mol_three["smiles"], label, 2, change_frag, iso_label
+    )
     if "." in label:
         ret_obj.frag_type = "LINKER"
     elif diff_one >= 0 and diff_two >= 0:
@@ -126,8 +132,12 @@ def define_proximal_type(record):
     """
     mol_one = record["n"]
     label = str(record["nm"]["label"].split("|")[4])
+    iso_label = str(record["nm"]["label"].split("|")[5])
+    change_frag = str(record["nm"]["label"].split("|")[2])
     mol_two = record["m"]
-    ret_obj = ReturnObject(mol_one["smiles"], mol_two["smiles"], label, 1)
+    ret_obj = ReturnObject(
+        mol_one["smiles"], mol_two["smiles"], label, 1, change_frag, iso_label
+    )
     if "." in label:
         ret_obj.frag_type = "LINKER"
     elif mol_one["hac"] - mol_two["hac"] > 0:
@@ -144,20 +154,22 @@ def organise(records, num_picks):
     smi_set = set()
     for rec in records:
         rec_key = str(rec)
+        addition = {"change": rec.change_frag, "end": rec.end_smi}
         if rec_key in out_d:
-            out_d[rec_key].append(rec.end_smi)
+            out_d[rec_key]["addition"].append(addition)
         else:
-            out_d[rec_key] = [rec.end_smi]
+            out_d[rec_key] = {"vector": rec.iso_label, "addition": [addition]}
         smi_set.add(rec.end_smi)
     if num_picks:
         max_per_hypothesis = num_picks / len(out_d)
     out_smi = []
     for rec in out_d:
-        random.shuffle(out_d[rec])
+        # TODO here is the logic as to ordering replacements
         if num_picks:
-            out_d[rec] = out_d[rec][:max_per_hypothesis]
+            random.shuffle(out_d[rec]["addition"])
+            out_d[rec]["addition"] = out_d[rec]["addition"][:max_per_hypothesis]
         else:
-            out_d[rec] = out_d[rec]
+            out_d[rec]["addition"] = out_d[rec]["addition"]
         out_smi.extend(out_d[rec])
     return out_d
 
