@@ -141,10 +141,10 @@ def get_fragments(input_mol, iso_labels=True, get_index_iso_map=False):
         bs = []
         for bi in atom_indices:
             b = input_mol.GetBondBetweenAtoms(bi[0], bi[1])
-            if b.GetIdx() in index_isotope_map:
-                index_isotope_map[b.GetIdx()].append(counter)
+            if counter in index_isotope_map:
+                index_isotope_map[counter].append(b.GetIdx())
             else:
-                index_isotope_map[b.GetIdx()] = [counter]
+                index_isotope_map[counter] = [b.GetIdx()]
             labels.append((counter, counter))
             bs.append(b.GetIdx())
             counter += 1
