@@ -47,7 +47,7 @@ class RDKitAtom(object):
         """
         out_list = []
         conf = rdmol.GetConformer()
-        for atom in conf.GetAtoms():
+        for atom in rdmol.GetAtoms():
             atom_desc = self.get_atom_description(atom)
             atom_pos = conf.GetAtomPosition(atom.GetIdx())
             out_list.append((atom_pos.x, atom_pos.y, atom_pos.z, atom_desc))
