@@ -53,7 +53,7 @@ class RDKitAtom(object):
             out_list.append((atom_pos.x, atom_pos.y, atom_pos.z, atom_desc))
         return out_list
 
-    def get_atom_descrtiption(self, atom):
+    def get_atom_description(self, atom):
         """
         Generate a unique description of an atom
         :param atom: the input atom
