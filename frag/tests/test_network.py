@@ -132,7 +132,7 @@ class NetworksTest(unittest.TestCase):
         :return:
         """
         input_smis = ["C#CC(C)(C)NC[C@]1(O)CCCN2CCCC[C@@H]21"]
-        test_iso_list = [
+        test_iso_node_list = [
             "C#CC(C)(C)NC",
             "OC1CCCN2CCCCC12",
             "O",
@@ -141,7 +141,7 @@ class NetworksTest(unittest.TestCase):
             "C1CCN2CCCCC2C1",
             "C#CC(C)(C)NC.O",
         ]
-        test_non_iso_list = [
+        test_non_iso_node_list = [
             "C#CC(C)(C)NC",
             "OC1CCCN2CCCCC12",
             "O",
@@ -150,15 +150,42 @@ class NetworksTest(unittest.TestCase):
             "C1CCN2CCCCC2C1",
             "C#CC(C)(C)NC.O",
         ]
+        test_iso_edge_list = [
+            "EDGE C#CC(C)(C)NC[C@]1(O)CCCN2CCCC[C@@H]21 OC1CCCN2CCCCC12 FG|C#CC(C)(C)NC[Xe]|CCC(C)(C)NC[100Xe]|RING|OC1([Xe])CCCN2CCCCC21|O[C@@]1([100Xe])CCCC2CCCC[C@@H]21",
+            "EDGE OC1CCCN2CCCCC12 O RING|[Xe]C1CCCN2CCCCC12|[100Xe]C1CCCC2CCCCC12|FG|O[Xe]|O[100Xe]",
+            "EDGE C#CC(C)(C)NC[C@]1(O)CCCN2CCCC[C@@H]21 C#CC(C)(C)NC.O RING|[Xe]C1([Xe])CCCN2CCCCC21|[100Xe][C@]1([101Xe])CCCC2CCCC[C@@H]21|FG|C#CC(C)(C)NC[Xe].O[Xe]|CCC(C)(C)NC[100Xe].O[101Xe]",
+            "EDGE OC1CCCN2CCCCC12 C1CCN2CCCCC2C1 FG|O[Xe]|O[100Xe]|RING|[Xe]C1CCCN2CCCCC12|[100Xe]C1CCCC2CCCCC12",
+            "EDGE C#CC(C)(C)NC.O C#CC(C)(C)NC FG|O|O|FG|C#CC(C)(C)NC|CCC(C)(C)NC",
+            "EDGE C#CC(C)(C)NC[C@]1(O)CCCN2CCCC[C@@H]21 C#CC(C)(C)NCC1CCCN2CCCCC12 FG|O[Xe]|O[101Xe]|RING|C#CC(C)(C)NCC1([Xe])CCCN2CCCCC21|CCC(C)(C)NC[C@@]1([101Xe])CCCC2CCCC[C@@H]21",
+            "EDGE C#CC(C)(C)NCC1CCCN2CCCCC12 C1CCN2CCCCC2C1 FG|C#CC(C)(C)NC[Xe]|CCC(C)(C)NC[100Xe]|RING|[Xe]C1CCCN2CCCCC12|[100Xe]C1CCCC2CCCCC12",
+            "EDGE C#CC(C)(C)NC.O O FG|C#CC(C)(C)NC|CCC(C)(C)NC|FG|O|O",
+            "EDGE C#CC(C)(C)NCC1CCCN2CCCCC12 C#CC(C)(C)NC RING|[Xe]C1CCCN2CCCCC12|[100Xe]C1CCCC2CCCCC12|FG|C#CC(C)(C)NC[Xe]|CCC(C)(C)NC[100Xe]",
+        ]
+
+        test_non_iso_edge_list = [
+            "EDGE C#CC(C)(C)NC.O C#CC(C)(C)NC FG|O|O|FG|C#CC(C)(C)NC|CCC(C)(C)NC",
+            "EDGE C#CC(C)(C)NCC1CCCN2CCCCC12 C#CC(C)(C)NC RING|[Xe]C1CCCN2CCCCC12|[Xe]C1CCCC2CCCCC12|FG|C#CC(C)(C)NC[Xe]|CCC(C)(C)NC[Xe]",
+            "EDGE C#CC(C)(C)NCC1(O)CCCN2CCCCC21 OC1CCCN2CCCCC12 FG|C#CC(C)(C)NC[Xe]|CCC(C)(C)NC[Xe]|RING|OC1([Xe])CCCN2CCCCC21|OC1([Xe])CCCC2CCCCC21",
+            "EDGE OC1CCCN2CCCCC12 C1CCN2CCCCC2C1 FG|O[Xe]|O[Xe]|RING|[Xe]C1CCCN2CCCCC12|[Xe]C1CCCC2CCCCC12",
+            "EDGE C#CC(C)(C)NCC1(O)CCCN2CCCCC21 C#CC(C)(C)NC.O RING|[Xe]C1([Xe])CCCN2CCCCC21|[Xe]C1([Xe])CCCC2CCCCC21|FG|C#CC(C)(C)NC[Xe].O[Xe]|CCC(C)(C)NC[Xe].O[Xe]",
+            "EDGE C#CC(C)(C)NCC1(O)CCCN2CCCCC21 C#CC(C)(C)NCC1CCCN2CCCCC12 FG|O[Xe]|O[Xe]|RING|C#CC(C)(C)NCC1([Xe])CCCN2CCCCC21|CCC(C)(C)NCC1([Xe])CCCC2CCCCC21",
+            "EDGE OC1CCCN2CCCCC12 O RING|[Xe]C1CCCN2CCCCC12|[Xe]C1CCCC2CCCCC12|FG|O[Xe]|O[Xe]",
+            "EDGE C#CC(C)(C)NCC1CCCN2CCCCC12 C1CCN2CCCCC2C1 FG|C#CC(C)(C)NC[Xe]|CCC(C)(C)NC[Xe]|RING|[Xe]C1CCCN2CCCCC12|[Xe]C1CCCC2CCCCC12",
+            "EDGE C#CC(C)(C)NC.O O FG|C#CC(C)(C)NC|CCC(C)(C)NC|FG|O|O",
+        ]
         attrs = [Attr(input_smi) for input_smi in input_smis]
         node_holder = NodeHolder(iso_flag=False)
         node_holder = build_network(attrs, node_holder)
-        non_iso_list = [x.SMILES for x in node_holder.node_list]
-        self.assertListEqual(sorted(non_iso_list), sorted(test_non_iso_list))
+        non_iso_node_list = [x.SMILES for x in node_holder.node_list]
+        non_iso_edge_list = [str(x) for x in node_holder.edge_list]
+        self.assertListEqual(sorted(non_iso_node_list), sorted(test_non_iso_node_list))
+        self.assertListEqual(sorted(non_iso_edge_list), sorted(test_non_iso_edge_list))
         node_holder = NodeHolder(iso_flag=True)
         node_holder = build_network(attrs, node_holder)
-        iso_list = [x.SMILES for x in node_holder.node_list]
-        self.assertListEqual(sorted(iso_list), sorted(test_iso_list))
+        iso_node_list = [x.SMILES for x in node_holder.node_list]
+        iso_edge_list = [str(x) for x in node_holder.edge_list]
+        self.assertListEqual(sorted(iso_node_list), sorted(test_iso_node_list))
+        self.assertListEqual(sorted(iso_edge_list), sorted(test_iso_edge_list))
 
     def test_decorate(self):
         """

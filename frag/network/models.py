@@ -27,7 +27,7 @@ class NodeHolder(object):
         :param new_node:
         :return:
         """
-        new_edge = Edge(excluded_smi, child_smi, input_node, new_node)
+        new_edge = Edge(excluded_smi, child_smi, input_node, new_node, self.iso_flag)
         new_edge.NODES = [input_node, new_node]
         self.edge_list.add(new_edge)
         return new_edge
@@ -87,7 +87,7 @@ class Edge(object):
     def __hash__(self):
         return self.HASH
 
-    def __init__(self, excluded_smi, rebuilt_smi, node_one, node_two):
+    def __init__(self, excluded_smi, rebuilt_smi, node_one, node_two, iso_flag=True):
         self.EXCLUDE_SMILES = Chem.MolToSmiles(
             Chem.MolFromSmiles(excluded_smi), isomericSmiles=False
         )
@@ -95,9 +95,9 @@ class Edge(object):
         self.REBUILT_SMILES = Chem.MolToSmiles(
             Chem.MolFromSmiles(rebuilt_smi), isomericSmiles=False
         )
-        self.REBUILT_RING_SMILES = simplified_graph(rebuilt_smi)
+        self.REBUILT_RING_SMILES = simplified_graph(rebuilt_smi, iso_flag=iso_flag)
         self.REBUILT_TYPE = get_type(rebuilt_smi)
-        self.EXCLUDED_RING_SMILES = simplified_graph(excluded_smi)
+        self.EXCLUDED_RING_SMILES = simplified_graph(excluded_smi, iso_flag=iso_flag)
         self.NODES = [node_one, node_two]
         self.REPR = " ".join(
             ["EDGE", self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
