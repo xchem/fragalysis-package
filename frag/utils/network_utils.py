@@ -116,7 +116,7 @@ def get_comb_index(bi_1, bi_2):
     return bi_1 + (100 * (bi_2 + 1))
 
 
-def ret_comb_index(bi_tot):
+def ret_comb_index(bi_tot, get_indices=False):
     """
 
     :param bi_tot:
@@ -124,7 +124,10 @@ def ret_comb_index(bi_tot):
     """
     bi_1 = int(str(bi_tot)[-2:])
     bi_2 = int(str(bi_tot)[0:-2])
-    return (bi_1, bi_2 - 1)
+    if get_indices:
+        return (bi_1, bi_2 - 1, bi_tot)
+    else:
+        return (bi_1, bi_2 - 1)
 
 
 def get_fragments(input_mol, iso_labels=True, get_index_iso_map=False):
@@ -183,13 +186,15 @@ def get_num_ring_atoms(input_mol):
     return num_ring_atoms, split_indices
 
 
-def simplified_graph(input_smiles):
+def simplified_graph(input_smiles, iso_flag=True):
     """
     The simplified graph representation for the edge uses the daylight
 function dt_molgraph to
-1) set all bond orders to one, 2) remove aromaticity, 3??"set the hydrogen count,
-4) remove charges and set masses to zero. 5)  Additionally we set every ring atom element to carbon
-    :param input_smiles:
+1) set all bond orders to one, 2) remove aromaticity, 3) set the hydrogen count,
+4) remove charges and set masses to zero. 5)  Additionally we set every ring atom element to carbon.
+This is Anthony Bradley's version of the algorithm.
+    :param input_smiles: the input smiles to simplify
+    :param iso_flag: a boolean to determine if we should include chirality etc
     :return:
     """
     mol = Chem.MolFromSmiles(input_smiles)
@@ -200,6 +205,8 @@ function dt_molgraph to
             atom.SetIsAromatic(False)
         for bond in atom.GetBonds():
             bond.SetBondType(Chem.BondType.SINGLE)
+        if not iso_flag:
+            atom.SetChiralTag(Chem.ChiralType.CHI_OTHER)
     return Chem.MolToSmiles(mol, isomericSmiles=True)
 
 
