@@ -62,7 +62,7 @@ class Node(object):
         self.SMILES = Chem.MolToSmiles(input_mol, isomericSmiles=self.iso_flag)
         self.HAC = input_mol.GetNumHeavyAtoms()
         self.RAC, split_indices = get_num_ring_atoms(input_mol)
-        self.RING_SMILES = simplified_graph(self.SMILES, iso_smiles=self.iso_flag)
+        self.RING_SMILES = simplified_graph(self.SMILES, iso_flag=self.iso_flag)
         self.RDMol = input_mol
         self.EDGES = []
         self.HASH = hash(self.SMILES)
