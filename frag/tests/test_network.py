@@ -126,6 +126,40 @@ class NetworksTest(unittest.TestCase):
         # Close enough - and the output looks right...
         self.assertEqual(len(node_holder.get_edges()), 3687)
 
+    def test_compare_iso_non_iso(self):
+        """
+        Test that the iso flag makes a difference.
+        :return:
+        """
+        input_smis = ["C#CC(C)(C)NC[C@]1(O)CCCN2CCCC[C@@H]21"]
+        test_iso_list = [
+            "C#CC(C)(C)NC",
+            "OC1CCCN2CCCCC12",
+            "O",
+            "C#CC(C)(C)NCC1CCCN2CCCCC12",
+            "C#CC(C)(C)NC[C@]1(O)CCCN2CCCC[C@@H]21",
+            "C1CCN2CCCCC2C1",
+            "C#CC(C)(C)NC.O",
+        ]
+        test_non_iso_list = [
+            "C#CC(C)(C)NC",
+            "OC1CCCN2CCCCC12",
+            "O",
+            "C#CC(C)(C)NCC1CCCN2CCCCC12",
+            "C#CC(C)(C)NCC1(O)CCCN2CCCCC21",
+            "C1CCN2CCCCC2C1",
+            "C#CC(C)(C)NC.O",
+        ]
+        attrs = [Attr(input_smi) for input_smi in input_smis]
+        node_holder = NodeHolder(iso_flag=False)
+        node_holder = build_network(attrs, node_holder)
+        non_iso_list = [x.SMILES for x in node_holder.node_list]
+        self.assertListEquals(non_iso_list, test_non_iso_list)
+        node_holder = NodeHolder(iso_flag=True)
+        node_holder = build_network(attrs, node_holder)
+        iso_list = [x.SMILES for x in node_holder.node_list]
+        self.assertListEquals(iso_list, test_iso_list)
+
     def test_decorate(self):
         """
         Test we can decorate a series of input SMILEs
