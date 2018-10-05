@@ -205,7 +205,7 @@ This is Anthony Bradley's version of the algorithm.
             atom.SetIsAromatic(False)
         for bond in atom.GetBonds():
             bond.SetBondType(Chem.BondType.SINGLE)
-        if iso_flag:
+        if not iso_flag:
             atom.SetChiralTag(Chem.ChiralType.CHI_OTHER)
     return Chem.MolToSmiles(mol, isomericSmiles=True)
 
