@@ -7,12 +7,13 @@ class NodeHolder(object):
     A Class to hold a series of nodes
     """
 
-    def __init__(self):
+    def __init__(self, iso_flag=True):
         self.node_list = set()
         self.edge_list = set()
+        self.iso_flag = iso_flag
 
     def create_or_retrieve_node(self, child_smi):
-        new_node = Node(Chem.MolFromSmiles(child_smi))
+        new_node = Node(Chem.MolFromSmiles(child_smi), self.iso_flag)
         if new_node not in self.node_list:
             self.node_list.add(new_node)
             return new_node, True
@@ -52,15 +53,16 @@ class Node(object):
     def __hash__(self):
         return self.HASH
 
-    def __init__(self, input_mol=None):
+    def __init__(self, input_mol=None, iso_flag=True):
+        self.iso_flag = iso_flag
         if not input_mol:
             return
         if type(input_mol) == str:
             input_mol = Chem.MolFromSmiles(input_mol)
-        self.SMILES = Chem.MolToSmiles(input_mol, isomericSmiles=True)
+        self.SMILES = Chem.MolToSmiles(input_mol, isomericSmiles=self.iso_flag)
         self.HAC = input_mol.GetNumHeavyAtoms()
         self.RAC, split_indices = get_num_ring_atoms(input_mol)
-        self.RING_SMILES = simplified_graph(self.SMILES)
+        self.RING_SMILES = simplified_graph(self.SMILES, iso_smiles=self.iso_flag)
         self.RDMol = input_mol
         self.EDGES = []
         self.HASH = hash(self.SMILES)

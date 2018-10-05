@@ -18,6 +18,7 @@ def main():
     parser.add_argument("--input")
     parser.add_argument("--input_format", default="smi")
     parser.add_argument("--base_dir")
+    parser.add_argument("--iso_flag", default=True)
 
     args = parser.parse_args()
     attrs = []
@@ -35,7 +36,7 @@ def main():
     if not os.path.isdir(args.base_dir):
         os.mkdir(args.base_dir)
     # Build the network
-    node_holder = NodeHolder()
+    node_holder = NodeHolder(iso_flag=args.iso_flag)
     node_holder = build_network(attrs, node_holder)
     # Write the data out
     write_data(args.base_dir, node_holder, attrs)
