@@ -154,11 +154,11 @@ class NetworksTest(unittest.TestCase):
         node_holder = NodeHolder(iso_flag=False)
         node_holder = build_network(attrs, node_holder)
         non_iso_list = [x.SMILES for x in node_holder.node_list]
-        self.assertListEquals(non_iso_list, test_non_iso_list)
+        self.assertListEqual(sorted(non_iso_list), sorted(test_non_iso_list))
         node_holder = NodeHolder(iso_flag=True)
         node_holder = build_network(attrs, node_holder)
         iso_list = [x.SMILES for x in node_holder.node_list]
-        self.assertListEquals(iso_list, test_iso_list)
+        self.assertListEqual(sorted(iso_list), sorted(test_iso_list))
 
     def test_decorate(self):
         """
