@@ -18,7 +18,9 @@ def main():
     parser.add_argument("--input")
     parser.add_argument("--input_format", default="smi")
     parser.add_argument("--base_dir")
-    parser.add_argument("--iso_flag", default=True)
+    parser.add_argument("--isomeric", dest="iso_flag", action="store_true")
+    parser.add_argument("--non_isomeric", dest="iso_flag", action="store_false")
+    parser.set_defaults(iso_flag=True)
 
     args = parser.parse_args()
     attrs = []
