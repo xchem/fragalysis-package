@@ -16,13 +16,31 @@ def do_for_dir(input_dir):
         "nodes.txt": [None, "smiles:ID(F2)", "hac:INT", "chac:INT", "osmiles"],
         "edges.txt": [None, ":START_ID(F2)", ":END_ID(F2)", "label"],
     }
-    # build a map of SMILES to chemical ID
+    # build a map of SMILES to chemical IDs
     # from the attributes file...
     attrs = {}
     with open("attributes.txt") as attr_f:
         for line in attr_f:
+
             line_parts = line.split()
-            attrs[line_parts[1]] = line_parts[3]
+            # Translate supplier names (in line_parts[3]).
+            #  'Z' -> 'REAL:Z'
+            #  'MolPort-' -> 'MolPort:'
+            # Ignore others
+            supplier = None
+            if line_parts[3].startswith('Z'):
+                supplier = 'REAL:' + line_parts[3]
+            elif line_parts[3].startswith('MolPort-'):
+                supplier = 'MolPort:' + line_parts[3].split('MolPort-', 1)[1]
+
+            if supplier:
+                # Each attribute is a potential list of suppliers
+                # for a given molecule (line_parts[1]).
+                # We separate suppliers using ';'.
+                if line_parts[1]:
+                    attrs[line_parts[1]] += ';' + supplier
+                else:
+                    attrs[line_parts[1]] = supplier
 
     for f_name in prop_dict:
 
