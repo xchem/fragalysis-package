@@ -37,7 +37,7 @@ def do_for_dir(input_dir):
                 # Each attribute is a potential list of suppliers
                 # for a given molecule (line_parts[1]).
                 # We separate suppliers using ';'.
-                if line_parts[1]:
+                if line_parts[1] in attrs:
                     attrs[line_parts[1]] += ';' + supplier
                 else:
                     attrs[line_parts[1]] = supplier
