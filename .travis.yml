@@ -7,7 +7,7 @@ env:
 install:
   - docker build -t "$IMAGE_NAME" .
 script:
-  - docker run xchem/fragalysis /bin/sh -c "cd /usr/local/fragalysis && nosetests"
+  - docker run "$IMAGE_NAME" /bin/sh -c "cd /usr/local/fragalysis && nosetests"
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
@@ -15,7 +15,7 @@ after_success:
     fi
 before_deploy:
   - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${version}"
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${TRAVIS_TAG}"
 deploy:
   provider: script
   script: docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${TRAVIS_TAG} && docker push "${IMAGE_NAME}:${version}"
