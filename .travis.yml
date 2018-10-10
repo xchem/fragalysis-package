@@ -10,3 +10,14 @@ after_success:
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push xchem/fragalysis;
     fi
+deploy:
+  provider: pypi
+  user: abradle
+  distributions: "sdist bdist_wheel"
+  on:
+    branch: master
+    tags: true
+    repo: xchem/fragalysis
+    python: '2.7'
+  password:
+    secure: iV4v/qWVuayJK4J6aoYetBQ+EMtIeXdURBDINYmjrGVP4ZX0PQJ8zcSBhS5zw8+2CAT2w4YMz92YFoiNRuIvJEthVwR+5Itw82luMo/XKW3fOw1g2N2gk+qO+B9IwJ5ymEtn+xYD0rTeu/rBn7cJnepDr1GqclMwq3KpOTiUpHJsXQs8DjS3SNpTadSsDPgM5rCGDD0uSFhYKX7Og5q3JbcMamdlJ5y7ufVhTypEWGDkaH4eMGiVKYg9ck4IVW0fSBtcwldIDFKjiKIqoDiUnU6BtwUQOmgiJnXGfryH69woWUsF90FZEjjlj+XTUpR5ieNVQF/CfbJ0Tfp2dyGF51SKzQsa8cIKnIAuo2gUYazw5e34qTiTuTBCtGGJ6l88wP8EzbkLlPAcjjXCbKpLC4bQq+0tcur4MLC3EOx7VR0/xaiufXhlYmMH8mTaB+BJULT5McH41cMxlSCs9FDZT0Bd50HTqj5G9i2ak1m0qpMW7Kvovl+TRld5+r02FyD5R0MXIUjsavLnvx7WOtVzehzuWbzc5uPDRgE0qrj4yRrugUWa8/EwzirERPoiOUUdRxoCYVsFIECigeDioxiTPxS+RP6kegGfQPHDkKF5Ase77JWB8C/x84yqY3Zuhm1cR86IcUMeFS8hxNO0A+wcRBU0lgKlvDpieJtZmp9k6Lw=
