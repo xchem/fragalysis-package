@@ -95,6 +95,9 @@ def get_3d_vects_for_mol(input_mol):
 
 
 def get_vect_indices_for_mol(input_mol):
+    mol = Chem.MolFromSmiles(Chem.MolToSmiles(input_mol))
+    AllChem.EmbedMolecule(mol)
+    input_mol = Chem.MolToMolBlock(mol)
     tot_dict = del_link_coord(input_mol, get_indices=True, iso_labels=True)
     tot_dict["additions"] = decorate_3d_mol(input_mol, get_indices=True)
     return tot_dict
