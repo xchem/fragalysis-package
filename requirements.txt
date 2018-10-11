@@ -4,3 +4,4 @@ neo4j-driver
 numpy
 nose
 coveralls
+requests
