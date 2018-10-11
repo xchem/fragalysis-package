@@ -116,7 +116,7 @@ def get_comb_index(bi_1, bi_2):
     return bi_1 + (100 * (bi_2 + 1))
 
 
-def ret_comb_index(bi_tot, get_indices=False):
+def ret_comb_index(bi_tot, get_indices=False, isotope=None):
     """
 
     :param bi_tot:
@@ -125,7 +125,7 @@ def ret_comb_index(bi_tot, get_indices=False):
     bi_1 = int(str(bi_tot)[-2:])
     bi_2 = int(str(bi_tot)[0:-2])
     if get_indices:
-        return (bi_1, bi_2 - 1, bi_tot)
+        return (bi_1, bi_2 - 1, isotope)
     else:
         return (bi_1, bi_2 - 1)
 
@@ -393,9 +393,13 @@ def add_child_and_edge(
         create_children(new_node, node_holder)
 
 
-def canon_input(smi):
+def canon_input(smi, isomericSmiles=True):
     # Decharge in this step too
-    return NeutraliseCharges(Chem.MolFromSmiles(smi))[0]
+    iso_smiles = NeutraliseCharges(Chem.MolFromSmiles(smi))[0]
+    if not isomericSmiles:
+        return Chem.MolToSmiles(Chem.MolFromSmiles(iso_smiles), isomericSmiles=False)
+    else:
+        return iso_smiles
 
 
 def create_children(input_node, node_holder):

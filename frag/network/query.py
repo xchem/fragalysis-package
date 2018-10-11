@@ -196,8 +196,8 @@ def get_picks(smiles, num_picks, graph_url="neo4j"):
             print("Nothing found for input: " + smiles)
 
 
-def get_full_graph(smiles, graph_url="neo4j"):
-    smiles = canon_input(smiles)
+def get_full_graph(smiles, graph_url="neo4j", isomericSmiles=True):
+    smiles = canon_input(smiles, isomericSmiles)
     driver = get_driver(graph_url)
     with driver.session() as session:
         records = []

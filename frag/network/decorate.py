@@ -95,10 +95,10 @@ def get_3d_vects_for_mol(input_mol):
 
 
 def get_vect_indices_for_mol(input_mol):
-    mol = Chem.MolFromSmiles(Chem.MolToSmiles(input_mol))
+    mol = Chem.MolFromSmiles(Chem.MolToSmiles(Chem.MolFromMolBlock(input_mol)))
     AllChem.EmbedMolecule(mol)
     input_mol = Chem.MolToMolBlock(mol)
-    tot_dict = del_link_coord(input_mol, get_indices=True, iso_labels=True)
+    tot_dict = del_link_coord(input_mol, get_indices=True, iso_labels=False)
     tot_dict["additions"] = decorate_3d_mol(input_mol, get_indices=True)
     return tot_dict
 
@@ -136,15 +136,30 @@ def del_link_coord(input_mol, get_indices=False, iso_labels=False):
     deletions = [Chem.MolToSmiles(x, isomericSmiles=True) for x in tot_vals[0]]
     linkers = [Chem.MolToSmiles(x, isomericSmiles=True) for x in tot_vals[1]]
     ring = [Chem.MolToSmiles(x, isomericSmiles=True) for x in tot_vals[2]]
+
+    if not iso_labels:
+        iso_vals = deletion_linker_sd(input_mol, iso_labels=True)
+    else:
+        iso_vals = tot_vals
+    deletions_iso = [Chem.MolToSmiles(x, isomericSmiles=True) for x in iso_vals[0]]
+    linkers_iso = [Chem.MolToSmiles(x, isomericSmiles=True) for x in iso_vals[1]]
+    ring_iso = [Chem.MolToSmiles(x, isomericSmiles=True) for x in iso_vals[2]]
+
     out_d = {"linkers": {}, "deletions": {}, "ring": {}}
-    for x in linkers:
-        ret_ans = get_atom_coords(x, Chem.MolFromMolBlock(input_mol), get_indices)
+    for i, x in enumerate(linkers):
+        ret_ans = get_atom_coords(
+            x, Chem.MolFromMolBlock(input_mol), get_indices, linkers_iso[i]
+        )
         out_d["linkers"][ret_ans[0]] = ret_ans[1:]
-    for x in deletions:
-        ret_ans = get_atom_coords(x, Chem.MolFromMolBlock(input_mol), get_indices)
+    for i, x in enumerate(deletions):
+        ret_ans = get_atom_coords(
+            x, Chem.MolFromMolBlock(input_mol), get_indices, deletions_iso[i]
+        )
         out_d["deletions"][ret_ans[0]] = ret_ans[1:]
-    for x in ring:
-        ret_ans = get_atom_coords(x, Chem.MolFromMolBlock(input_mol), get_indices)
+    for i, x in enumerate(ring):
+        ret_ans = get_atom_coords(
+            x, Chem.MolFromMolBlock(input_mol), get_indices, ring_iso[i]
+        )
         out_d["ring"][ret_ans[0]] = ret_ans[1:]
     return out_d
 
@@ -191,29 +206,36 @@ def deletion_linker_mol(mol, iso_labels=True):
     return out_mols, linker_mol_list, ring_repl_list
 
 
-def find_atom_pairs(smiles_input, get_indices):
+def find_atom_pairs(smiles_input, get_indices, iso_smiles):
     """
     Find the indices of the atom pairs from a SMILES input
     :param smiles_input:
     :return:
     """
     matches = re.findall(XE_PATT, smiles_input)
+    if iso_smiles:
+        iso_matches = re.findall(XE_PATT, iso_smiles)
+    else:
+        iso_matches = None
+        isotope = None
     ind_list = []
-    for match in matches:
+    for i, match in enumerate(matches):
         index = int(match[:-2])
-        indices = ret_comb_index(index, get_indices)
+        if iso_matches:
+            isotope = int(iso_matches[i][:-2])
+        indices = ret_comb_index(index, get_indices, isotope)
         ind_list.append(indices)
     return ind_list
 
 
-def get_atom_coords(smiles_input, mol, get_indices=False):
+def get_atom_coords(smiles_input, mol, get_indices=False, iso_smiles=None):
     """
     Get a
     :param smiles_input:
     :param mol:
     :return:
     """
-    ind_list = find_atom_pairs(smiles_input, get_indices)
+    ind_list = find_atom_pairs(smiles_input, get_indices, iso_smiles)
     clean_smi = re.sub(XE_PATT, "Xe", smiles_input)
     out_list = [clean_smi]
     conf = mol.GetConformer()
