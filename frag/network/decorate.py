@@ -89,7 +89,7 @@ def deletion_linker_sd(input_mol, iso_labels=True):
 
 
 def get_3d_vects_for_mol(input_mol, iso_labels=True):
-    tot_dict = del_link_coord(input_mol, iso_labels)
+    tot_dict = del_link_coord(input_mol, iso_labels=iso_labels)
     tot_dict["additions"] = decorate_3d_mol(input_mol)
     return tot_dict
 
