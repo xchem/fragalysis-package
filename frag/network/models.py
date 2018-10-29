@@ -7,12 +7,13 @@ class NodeHolder(object):
     A Class to hold a series of nodes
     """
 
-    def __init__(self):
+    def __init__(self, iso_flag=True):
         self.node_list = set()
         self.edge_list = set()
+        self.iso_flag = iso_flag
 
     def create_or_retrieve_node(self, child_smi):
-        new_node = Node(Chem.MolFromSmiles(child_smi))
+        new_node = Node(Chem.MolFromSmiles(child_smi), self.iso_flag)
         if new_node not in self.node_list:
             self.node_list.add(new_node)
             return new_node, True
@@ -26,7 +27,7 @@ class NodeHolder(object):
         :param new_node:
         :return:
         """
-        new_edge = Edge(excluded_smi, child_smi, input_node, new_node)
+        new_edge = Edge(excluded_smi, child_smi, input_node, new_node, self.iso_flag)
         new_edge.NODES = [input_node, new_node]
         self.edge_list.add(new_edge)
         return new_edge
@@ -58,15 +59,16 @@ class Node(object):
     def __hash__(self):
         return self.HASH
 
-    def __init__(self, input_mol=None):
+    def __init__(self, input_mol=None, iso_flag=True):
+        self.iso_flag = iso_flag
         if not input_mol:
             return
         if type(input_mol) == str:
             input_mol = Chem.MolFromSmiles(input_mol)
-        self.SMILES = Chem.MolToSmiles(input_mol, isomericSmiles=True)
+        self.SMILES = Chem.MolToSmiles(input_mol, isomericSmiles=self.iso_flag)
         self.HAC = input_mol.GetNumHeavyAtoms()
         self.RAC, split_indices = get_num_ring_atoms(input_mol)
-        self.RING_SMILES = simplified_graph(self.SMILES)
+        self.RING_SMILES = simplified_graph(self.SMILES, iso_flag=self.iso_flag)
         self.RDMol = input_mol
         self.EDGES = []
         self.HASH = hash(self.SMILES)
@@ -91,7 +93,7 @@ class Edge(object):
     def __hash__(self):
         return self.HASH
 
-    def __init__(self, excluded_smi, rebuilt_smi, node_one, node_two):
+    def __init__(self, excluded_smi, rebuilt_smi, node_one, node_two, iso_flag=True):
         self.EXCLUDE_SMILES = Chem.MolToSmiles(
             Chem.MolFromSmiles(excluded_smi), isomericSmiles=False
         )
@@ -99,9 +101,9 @@ class Edge(object):
         self.REBUILT_SMILES = Chem.MolToSmiles(
             Chem.MolFromSmiles(rebuilt_smi), isomericSmiles=False
         )
-        self.REBUILT_RING_SMILES = simplified_graph(rebuilt_smi)
+        self.REBUILT_RING_SMILES = simplified_graph(rebuilt_smi, iso_flag=iso_flag)
         self.REBUILT_TYPE = get_type(rebuilt_smi)
-        self.EXCLUDED_RING_SMILES = simplified_graph(excluded_smi)
+        self.EXCLUDED_RING_SMILES = simplified_graph(excluded_smi, iso_flag=iso_flag)
         self.NODES = [node_one, node_two]
         self.REPR = " ".join(
             ["EDGE", self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
