@@ -1,4 +1,4 @@
-FROM informaticsmatters/rdkit-python-debian:Release_2018_03_01
+FROM informaticsmatters/rdkit-python-debian:Release_2018_09_1
 ADD requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 USER root
