@@ -36,7 +36,7 @@ def main():
         os.mkdir(args.base_dir)
     # Build the network
     node_holder = NodeHolder()
-    node_holder = build_network(attrs, node_holder)
+    node_holder = build_network(attrs, node_holder, args.base_dir)
     # Write the data out
     write_data(args.base_dir, node_holder, attrs)
 

@@ -6,6 +6,7 @@ except ImportError:
     from rdkit.Chem import MCS
 from rdkit.Chem import AllChem, Draw
 from tqdm import tqdm
+import timeit
 import os
 
 SMARTS_PATTERN = "[*;R]-;!@[*]"
@@ -13,6 +14,19 @@ SMARTS_PATTERN = "[*;R]-;!@[*]"
 """ contribution from Hans de Winter """
 from rdkit import Chem
 from rdkit.Chem import AllChem
+
+# Instrumentation to expose the 'retrieve', 'create' and 'total' durations,
+# and the number of nodes and edges for each molecule processed
+# by build_network().
+#
+# Data is flushed and synchronised to disc after each molecule
+# (so that data is kept even if the process dies). So anticipate a
+# drop in throughput if you enable this feature.
+#
+# Alan Christie, Sep 2018
+ENABLE_BUILD_NETWORK_LOG = os.environ.get('ENABLE_BUILD_NETWORK_LOG')
+BUILD_NETWORK_LOG = 'build-network.log'
+CHILD_DEPTH = 0
 
 
 def _InitialiseNeutralisationReactions():
@@ -430,12 +444,40 @@ def write_data(output_dir, node_holder, attrs):
         out_f.write("\n")
 
 
-def build_network(attrs, node_holder):
+def build_network(attrs, node_holder, base_dir='.'):
+
+    log_file = None
+    if ENABLE_BUILD_NETWORK_LOG:
+        log_file_name = os.path.join(base_dir, BUILD_NETWORK_LOG)
+        log_file = open(log_file_name, 'w')
+
     # Create the nodes and test with output
     for attr in tqdm(attrs):
+        start_time = timeit.default_timer()
         node, is_node = node_holder.create_or_retrieve_node(attr.SMILES)
+        retrieve_end_time = timeit.default_timer()
+        create_end_time = None
         if is_node:
             create_children(node, node_holder)
+            create_end_time = timeit.default_timer()
+        if log_file:
+            nh_nodes, nh_edges = node_holder.size()
+            if is_node:
+                retrieve_dur = retrieve_end_time - start_time
+                create_dur = create_end_time - retrieve_end_time
+                total_dur = create_end_time - start_time
+                log_file.write('1,%s,%s,%s,%s,%s,%s\n' % (attr.SMILES, retrieve_dur, create_dur, total_dur, nh_nodes, nh_edges))
+                log_file.flush()
+                os.fsync(log_file)
+            else:
+                retrieve_dur = retrieve_end_time - start_time
+                log_file.write('0,%s,%s,%s,%s,%s,%s\n' % (attr.SMILES, retrieve_dur, 0, retrieve_dur, nh_nodes, nh_edges))
+                log_file.flush()
+                os.fsync(log_file)
+
+    if log_file:
+        log_file.close()
+
     return node_holder
 
 
