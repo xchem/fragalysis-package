@@ -1,5 +1,3 @@
-
-
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 
@@ -19,7 +17,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version="0.0.21",
+    version="0.0.41",
     description="Library for fragment based analysis",
     long_description=long_description,
     # The project's main homepage.

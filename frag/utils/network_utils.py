@@ -130,7 +130,7 @@ def get_comb_index(bi_1, bi_2):
     return bi_1 + (100 * (bi_2 + 1))
 
 
-def ret_comb_index(bi_tot):
+def ret_comb_index(bi_tot, get_indices=False, isotope=None):
     """
 
     :param bi_tot:
@@ -138,15 +138,19 @@ def ret_comb_index(bi_tot):
     """
     bi_1 = int(str(bi_tot)[-2:])
     bi_2 = int(str(bi_tot)[0:-2])
-    return (bi_1, bi_2 - 1)
+    if get_indices:
+        return (bi_1, bi_2 - 1, isotope)
+    else:
+        return (bi_1, bi_2 - 1)
 
 
-def get_fragments(input_mol, iso_labels=True):
+def get_fragments(input_mol, iso_labels=True, get_index_iso_map=False):
     """
     Find the frgments for a given molecule
     :param input_mol:
     :return:
     """
+    index_isotope_map = {}
     atom_indices = input_mol.GetSubstructMatches(Chem.MolFromSmarts(SMARTS_PATTERN))
     if atom_indices and iso_labels:
         counter = 100
@@ -154,6 +158,10 @@ def get_fragments(input_mol, iso_labels=True):
         bs = []
         for bi in atom_indices:
             b = input_mol.GetBondBetweenAtoms(bi[0], bi[1])
+            if counter in index_isotope_map:
+                index_isotope_map[counter].append(b.GetIdx())
+            else:
+                index_isotope_map[counter] = [b.GetIdx()]
             labels.append((counter, counter))
             bs.append(b.GetIdx())
             counter += 1
@@ -168,7 +176,10 @@ def get_fragments(input_mol, iso_labels=True):
             labels.append((comb_index, comb_index))
         input_mol = Chem.FragmentOnBonds(input_mol, bs, dummyLabels=labels)
         return get_frag_list(str_find="*", input_mol=input_mol)
-    return get_frag_list(str_find="*", input_mol=input_mol)
+    if get_index_iso_map:
+        return get_frag_list(str_find="*", input_mol=input_mol), index_isotope_map
+    else:
+        return get_frag_list(str_find="*", input_mol=input_mol)
 
 
 def get_num_ring_atoms(input_mol):
@@ -189,13 +200,15 @@ def get_num_ring_atoms(input_mol):
     return num_ring_atoms, split_indices
 
 
-def simplified_graph(input_smiles):
+def simplified_graph(input_smiles, iso_flag=True):
     """
     The simplified graph representation for the edge uses the daylight
 function dt_molgraph to
-1) set all bond orders to one, 2) remove aromaticity, 3??"set the hydrogen count,
-4) remove charges and set masses to zero. 5)  Additionally we set every ring atom element to carbon
-    :param input_smiles:
+1) set all bond orders to one, 2) remove aromaticity, 3) set the hydrogen count,
+4) remove charges and set masses to zero. 5)  Additionally we set every ring atom element to carbon.
+This is Anthony Bradley's version of the algorithm.
+    :param input_smiles: the input smiles to simplify
+    :param iso_flag: a boolean to determine if we should include chirality etc
     :return:
     """
     mol = Chem.MolFromSmiles(input_smiles)
@@ -206,6 +219,8 @@ function dt_molgraph to
             atom.SetIsAromatic(False)
         for bond in atom.GetBonds():
             bond.SetBondType(Chem.BondType.SINGLE)
+        if not iso_flag:
+            atom.SetChiralTag(Chem.ChiralType.CHI_OTHER)
     return Chem.MolToSmiles(mol, isomericSmiles=True)
 
 
@@ -392,9 +407,13 @@ def add_child_and_edge(
         create_children(new_node, node_holder)
 
 
-def canon_input(smi):
+def canon_input(smi, isomericSmiles=True):
     # Decharge in this step too
-    return NeutraliseCharges(Chem.MolFromSmiles(smi))[0]
+    iso_smiles = NeutraliseCharges(Chem.MolFromSmiles(smi))[0]
+    if not isomericSmiles:
+        return Chem.MolToSmiles(Chem.MolFromSmiles(iso_smiles), isomericSmiles=False)
+    else:
+        return iso_smiles
 
 
 def create_children(input_node, node_holder):
