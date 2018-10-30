@@ -65,10 +65,6 @@ parser.add_argument('--id-prefix', help='The molecule ID prefix to insert', requ
 parser.add_argument('inputs', nargs='+')
 args = parser.parse_args()
 
-if args.id_column < 1:
-    sys.stderr.write("ID column must be 1 or higher\n")
-    sys.exit(1)
-
 outfilename = args.output
 
 prefix_delimiter = ':'
@@ -102,7 +98,7 @@ for file in args.inputs:
                 #print("HAC: " + str(hac))
                 vals = [ssmiles, osmiles, '{}{}{}'.format(args.id_prefix,
                                                           prefix_delimiter,
-                                                          values[args.id_column - 1])]
+                                                          values[args.id_column])]
                 if hac >= args.min_hac and (args.max_hac is None or hac <= args.max_hac):
                     included += 1
                     outfile.write(" ".join(vals) + "\n")
