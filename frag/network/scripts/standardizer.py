@@ -60,8 +60,8 @@ parser.add_argument('-o', '--output', help='Base name for output', default='outp
 parser.add_argument('-l', '--limit', help='Only process this many from each file', type=int)
 parser.add_argument('--min-hac', help='Minimum HAC', type=int, default=0)
 parser.add_argument('--max-hac', help='Maximum HAC', type=int)
-parser.add_argument('--id-column', help='The molecule ID column (first column is 1)', type=int)
-parser.add_argument('--id-prefix', help='The molecule ID prefix to insert')
+parser.add_argument('--id-column', help='The molecule ID column (first column is 1)', required=True, type=int)
+parser.add_argument('--id-prefix', help='The molecule ID prefix to insert', required=True)
 parser.add_argument('inputs', nargs='+')
 args = parser.parse_args()
 
@@ -102,7 +102,7 @@ for file in args.inputs:
                 #print("HAC: " + str(hac))
                 vals = [ssmiles, osmiles, '{}{}{}'.format(args.id_prefix,
                                                           prefix_delimiter,
-                                                          values[args.id_column])]
+                                                          values[args.id_column - 1])]
                 if hac >= args.min_hac and (args.max_hac is None or hac <= args.max_hac):
                     included += 1
                     outfile.write(" ".join(vals) + "\n")
