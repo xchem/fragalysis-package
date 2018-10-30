@@ -58,14 +58,20 @@ def log(sep, vals):
 parser = argparse.ArgumentParser(description='Fragment network standardize')
 parser.add_argument('-o', '--output', help='Base name for output', default='output')
 parser.add_argument('-l', '--limit', help='Only process this many from each file', type=int)
-parser.add_argument('--min-hac', help='minimum HAC', type=int, default=0)
-parser.add_argument('--max-hac', help='maximum HAC', type=int)
+parser.add_argument('--min-hac', help='Minimum HAC', type=int, default=0)
+parser.add_argument('--max-hac', help='Maximum HAC', type=int)
+parser.add_argument('--id-column', help='The molecule ID column (first column is 1)', type=int)
+parser.add_argument('--id-prefix', help='The molecule ID prefix to insert')
 parser.add_argument('inputs', nargs='+')
 args = parser.parse_args()
 
+if args.id_column < 1:
+    sys.stderr.write("ID column must be 1 or higher\n")
+    sys.exit(1)
 
 outfilename = args.output
 
+prefix_delimiter = ':'
 countMols = 0
 countFiles = 0
 excluded = 0
@@ -94,7 +100,9 @@ for file in args.inputs:
                 ssmiles = Chem.MolToSmiles(m)
                 hac = m.GetNumHeavyAtoms()
                 #print("HAC: " + str(hac))
-                vals = [ssmiles, osmiles, "REAL:" + values[-4]]
+                vals = [ssmiles, osmiles, '{}{}{}'.format(args.id_prefix,
+                                                          prefix_delimiter,
+                                                          values[args.id_column])]
                 if hac >= args.min_hac and (args.max_hac is None or hac <= args.max_hac):
                     included += 1
                     outfile.write(" ".join(vals) + "\n")
