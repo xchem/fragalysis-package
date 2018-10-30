@@ -94,7 +94,7 @@ for file in args.inputs:
                 ssmiles = Chem.MolToSmiles(m)
                 hac = m.GetNumHeavyAtoms()
                 #print("HAC: " + str(hac))
-                vals = [ssmiles, osmiles, "REAL:" + values[-3]]
+                vals = [ssmiles, osmiles, "REAL:" + values[-4]]
                 if hac >= args.min_hac and (args.max_hac is None or hac <= args.max_hac):
                     included += 1
                     outfile.write(" ".join(vals) + "\n")
