@@ -31,7 +31,7 @@ def do_for_dir(input_dir):
             if line_parts[3].startswith('Z'):
                 supplier = 'REAL:' + line_parts[3]
             elif line_parts[3].startswith('MolPort-'):
-                supplier = 'MolPort:' + line_parts[3].split('MolPort-', 1)[1]
+                supplier = 'MOLPORT:' + line_parts[3].split('MolPort-', 1)[1]
 
             if supplier:
                 # Each attribute is a potential list of suppliers
@@ -69,7 +69,7 @@ def do_for_dir(input_dir):
                         cmpd_id = attr_cmp_id
                         out_l.append(cmpd_id)
                         # This is where we can add tags - like CHEAP - EXPENSIVE
-                        out_l.append("EM;MOL;F2")
+                        out_l.append("MOL;F2")
                     else:
                         out_l.append("")
                         out_l.append("F2")
