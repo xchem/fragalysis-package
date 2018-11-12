@@ -68,6 +68,11 @@ logger.setLevel(logging.INFO)
 # The minimum number of columns in the input data and
 # a map of expected column names indexed by column number.
 #
+# The molecule data is spread over a number of `txt.gz` files
+# (i.e. files like `iis_smiles-000-000-000--000-499-999.txt.gz`)
+# in a common directory where the files have the following header
+# names and (0-based) positions:
+#
 # SMILES                0
 # SMILES_CANONICAL      1
 # MOLPORTID             2
