@@ -9,7 +9,7 @@ import argparse
 # On a 2.7GHz i7 we should see around 13Million node lines/min
 # and about 9Million edge lines/min.
 # Set to 0 for quiet operation.
-LINE_REMINDER = 0
+LINE_REMINDER = 13000000
 
 
 def do_for_dir(input_dir):
@@ -20,8 +20,12 @@ def do_for_dir(input_dir):
     }
     # build a map of SMILES to chemical IDs
     # from the attributes file...
+    num_supplier_identities_found = 0
+    f_name = "attributes.txt"
+    if LINE_REMINDER:
+        print('%s Processing %s/%s...' % (datetime.now(), input_dir, f_name))
     attrs = {}
-    with open("attributes.txt") as attr_f:
+    with open(f_name) as attr_f:
         for line in attr_f:
 
             line_parts = line.split()
@@ -36,6 +40,7 @@ def do_for_dir(input_dir):
                 supplier = 'MOLPORT:' + line_parts[3].split('MolPort-', 1)[1]
 
             if supplier:
+                num_supplier_identities_found += 1
                 # Each attribute is a potential list of suppliers
                 # for a given molecule (line_parts[1]).
                 # We separate suppliers using ';'.
@@ -43,6 +48,9 @@ def do_for_dir(input_dir):
                     attrs[line_parts[1]] += ';' + supplier
                 else:
                     attrs[line_parts[1]] = supplier
+    if LINE_REMINDER:
+        print('%s Found %d supplier identities' %
+              (datetime.now(), num_supplier_identities_found))
 
     for f_name in prop_dict:
 
