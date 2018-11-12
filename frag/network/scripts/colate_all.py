@@ -89,7 +89,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Convert text files output from build_db into CSV files for neo4j."
     )
-    parser.add_argument("--input_dir")
+    parser.add_argument("--input_dir", required=True)
     args = parser.parse_args()
 
     node_list = ["nodes-header.csv"]
