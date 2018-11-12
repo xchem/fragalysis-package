@@ -78,7 +78,7 @@ for file in args.inputs:
     countFiles += 1
     log(' ', [str(countFiles), file])
     outfile = open(outfilename + "_" + str(countFiles) + ".smi", "w")
-    outfile.write("SSMILES OSMILES ID\n")
+    outfile.write("SSMILES ID OSMILES\n")
     with gzip.open(file, 'rb') as f:
         linecount = 0
         for line in f:
@@ -96,9 +96,11 @@ for file in args.inputs:
                 ssmiles = Chem.MolToSmiles(m)
                 hac = m.GetNumHeavyAtoms()
                 #print("HAC: " + str(hac))
-                vals = [ssmiles, osmiles, '{}{}{}'.format(args.id_prefix,
-                                                          prefix_delimiter,
-                                                          values[args.id_column])]
+                vals = [ssmiles,
+                        '{}{}{}'.format(args.id_prefix,
+                                        prefix_delimiter,
+                                        values[args.id_column]),
+                        osmiles]
                 if hac >= args.min_hac and (args.max_hac is None or hac <= args.max_hac):
                     included += 1
                     outfile.write(" ".join(vals) + "\n")
