@@ -3,8 +3,14 @@
 """process_molport_compounds.py
 
 Processes MolPort vendor compound files, expected to contain pricing
-information. Four new files are generated and the original nodes file
+information, against the colated graph processing files.
+
+Four new files are generated and the original nodes file
 augmented with a "V_MP" label.
+
+Note:   This module does expect `colate_all` to have been used on the original
+        graph files to produce normalised supplier identities in the node file
+        this module uses.
 
 The purpose of this module is to create "Vendor" Compound and "Cost" nodes
 and relationships to augment the DLS fragment database.
@@ -41,6 +47,17 @@ to the augmented copy of the original node file that it creates.
 If the original nodes file is "nodes.csv.gz" the augmented copy
 (in the named output directory) will be called
 "molport-augmented-nodes.csv.gz".
+
+Note:   At the moment the original nodes.csv.gz file is expected to contain
+        standardised (uppercase) compound identifiers,
+        i.e. "MOLPORT:NNN-NNN-NNN" whereas the compound files (that include
+        pricing information) are expected to use the supplier's identifier,
+        i.e. "MolPort-NNN-NNN-NNN". See the 'molport_re' and 'supplier_prefix'
+        variables in this module.
+
+        In the future the standardiser should produce a new compound file
+        that contains all the relevant columns passed through (at the moment
+        it just contains SSMILES, OSMILES and ID columns.
 
 Alan Christie
 November 2018
@@ -124,9 +141,10 @@ smiles_namespace = 'F2'
 compound_namespace = 'VMP'
 cost_namespace = 'CMP'
 
-# Regular expression to find
-# MolPort compound IDs (in the original nodes file).
-molport_re = re.compile(r'MolPort:(\d+-\d+-\d+)[^\d]')
+# Regular expression to find the MolPort compound IDs
+# (in the original nodes file).
+molport_re = re.compile(r'MOLPORT:(\d+-\d+-\d+)[^\d]')
+supplier_prefix = 'MolPort-'
 
 # Various diagnostic counts
 num_compounds_without_costs = 0
@@ -227,7 +245,7 @@ def extract_vendor_compounds(gzip_filename):
             fields = line.split('\t')
 
             smiles = fields[smiles_col]
-            compound_id = fields[compound_col].split('MolPort-')[1]
+            compound_id = fields[compound_col].split(supplier_prefix)[1]
             blt = int(fields[blt_col].strip())
 
             # Add the compound (a UUID) to our set of all compounds.

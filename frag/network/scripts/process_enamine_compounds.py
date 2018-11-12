@@ -2,9 +2,15 @@
 
 """process_enamine_compounds.py
 
-Processes Enamine vendor files, not expected to contain pricing information.
-Two new files are generated and the original nodes file augmented with
-a "V_E" label.
+Processes standardised Enamine vendor files, not expected to contain
+pricing information.
+
+Two new files are generated and the original nodes file augmented with a
+"V_E" label.
+
+Note:   This module does expect `colate_all` to have been used on the original
+        graph files to produce normalised supplier identities in the node file
+        this module uses.
 
 The purpose of this module is to create "Vendor" Compound nodes
 and relationships to augment the DLS fragment database.
@@ -55,12 +61,19 @@ logger.addHandler(out_hdlr)
 logger.setLevel(logging.INFO)
 
 # The minimum number of columns in the input files and
-# and a map of expected column names indexed by column number
-expected_min_num_cols = 2
-smiles_col = 0
+# and a map of expected column names indexed by (0-based) column number.
+#
+# The 'standardised' files contain at least 3 columns...
+#
+# SSMILES   0
+# ID        1
+# OSMILES   2
+
+expected_min_num_cols = 3
 compound_col = 1
-expected_input_cols = {smiles_col: 'SMILES',
-                       compound_col: 'idnumber'}
+smiles_col = 2
+expected_input_cols = {compound_col: 'ID',
+                       smiles_col: 'OSMILES'}
 
 # The Vendor Compound node has...
 # a compound id (A 'Z' number)
