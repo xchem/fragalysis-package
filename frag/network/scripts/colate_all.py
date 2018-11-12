@@ -29,9 +29,9 @@ def do_for_dir(input_dir):
         for line in attr_f:
 
             line_parts = line.split()
-            # Translate supplier names (in line_parts[3]).
-            #  'Z' -> 'REAL:Z'
-            #  'MolPort-' -> 'MolPort:'
+            # Look for supplier names (in line_parts[3]).
+            #  'REAL:'
+            #  'MOLPORT:'
             # Ignore others
             supplier = None
             if (line_parts[3].startswith('REAL:') or
