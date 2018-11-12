@@ -49,8 +49,12 @@ def do_for_dir(input_dir):
                 else:
                     attrs[line_parts[1]] = supplier
     if LINE_REMINDER:
-        print('%s Found %d supplier identities' %
-              (datetime.now(), num_supplier_identities_found))
+        if not num_supplier_identities_found:
+            print('%s WARNING: Found no supplier identities (!)' %
+                  (datetime.now(), num_supplier_identities_found))
+        else:
+            print('%s Found %d supplier identities' %
+                  (datetime.now(), num_supplier_identities_found))
 
     for f_name in prop_dict:
 
