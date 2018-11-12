@@ -92,8 +92,9 @@ smiles_namespace = 'F2'
 compound_namespace = 'VE'
 
 # Regular expression to find
-# MolPort compound IDs in the original nodes file.
-enamine_re = re.compile(r'REAL:(Z\d+)[^\d]')
+# Enamine compound IDs in the original nodes file.
+# These can have a 'Z' or 'PV-' prefix.
+enamine_re = re.compile(r'REAL:((?:Z|PV\-)\d+)')
 
 # Various diagnostic counts
 num_nodes = 0

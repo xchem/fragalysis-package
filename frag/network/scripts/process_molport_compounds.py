@@ -143,7 +143,7 @@ cost_namespace = 'CMP'
 
 # Regular expression to find the MolPort compound IDs
 # (in the original nodes file).
-molport_re = re.compile(r'MOLPORT:(\d+-\d+-\d+)[^\d]')
+molport_re = re.compile(r'MOLPORT:(\d+-\d+-\d+)')
 supplier_prefix = 'MolPort-'
 
 # Various diagnostic counts
