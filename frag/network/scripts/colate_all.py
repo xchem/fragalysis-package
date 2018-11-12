@@ -34,10 +34,9 @@ def do_for_dir(input_dir):
             #  'MolPort-' -> 'MolPort:'
             # Ignore others
             supplier = None
-            if line_parts[3].startswith('Z'):
-                supplier = 'REAL:' + line_parts[3]
-            elif line_parts[3].startswith('MolPort-'):
-                supplier = 'MOLPORT:' + line_parts[3].split('MolPort-', 1)[1]
+            if (line_parts[3].startswith('REAL:') or
+                line_parts[3].startswith('MOLPORT:')):
+                supplier = line_parts[3]
 
             if supplier:
                 num_supplier_identities_found += 1
