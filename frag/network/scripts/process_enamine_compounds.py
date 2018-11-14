@@ -33,7 +33,7 @@ The module augments the original nodes by adding the label
 "V_E" for all MolPort compounds that have been found
 to the augmented copy of the original node file that it creates.
 
-If the original nodes file is "nodes.csv.gz" the augmented copy
+If the original nodes file is "nodes.csv" the augmented copy
 (in the named output directory) will be called
 "enamine-augmented-nodes.csv.gz".
 
@@ -65,15 +65,14 @@ logger.setLevel(logging.INFO)
 #
 # The 'standardised' files contain at least 3 columns...
 #
-# SSMILES   0
-# ID        1
-# OSMILES   2
+# smiles    0
+# idnumber  1
 
-expected_min_num_cols = 3
+expected_min_num_cols = 2
+smiles_col = 0
 compound_col = 1
-smiles_col = 2
-expected_input_cols = {compound_col: 'ID',
-                       smiles_col: 'OSMILES'}
+expected_input_cols = {compound_col: 'idnumber',
+                       smiles_col: 'smiles'}
 
 # The Vendor Compound node has...
 # a compound id (A 'Z' number)
@@ -216,14 +215,14 @@ def augment_original_nodes(directory, filename, has_header):
     logger.info(' {}'.format(augmented_filename))
     logger.info(' {}'.format(augmented_relationships_filename))
 
-    with gzip.open(filename, 'rt') as gzip_i_file:
+    with open(filename) as i_file:
 
         if has_header:
             # Copy first line (header)
-            hdr = gzip_i_file.readline()
+            hdr = i_file.readline()
             gzip_ai_file.write(hdr)
 
-        for line in gzip_i_file:
+        for line in i_file:
 
             num_nodes += 1
             # Search for a potential MolPort identity
@@ -266,11 +265,14 @@ def augment_original_nodes(directory, filename, has_header):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('Vendor Compound Processor (Enamine)')
-    parser.add_argument('dir',
+    parser.add_argument('vendor_dir',
                         help='The Enamine vendor directory,'
                              ' containing the ".gz" files to be processed.'
                              ' All the ".gz" files in the supplied directory'
                              ' will be inspected.')
+    parser.add_argument('vendor_prefix',
+                        help='The Enamine vendor file prefix,'
+                             ' i.e. "June2018".')
     parser.add_argument('nodes',
                         help='The nodes file to augment with the collected'
                              ' vendor data')
@@ -289,7 +291,7 @@ if __name__ == '__main__':
         error('output ({}) is not a directory'.format(args.output))
 
     # Process all the files...
-    enamine_files = glob.glob('{}/*.gz'.format(args.dir))
+    enamine_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir, args.vendor_perfix))
     for enamine_file in enamine_files:
         extract_vendor(enamine_file)
 
