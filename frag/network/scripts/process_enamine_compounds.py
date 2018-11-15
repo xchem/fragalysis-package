@@ -199,8 +199,8 @@ def augment_original_nodes(directory, filename, has_header):
     # Augmented file
     augmented_filename =\
         os.path.join(directory,
-                     '{}-augmented-{}'.format(output_filename_prefix,
-                                              os.path.basename(filename)))
+                     '{}-augmented-{}.gz'.format(output_filename_prefix,
+                                                 os.path.basename(filename)))
     gzip_ai_file = gzip.open(augmented_filename, 'wt')
     # Frag to Vendor Compound relationships file
     augmented_relationships_filename =\

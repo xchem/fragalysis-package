@@ -89,7 +89,7 @@ for file in args.inputs:
             if args.limit and linecount > args.limit + 1:
                 break
             countMols += 1
-            values = line.split(" ")
+            values = line.strip().split(" ")
             osmiles = values[0]
             m, numFrags = process(osmiles)
             if m is not None:
