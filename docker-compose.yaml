@@ -1,0 +1,7 @@
+version: '3'
+services:
+  fragalysis:
+    build:
+      context: .
+    image: informaticsmatters/fragalysis:latest
+    container_name: fragalysis
