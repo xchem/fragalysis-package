@@ -386,9 +386,8 @@ def get_ring_ring_splits(input_mol, labels=False, do_comb_index=False):
         return out_mols
 
 
-def add_child_and_edge(
-    new_list, input_node, excluded_smi, node_holder, ring_ring=False
-):
+def add_child_and_edge(new_list, input_node, excluded_smi, node_holder,
+                       ring_ring=False):
     """
     :param input_pair:
     :return:
@@ -420,7 +419,7 @@ def create_children(input_node, node_holder):
     """
     Create a series of edges from an input molecule. Iteratively
     :param input_node:
-    :return:
+    :return: A tuple, the number of direct children
     """
     # Get all ring-ring splits
     ring_ring_splits = get_ring_ring_splits(input_node.RDMol)
@@ -430,8 +429,10 @@ def create_children(input_node, node_holder):
                 ring_ring_split, input_node, "[Xe]", node_holder, ring_ring=True
             )
     fragments = get_fragments(input_node.RDMol)
-    if len(fragments) < 2:
-        return
+    num_fragments = len(fragments)
+    if num_fragments < 2:
+        return num_fragments, 0
+
     # Now remove one item on each iteration
     for i in range(len(fragments)):
         new_list = []
@@ -442,6 +443,7 @@ def create_children(input_node, node_holder):
             new_list.append(item)
         add_child_and_edge(new_list, input_node, excluded_smi, node_holder)
 
+    return num_fragments, 0
 
 def neutralise_3d_mol(input_mol):
     neutral_mol = NeutraliseCharges(Chem.MolFromMolBlock(input_mol), as_mol=True)[0]
@@ -463,7 +465,7 @@ def write_data(output_dir, node_holder, attrs):
         out_f.write("\n")
 
 
-def build_network(attrs, node_holder, base_dir='.'):
+def build_network(attrs, node_holder, base_dir='.', verbosity=0):
 
     log_file = None
     if ENABLE_BUILD_NETWORK_LOG:
@@ -471,14 +473,21 @@ def build_network(attrs, node_holder, base_dir='.'):
         log_file = open(log_file_name, 'w')
 
     # Create the nodes and test with output
-    for attr in tqdm(attrs):
+    tqdm_disable = True if verbosity else False
+    for attr in tqdm(attrs, disable=tqdm_disable):
+
         start_time = timeit.default_timer()
         node, is_node = node_holder.create_or_retrieve_node(attr.SMILES)
         retrieve_end_time = timeit.default_timer()
         create_end_time = None
         if is_node:
-            create_children(node, node_holder)
+            direct_frags, total_frags = create_children(node, node_holder)
             create_end_time = timeit.default_timer()
+
+        if verbosity:
+            total_dur = create_end_time - start_time
+            print('{} {} {}'.format(attr.SMILES, total_dur, direct_frags))
+
         if log_file:
             nh_nodes, nh_edges = node_holder.size()
             if is_node:
