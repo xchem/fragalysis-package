@@ -3,5 +3,5 @@ services:
   fragalysis:
     build:
       context: .
-    image: informaticsmatters/fragalysis:latest
+    image: informaticsmatters/fragalysis:${IMAGE_TAG:-latest}
     container_name: fragalysis
