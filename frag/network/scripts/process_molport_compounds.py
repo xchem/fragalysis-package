@@ -450,11 +450,14 @@ def augment_original_nodes(directory, filename, has_header):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('Vendor Compound Processor (MolPort)')
-    parser.add_argument('dir',
+    parser.add_argument('vendor_dir',
                         help='The MolPort vendor directory,'
                              ' containing the ".gz" files to be processed.'
                              ' All the ".gz" files in the supplied directory'
                              ' will be inspected.')
+    parser.add_argument('vendor_prefix',
+                        help='The MolPort vendor file prefix,'
+                             ' i.e. "iis_smiles".')
     parser.add_argument('nodes',
                         help='The nodes file to augment with the collected'
                              ' vendor data')
@@ -473,7 +476,7 @@ if __name__ == '__main__':
         error('output ({}) is not a directory'.format(args.output))
 
     # Process all the files...
-    molport_files = glob.glob('{}/*.gz'.format(args.dir))
+    molport_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir, args.vendor_perfix))
     for molport_file in molport_files:
         extract_vendor_compounds(molport_file)
 
