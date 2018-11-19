@@ -452,12 +452,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Vendor Compound Processor (MolPort)')
     parser.add_argument('vendor_dir',
                         help='The MolPort vendor directory,'
-                             ' containing the ".gz" files to be processed.'
-                             ' All the ".gz" files in the supplied directory'
-                             ' will be inspected.')
+                             ' containing the ".gz" files to be processed.')
     parser.add_argument('vendor_prefix',
                         help='The MolPort vendor file prefix,'
-                             ' i.e. "iis_smiles".')
+                             ' i.e. "iis_smiles". Only files with this prefix'
+                             ' in the vendor directory will be processed')
     parser.add_argument('nodes',
                         help='The nodes file to augment with the collected'
                              ' vendor data')

@@ -257,12 +257,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Vendor Compound Processor (HTS)')
     parser.add_argument('vendor_dir',
                         help='The HTS vendor directory,'
-                             ' containing the ".gz" files to be processed.'
-                             ' All the ".gz" files in the supplied directory'
-                             ' will be inspected.')
+                             ' containing the ".gz" files to be processed.')
     parser.add_argument('vendor_prefix',
                         help='The HTS vendor file prefix,'
-                             ' i.e. "hts".')
+                             ' i.e. "hts". Only files with this prefix'
+                             ' in the vendor directory will be processed')
     parser.add_argument('nodes',
                         help='The nodes file to augment with the collected'
                              ' vendor data')
