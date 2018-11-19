@@ -417,7 +417,7 @@ def augment_original_nodes(directory, filename, has_header):
             match_ob = molport_re.findall(line)
             if match_ob:
                 # Look for compounds where we have a costed vendor.
-                # If there is one, add the "V_MP" label.
+                # If there is one, add the label.
                 for compound_id in match_ob:
                     if compound_id in costed_compounds:
                         new_line = line.strip() + ';V_MP\n'

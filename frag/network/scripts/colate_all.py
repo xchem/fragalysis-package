@@ -35,7 +35,8 @@ def do_for_dir(input_dir):
             # Ignore others
             supplier = None
             if (line_parts[3].startswith('REAL:') or
-                line_parts[3].startswith('MOLPORT:')):
+                line_parts[3].startswith('MOLPORT:') or
+                line_parts[3].startswith('HTS:')):
                 supplier = line_parts[3]
 
             if supplier:

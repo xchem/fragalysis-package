@@ -1,41 +1,26 @@
 #!/usr/bin/env python
 
-"""process_enamine_compounds.py
+"""process_hts_compounds.py
 
-Processes standardised Enamine vendor files, not expected to contain
-pricing information.
-
-Two new files are generated and the original nodes file augmented with a
-"V_E" label.
-
-Note:   This module does expect `colate_all` to have been used on the original
-        graph files to produce normalised supplier identities in the node file
-        this module uses.
-
-The purpose of this module is to create "Vendor" Compound nodes
-and relationships to augment the DLS fragment database.
-Every fragment line that has an Enamine identifier in the original data set
-is labelled and a relationship created between it and the Vendor's compound(s).
-
-Some vendor compound nodes may not exist in the original data set.
+Processes standardised HTS vendor files.
 
 The files generated (in a named output directory) are:
 
--   "enamine-compound-nodes.csv.gz"
+-   "hts-compound-nodes.csv.gz"
     containing all the nodes for the vendor compounds.
 
--   "enamine-molecule-compound_edges.csv.gz"
+-   "hts-molecule-compound_edges.csv.gz"
     containing the relationships between the original node entries and
     the "Vendor" nodes. There is a relationship for every Enamine
     compound that was found in the earlier processing.
 
 The module augments the original nodes by adding the label
-"V_E" for all MolPort compounds that have been found
+"V_HTS" for all MolPort compounds that have been found
 to the augmented copy of the original node file that it creates.
 
 If the original nodes file is "nodes.csv" the augmented copy
 (in the named output directory) will be called
-"enamine-augmented-nodes.csv.gz".
+"hts-augmented-nodes.csv.gz".
 
 Alan Christie
 November 2018
@@ -51,7 +36,7 @@ import re
 import sys
 
 # Configure basic logging
-logger = logging.getLogger('enamine')
+logger = logging.getLogger('hts')
 out_hdlr = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s %(levelname)s # %(message)s',
                               '%Y-%m-%dT%H:%M:%S')
@@ -65,19 +50,23 @@ logger.setLevel(logging.INFO)
 #
 # The 'standardised' files contain at least 3 columns...
 #
-# smiles    0
-# idnumber  1
+# SMILES            0
+# MoleculeName      1
+# %Inhibition@5uM   2
 
 expected_min_num_cols = 2
 smiles_col = 0
 compound_col = 1
-expected_input_cols = {compound_col: 'idnumber',
-                       smiles_col: 'smiles'}
+activity_col = 2
+expected_input_cols = {smiles_col: 'SMILES',
+                       compound_col: 'MoleculeName',
+                       activity_col: '%Inhibition@5uM'}
 
 # The Vendor Compound node has...
-# a compound id (A 'Z' number)
+# a compound id (A number)
 # a SMILES string
-CompoundNode = namedtuple('CompoundNode', 'c s')
+# an activity (floating-point percentage)
+CompoundNode = namedtuple('CompoundNode', 'c s a')
 # The unique set of vendor compound nodes.
 compound_nodes = set()
 # The vendor compound IDs that have a node.
@@ -85,15 +74,14 @@ compound_nodes = set()
 compound_map = {}
 
 # Prefix for output files
-output_filename_prefix = 'enamine'
+output_filename_prefix = 'hts'
 # The namespaces of the various indices
 smiles_namespace = 'F2'
 compound_namespace = 'VE'
 
 # Regular expression to find
-# Enamine compound IDs in the original nodes file.
-# These can have a 'Z' or 'PV-' prefix.
-enamine_re = re.compile(r'REAL:((?:Z|PV\-)\d+)')
+# HTS compound IDs in the original nodes file.
+hts_re = re.compile(r'HTS:(\d+)')
 
 # Various diagnostic counts
 num_nodes = 0
@@ -149,12 +137,13 @@ def extract_vendor(gzip_filename):
 
             smiles = fields[smiles_col]
             compound_id = fields[compound_col]
+            activity = fields[activity_col]
 
             # The compound ID must be unique
             if compound_id in compound_map:
                 error('Duplicate compound "{}"'.format(compound_id))
 
-            compound_node = CompoundNode(compound_id, smiles)
+            compound_node = CompoundNode(compound_id, smiles, activity)
             compound_nodes.add(compound_node)
             # Put in a map, indexed by compound ID for fast lookup later
             compound_map[compound_id] = compound_node
@@ -175,10 +164,11 @@ def write_compound_nodes(directory, compounds):
     with gzip.open(filename, 'wb') as gzip_file:
         gzip_file.write('cmpd_id:ID({}),'
                         'smiles,'
+                        'activity:FLOAT'
                         ':LABEL\n'.format(compound_namespace))
         for compound in compounds:
-            gzip_file.write('{},"{}",VENDOR;REAL\n'.
-                            format(compound.c, compound.s))
+            gzip_file.write('{},"{}",{},VENDOR;HTS\n'.
+                            format(compound.c, compound.s, compound.a))
 
 
 def augment_original_nodes(directory, filename, has_header):
@@ -231,11 +221,11 @@ def augment_original_nodes(directory, filename, has_header):
             augmented = False
             match_ob = enamine_re.findall(line)
             if match_ob:
-                # Look for compounds where we have a costed vendor.
+                # Look for compounds where we have a vendor.
                 # If there is one, add the label.
                 for compound_id in match_ob:
                     if compound_id in compound_map:
-                        new_line = line.strip() + ';V_E\n'
+                        new_line = line.strip() + ';V_HTS\n'
                         gzip_ai_file.write(new_line)
                         augmented = True
                         num_nodes_augmented += 1
@@ -264,15 +254,15 @@ def augment_original_nodes(directory, filename, has_header):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser('Vendor Compound Processor (Enamine)')
+    parser = argparse.ArgumentParser('Vendor Compound Processor (HTS)')
     parser.add_argument('vendor_dir',
-                        help='The Enamine vendor directory,'
+                        help='The HTS vendor directory,'
                              ' containing the ".gz" files to be processed.'
                              ' All the ".gz" files in the supplied directory'
                              ' will be inspected.')
     parser.add_argument('vendor_prefix',
-                        help='The Enamine vendor file prefix,'
-                             ' i.e. "June2018".')
+                        help='The HTS vendor file prefix,'
+                             ' i.e. "hts".')
     parser.add_argument('nodes',
                         help='The nodes file to augment with the collected'
                              ' vendor data')
@@ -291,9 +281,9 @@ if __name__ == '__main__':
         error('output ({}) is not a directory'.format(args.output))
 
     # Process all the files...
-    enamine_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir, args.vendor_prefix))
-    for enamine_file in enamine_files:
-        extract_vendor(enamine_file)
+    hts_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir, args.vendor_prefix))
+    for hts_file in hts_files:
+        extract_vendor(hts_file)
 
     # Write the new nodes and relationships
     # and augment the original nodes file.
