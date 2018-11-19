@@ -400,7 +400,7 @@ def augment_original_nodes(directory, filename, has_header):
     logger.info(' {}'.format(augmented_filename))
     logger.info(' {}'.format(augmented_relationships_filename))
 
-    with gzip.open(filename, 'rt') as gzip_i_file:
+    with open(filename, 'rt') as gzip_i_file:
 
         if has_header:
             # Copy first line (header)
