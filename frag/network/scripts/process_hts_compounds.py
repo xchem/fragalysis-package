@@ -77,7 +77,7 @@ compound_map = {}
 output_filename_prefix = 'hts'
 # The namespaces of the various indices
 smiles_namespace = 'F2'
-compound_namespace = 'VE'
+compound_namespace = 'VHTS'
 
 # Regular expression to find
 # HTS compound IDs in the original nodes file.
@@ -219,7 +219,7 @@ def augment_original_nodes(directory, filename, has_header):
             # Get the MolPort compound
             # if we know the compound add a label
             augmented = False
-            match_ob = enamine_re.findall(line)
+            match_ob = hts_re.findall(line)
             if match_ob:
                 # Look for compounds where we have a vendor.
                 # If there is one, add the label.
