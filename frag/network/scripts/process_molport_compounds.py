@@ -56,7 +56,7 @@ Note:   At the moment the original nodes.csv.gz file is expected to contain
         variables in this module.
 
         In the future the standardiser should produce a new compound file
-        that contains all the relevant columns passed through (at the moment
+        that contains all the relevant columns passed through. At the moment
         it just contains SSMILES, OSMILES and ID columns.
 
 Alan Christie
