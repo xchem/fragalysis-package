@@ -164,7 +164,7 @@ def write_compound_nodes(directory, compounds):
     with gzip.open(filename, 'wb') as gzip_file:
         gzip_file.write('cmpd_id:ID({}),'
                         'smiles,'
-                        'activity:FLOAT'
+                        'activity:FLOAT,'
                         ':LABEL\n'.format(compound_namespace))
         for compound in compounds:
             gzip_file.write('{},"{}",{},VENDOR;HTS\n'.
