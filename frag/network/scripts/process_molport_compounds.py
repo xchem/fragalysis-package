@@ -476,7 +476,7 @@ if __name__ == '__main__':
         error('output ({}) is not a directory'.format(args.output))
 
     # Process all the files...
-    molport_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir, args.vendor_perfix))
+    molport_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir, args.vendor_prefix))
     for molport_file in molport_files:
         extract_vendor_compounds(molport_file)
 

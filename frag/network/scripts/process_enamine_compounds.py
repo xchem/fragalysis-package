@@ -291,7 +291,7 @@ if __name__ == '__main__':
         error('output ({}) is not a directory'.format(args.output))
 
     # Process all the files...
-    enamine_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir, args.vendor_perfix))
+    enamine_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir, args.vendor_prefix))
     for enamine_file in enamine_files:
         extract_vendor(enamine_file)
 
