@@ -12,8 +12,8 @@ Note:   This module does expect `colate_all` to have been used on the original
         graph files to produce normalised supplier identities in the node file
         this module uses.
 
-The purpose of this module is to create "Vendor" Compound and "Cost" nodes
-and relationships to augment the DLS fragment database.
+The purpose of this module is to create "Vendor" compound and "Cost" nodes
+and relationships to augment the fragment database.
 Every fragment line that has a MolPort identifier in the original data set
 is labelled and a relationship created between it and the Vendor's compound(s).
 The compounds are also related to purchasing costs for those compounds in
@@ -248,8 +248,9 @@ def extract_vendor_compounds(gzip_filename):
             compound_id = fields[compound_col].split(supplier_prefix)[1]
             blt = int(fields[blt_col].strip())
 
-            # Add the compound (a UUID) to our set of all compounds.
-            # The compound ID has to be unique
+            # Add the compound (a unique compound ID)
+            # to our set of all compounds.
+            # The compound ID is assumed to be unique within the vendor file.
             if compound_id in vendor_compounds:
                 error('Duplicate compound ID ({})'.format(compound_id))
             vendor_compounds.add(compound_id)
@@ -416,21 +417,21 @@ def augment_original_nodes(directory, filename, has_header):
             augmented = False
             match_ob = molport_re.findall(line)
             if match_ob:
-                # Look for compounds where we have a costed vendor.
+                # Look for vendor compound nodes.
                 # If there is one, add the label.
                 for compound_id in match_ob:
-                    if compound_id in costed_compounds:
+                    if compound_id in vendor_compounds:
                         new_line = line.strip() + ';V_MP\n'
                         gzip_ai_file.write(new_line)
                         augmented = True
                         num_nodes_augmented += 1
                         break
                 if augmented:
-                    # If we've augmented the line
+                    # If we've augmented the line (with at least one compound)
                     # append a relationship to the relationships file
                     # for each compound that was found...
                     for compound_id in match_ob:
-                        if compound_id in costed_compounds:
+                        if compound_id in vendor_compounds:
                             # Now add vendor relationships to this row
                             frag_id = line.split(',')[0]
                             gzip_cr_file.write('"{}",{},HAS_VENDOR\n'.format(frag_id,
