@@ -52,6 +52,7 @@ def main():
     id = 0
     mols = parse_mols(args.input, args.input_format)
     for x in tqdm(mols, disable=tqdm_disable):
+        print("Processing " + Chem.MolToSmiles(x, isomericSmiles=True))
         if x is None:
             continue
         attr = Attr(

@@ -3,6 +3,7 @@
 from rdkit import Chem
 from rdkit.Chem.MolStandardize import rdMolStandardize
 import glob, gzip, sys, argparse
+from frag.utils.rdkit_utils import standardize
 
 
 uncharger = rdMolStandardize.Uncharger()
@@ -21,35 +22,6 @@ def process(smiles):
         sys.stderr.write(ve.message)
 
     return None, 0
-
-
-def standardize(mol):
-    mol = rdMolStandardize.Cleanup(mol)
-    mol = fragment(mol);
-    mol = uncharger.uncharge(mol)
-    return mol
-
-
-def fragment(mol):
-    frags = Chem.GetMolFrags(mol, asMols=True)
-
-    if len(frags) == 1:
-        return mol
-    else:
-        # TODO - handle ties
-        biggest_index = -1
-        i = 0
-
-        biggest_count = 0
-        for frag in frags:
-            hac = frag.GetNumHeavyAtoms()
-            if hac > biggest_count:
-                biggest_count = hac
-                biggest_mol = frag
-                biggest_index = i
-            i+=1
-
-        return biggest_mol
 
 
 def log(sep, vals):
