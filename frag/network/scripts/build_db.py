@@ -1,4 +1,17 @@
 #!/usr/bin/env python
+#
+# Build fragment network.
+# If using Docker start container like this:
+# docker run -it --rm -v $PWD:$PWD:z -u $(id -u):$(id -g) informaticsmatters/fragalysis:0.0.17 bash
+#
+# Input in SMILES format needs to be SMILES<space>ID<space>OTHER<space>FIELDS
+# SMILES and ID columns are needed.
+#
+# Run like this:
+# path/to/fragalysis/frag/network/scripts/build_db.py --non_isomeric --input smiles.txt --base_dir .
+# In Docker container path/to/fragalysis is /usr/local/fragalysis. e.g.
+# /usr/local/fragalysis/frag/network/scripts/build_db.py --non_isomeric --input nk.txt --base_dir .
+
 
 import argparse
 import os
