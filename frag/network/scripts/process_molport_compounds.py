@@ -40,12 +40,12 @@ The files generated (in a named output directory) are:
     containing information about compounds that are isomeric.
 
 -   "molport-molecule-suppliermol-edges.csv.gz"
-    containing the relationships between the original node entries and
-    the Vendor "Compound" nodes.
+    containing the relationships between the original fragment node entries
+    and the Vendor "Compound" nodes (where the compounds not isomeric)
 
 -   "molport-isomol-molecule-edges.csv.gz"
     containing the relationships between IsoMol entries and
-    the fragment nodes.
+    the fragment nodes (where the fragment is isomeric).
 
 The module augments the original nodes by adding the label
 "Mol" and "MolPort" for all MolPort compounds that have been found
@@ -145,6 +145,11 @@ compound_isomer_map = {}
 # The index is standardised (isomeric) SMILES
 # and the value is a list of Vendor compound IDs
 isomol_smiles = {}
+# Map of non-isomeric SMILES representations to isomeric smiles
+# (where the molecule is isomeric). This helps lookup
+# Vendor molecules that are isomeric rather than using the
+# Vendor's compound ID.
+nonisomol_smiles = {}
 # All the vendor compound IDs
 vendor_compounds = set()
 
@@ -249,6 +254,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
 
     global compound_isomer_map
     global isomol_smiles
+    global nonisomol_smiles
     global num_vendor_iso_mols
     global num_vendor_mols
 
@@ -313,6 +319,8 @@ def extract_vendor_compounds(suppliermol_gzip_file,
                     # Standard SMILES already
                     isomol_smiles[iso].append(compound_id)
                 compound_isomer_map[compound_id] = std
+                # Put a lookup of iso representation from the non-iso
+                nonisomol_smiles[noniso] = iso
 
             # Write the SupplierMol entry
             suppliermol_gzip_file.write('{},"{}",Available\n'.
@@ -431,27 +439,28 @@ def augment_colated_nodes(directory, filename, has_header):
                                                  os.path.basename(filename)))
     gzip_ai_file = gzip.open(augmented_filename, 'wt')
     # Frag to SupplierMol relationships file
-    augmented_relationships_filename = \
+    augmented_noniso_relationships_filename = \
         os.path.join(directory,
                      '{}-molecule-suppliermol-edges.csv.gz'.
                      format(output_filename_prefix))
-    gzip_smr_file = gzip.open(augmented_relationships_filename, 'wt')
+    gzip_smr_file = gzip.open(augmented_noniso_relationships_filename, 'wt')
     gzip_smr_file.write(':START_ID({}),'
                         ':END_ID({}),'
                         ':TYPE\n'.format(frag_namespace, suppliermol_namespace))
 
     # IsoMol to Frag relationships file
-    augmented_relationships_filename = \
+    augmented_iso_relationships_filename = \
         os.path.join(directory,
                      '{}-isomol-molecule-edges.csv.gz'.
                      format(output_filename_prefix))
-    gzip_ifr_file = gzip.open(augmented_relationships_filename, 'wt')
+    gzip_ifr_file = gzip.open(augmented_iso_relationships_filename, 'wt')
     gzip_ifr_file.write(':START_ID({}),'
                         ':END_ID({}),'
                         ':TYPE\n'.format(isomol_namespace, frag_namespace))
 
     logger.info(' %s', augmented_filename)
-    logger.info(' %s', augmented_relationships_filename)
+    logger.info(' %s', augmented_noniso_relationships_filename)
+    logger.info(' %s', augmented_iso_relationships_filename)
 
     with open(filename, 'rt') as n_file:
 
@@ -471,44 +480,65 @@ def augment_colated_nodes(directory, filename, has_header):
                                    num_compound_relationships,
                                    num_compound_iso_relationships))
 
-            # Search for a potential MolPort identity
-            # Get the MolPort compound
-            # if we know the compound add a label
+            # Check SMILES against our nonisomol map
+            # If not presents search for MolPort compound identities.
+
             augmented = False
-            match_ob = molport_re.findall(line)
-            if match_ob:
-                # Look for vendor compound nodes.
-                # If there is one, add the label.
-                for compound_id in match_ob:
-                    if compound_id in vendor_compounds:
-                        new_line = line.strip() + ';CanSmi;Mol;MolPort\n'
-                        gzip_ai_file.write(new_line)
-                        augmented = True
-                        num_nodes_augmented += 1
-                        break
-                if augmented:
-                    # We've augmented the line (with at least one compound).
-                    # Append a relationship in the molecule-suppliermol-edges
-                    # file to the SupplierMol if the Vendor compound is not
-                    # isomeric. Otherwise, add a relationship to this SMILES
-                    # entry from the IsoMol node.
-                    # Do this for each compound that was found...
+            frag_smiles = line.split(',')[0]
+            if frag_smiles in nonisomol_smiles:
+
+                # We've found the fragment (non-iso) SMILES in map
+                # that indicates it's a non-isomeric representation
+                # of an isomer. We should augment the entry.
+                noniso_isomol_smiles = nonisomol_smiles[frag_smiles]
+                # A relationship from IsoMol to Frag.
+                gzip_ifr_file.write('"{}",{},NonIso\n'.
+                                    format(noniso_isomol_smiles,
+                                           frag_smiles))
+
+                new_line = line.strip() + ';CanSmi;Mol;MolPort\n'
+                gzip_ai_file.write(new_line)
+                augmented = True
+                num_nodes_augmented += 1
+
+                num_compound_iso_relationships += 1
+                num_compound_relationships += 1
+
+            else:
+
+                match_ob = molport_re.findall(line)
+                if match_ob:
+                    # Look for vendor compound nodes.
+                    # If there is one, add the label.
                     for compound_id in match_ob:
                         if compound_id in vendor_compounds:
-                            frag_id = line.split(',')[0]
-                            if compound_id in compound_isomer_map:
-                                # A relationship from IsoMol to Frag
-                                isomol_index = compound_isomer_map[compound_id]
-                                gzip_ifr_file.write('"{}",{},NonIso\n'.
-                                                    format(isomol_index,
-                                                           frag_id))
-                                num_compound_iso_relationships += 1
-                            else:
-                                # A relationship from Frag to SupplierMol
-                                gzip_smr_file.write('"{}",{},HasVendor\n'.
-                                                    format(frag_id,
-                                                           compound_id))
-                            num_compound_relationships += 1
+                            new_line = line.strip() + ';CanSmi;Mol;MolPort\n'
+                            gzip_ai_file.write(new_line)
+                            augmented = True
+                            num_nodes_augmented += 1
+                            break
+                    if augmented:
+                        # We've augmented the line (with at least one compound).
+                        # Append a relationship in the fragment-suppliermol-edges
+                        # file to the SupplierMol if the Vendor compound is not
+                        # isomeric. Otherwise, add a relationship to this SMILES
+                        # entry from the IsoMol node.
+                        # Do this for each compound that was found...
+                        for compound_id in match_ob:
+                            if compound_id in vendor_compounds:
+                                if compound_id in compound_isomer_map:
+                                    # A relationship from IsoMol to Frag
+                                    isomol_smiles = compound_isomer_map[compound_id]
+                                    gzip_ifr_file.write('"{}",{},NonIso\n'.
+                                                        format(isomol_smiles,
+                                                               frag_smiles))
+                                    num_compound_iso_relationships += 1
+                                else:
+                                    # A relationship from Frag to SupplierMol
+                                    gzip_smr_file.write('"{}",{},HasVendor\n'.
+                                                        format(frag_smiles,
+                                                               compound_id))
+                                num_compound_relationships += 1
 
             if not augmented:
                 # No vendor for this line,
