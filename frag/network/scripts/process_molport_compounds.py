@@ -169,6 +169,10 @@ num_compound_iso_relationships = 0
 num_vendor_iso_mols = 0
 num_vendor_mols = 0
 
+# The line rate at which the augmenter writes updates to stdout.
+# Every 20 million?
+augment_report_rate = 20000000
+
 
 def error(msg):
     """Prints an error message and exists.
@@ -343,6 +347,7 @@ def write_isomol_nodes(directory, isomol_smiles):
                             format(output_filename_prefix))
     logger.info('Writing %s...', filename)
 
+    num_nodes = 0
     with gzip.open(filename, 'wb') as gzip_file:
         gzip_file.write('smiles:ID({}),'
                         'cmpd_ids:STRING[],'
@@ -355,6 +360,9 @@ def write_isomol_nodes(directory, isomol_smiles):
             # Write the row...
             gzip_file.write('"{}",{},CanSmi;Mol;MolPort\n'.
                             format(smiles, compound_ids))
+            num_nodes += 1
+
+    logger.info(' {:,}'.format(num_nodes))
 
 
 def write_supplier_nodes(directory, supplier_id):
@@ -375,6 +383,8 @@ def write_supplier_nodes(directory, supplier_id):
         # Write the solitary row...
         gzip_file.write('"{}",Supplier\n'.format(supplier_id))
 
+    logger.info(' 1')
+
 
 def write_isomol_suppliermol_relationships(directory, isomol_smiles):
     """Writes the IsoMol to SupplierMol relationships file, including a header.
@@ -389,13 +399,17 @@ def write_isomol_suppliermol_relationships(directory, isomol_smiles):
                             format(output_filename_prefix))
     logger.info('Writing %s...', filename)
 
+    num_edges = 0
     with gzip.open(filename, 'wb') as gzip_file:
         gzip_file.write(':START_ID({}),'
                         ':END_ID({}),'
-                        ':TYPE'.format(isomol_namespace, suppliermol_namespace))
+                        ':TYPE\n'.format(isomol_namespace, suppliermol_namespace))
         for smiles in isomol_smiles:
             for compound_id in isomol_smiles[smiles]:
                 gzip_file.write('"{}",{},HasVendor\n'.format(smiles, compound_id))
+                num_edges += 1
+
+    logger.info(' {:,}'.format(num_edges))
 
 
 def augment_colated_nodes(directory, filename, has_header):
@@ -449,6 +463,14 @@ def augment_colated_nodes(directory, filename, has_header):
         for line in n_file:
 
             num_nodes += 1
+            # Give user a gentle reminder to stdout
+            # that all is progressing...
+            if num_nodes % augment_report_rate == 0:
+                logger.info(' ...at fragment {:,} ({:,}/{:,})'.
+                            format(num_nodes,
+                                   num_compound_relationships,
+                                   num_compound_iso_relationships))
+
             # Search for a potential MolPort identity
             # Get the MolPort compound
             # if we know the compound add a label
@@ -601,6 +623,6 @@ if __name__ == '__main__':
     augment_colated_nodes(args.output, args.nodes, has_header=args.nodes_has_header)
 
     # Summary
-    logger.info('%s/%s vendor molecules/iso', num_vendor_mols, num_vendor_iso_mols)
-    logger.info('%s/%s nodes/augmented', num_nodes, num_nodes_augmented)
-    logger.info('%s/%s node compound relationships/iso', num_compound_relationships, num_compound_iso_relationships)
+    logger.info('{:,}/{:,} vendor molecules/iso'.format(num_vendor_mols, num_vendor_iso_mols))
+    logger.info('{:,}/{:,} nodes/augmented'.format(num_nodes, num_nodes_augmented))
+    logger.info('{:,}/{:,} node compound relationships/iso'.format(num_compound_relationships, num_compound_iso_relationships))
