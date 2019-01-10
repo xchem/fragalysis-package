@@ -142,7 +142,7 @@ CostNode = namedtuple('CostNode', 'ps min max')
 # If the compound is in this map it is isometric.
 compound_isomer_map = {}
 # Map of standardised SMILES to vendor compound(s)
-# The index is standardised SMILES
+# The index is standardised (isomeric) SMILES
 # and the value is a list of Vendor compound IDs
 isomol_smiles = {}
 # All the vendor compound IDs
@@ -304,10 +304,10 @@ def extract_vendor_compounds(suppliermol_gzip_file,
                     # This standardised SMILES is not
                     # in the map of existing isomers
                     # so start a new list of customer compounds...
-                    isomol_smiles[std] = [compound_id]
+                    isomol_smiles[iso] = [compound_id]
                 else:
                     # Standard SMILES already
-                    isomol_smiles[std].append(compound_id)
+                    isomol_smiles[iso].append(compound_id)
                 compound_isomer_map[compound_id] = std
 
             # Write the SupplierMol entry
@@ -331,12 +331,11 @@ def extract_vendor_compounds(suppliermol_gzip_file,
                                      supplier_id))
 
 
-def write_isomol_nodes(directory, isomol_smiles_compound_map):
+def write_isomol_nodes(directory, isomol_smiles):
     """Writes the IsoMol nodes file, including a header.
 
     :param directory: The sub-directory to write to
-    :param isomol_smiles_compound_map: The map of standardised SMILES
-                                       to a list of Vendor compound IDs
+    :param isomol_smiles: A map of standard SMILES to a list of compounds
     """
 
     filename = os.path.join(directory,
@@ -348,10 +347,10 @@ def write_isomol_nodes(directory, isomol_smiles_compound_map):
         gzip_file.write('smiles:ID({}),'
                         'cmpd_ids:STRING[],'
                         ':LABEL\n'.format(isomol_namespace))
-        for smiles in isomol_smiles_compound_map:
+        for smiles in isomol_smiles:
             # Construct the 'array' of compounds (';'-separated)
-            compound_ids = isomol_smiles_compound_map[smiles][0]
-            for compound_id in isomol_smiles_compound_map[smiles][1:]:
+            compound_ids = isomol_smiles[smiles][0]
+            for compound_id in isomol_smiles[smiles][1:]:
                 compound_ids += ';{}'.format(compound_id)
             # Write the row...
             gzip_file.write('"{}",{},CanSmi;Mol;MolPort\n'.
@@ -377,13 +376,12 @@ def write_supplier_nodes(directory, supplier_id):
         gzip_file.write('"{}",Supplier\n'.format(supplier_id))
 
 
-def write_isomol_suppliermol_relationships(directory,
-                                           isomol_smiles_compound_map):
+def write_isomol_suppliermol_relationships(directory, isomol_smiles):
     """Writes the IsoMol to SupplierMol relationships file, including a header.
 
     :param directory: The sub-directory to write to
-    :param isomol_smiles_compound_map: The map of standardised SMILES
-                                       to a list of Vendor compound IDs
+    :param isomol_smiles: The map of standardised SMILES
+                          to a list of Vendor compound IDs
     """
 
     filename = os.path.join(directory,
@@ -395,10 +393,9 @@ def write_isomol_suppliermol_relationships(directory,
         gzip_file.write(':START_ID({}),'
                         ':END_ID({}),'
                         ':TYPE'.format(isomol_namespace, suppliermol_namespace))
-        for smiles in isomol_smiles_compound_map:
-            for compound_id in isomol_smiles_compound_map[smiles]:
-                gzip_file.write('"{}",{},HasVendor\n'.
-                                format(smiles, compound_id))
+        for smiles in isomol_smiles:
+            for compound_id in isomol_smiles[smiles]:
+                gzip_file.write('"{}",{},HasVendor\n'.format(smiles, compound_id))
 
 
 def augment_colated_nodes(directory, filename, has_header):
@@ -587,8 +584,8 @@ if __name__ == '__main__':
     # and relationships and have a map of the vendor molecules
     # that are isomeric.
 
-    write_isomol_nodes(args.output, compound_isomer_map)
-    write_isomol_suppliermol_relationships(args.output, compound_isomer_map)
+    write_isomol_nodes(args.output, isomol_smiles)
+    write_isomol_suppliermol_relationships(args.output, isomol_smiles)
 
     # -------
     # Stage 3 - Augment
