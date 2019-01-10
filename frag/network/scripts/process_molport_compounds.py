@@ -492,7 +492,7 @@ def augment_colated_nodes(directory, filename, has_header):
                 # of an isomer. We should augment the entry.
                 noniso_isomol_smiles = nonisomol_smiles[frag_smiles]
                 # A relationship from IsoMol to Frag.
-                gzip_ifr_file.write('"{}",{},NonIso\n'.
+                gzip_ifr_file.write('"{}","{}",NonIso\n'.
                                     format(noniso_isomol_smiles,
                                            frag_smiles))
 
@@ -529,7 +529,7 @@ def augment_colated_nodes(directory, filename, has_header):
                                 if compound_id in compound_isomer_map:
                                     # A relationship from IsoMol to Frag
                                     isomol_smiles = compound_isomer_map[compound_id]
-                                    gzip_ifr_file.write('"{}",{},NonIso\n'.
+                                    gzip_ifr_file.write('"{}","{}",NonIso\n'.
                                                         format(isomol_smiles,
                                                                frag_smiles))
                                     num_compound_iso_relationships += 1
