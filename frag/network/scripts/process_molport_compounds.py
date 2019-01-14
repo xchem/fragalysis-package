@@ -332,8 +332,9 @@ def extract_vendor_compounds(suppliermol_gzip_file,
                 num_vendor_molecule_failures += 1
                 logger.error('Got nothing from MolFromSmiles(%s).'
                              ' Skipping this Vendor compound'
-                             ' (line=%s failures=%s)',
-                             o_smiles, num_lines, num_vendor_molecule_failures)
+                             ' (id=%s line=%s failures=%s)',
+                             o_smiles, compound_id, num_lines,
+                             num_vendor_molecule_failures)
                 continue
 
             # Got a molecule.
