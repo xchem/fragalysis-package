@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=utf-8
 
 """process_molport_compounds.py
 
@@ -65,6 +66,10 @@ Note:   At the moment the original nodes.csv.gz file is expected to contain
         In the future the standardiser should produce a new compound file
         that contains all the relevant columns passed through. At the moment
         it just contains SSMILES, OSMILES and ID columns.
+
+-   "molport-unknown-fragment-compounds.txt"
+    is a file that contains vendor compounds referred to in the fragment file
+    that are not in the Vendor data.
 
 Alan Christie
 January 2019
@@ -141,6 +146,7 @@ CostNode = namedtuple('CostNode', 'ps min max')
 # If the compound is in this map it is isometric.
 compound_isomer_map = {}
 # Map of standardised SMILES to vendor compound(s)
+# that have isomeric representations.
 # The index is standardised (isomeric) SMILES
 # and the value is a list of Vendor compound IDs
 isomol_smiles = {}
@@ -151,6 +157,9 @@ isomol_smiles = {}
 nonisomol_smiles = {}
 # All the vendor compound IDs
 vendor_compounds = set()
+# The set of all vendor compounds found in the fragment line
+# where a Vendor compound was not found.
+unknown_vendor_compounds = set()
 
 # Prefix for output files
 output_filename_prefix = 'molport'
@@ -494,6 +503,7 @@ def augment_colated_nodes(directory, filename, has_header):
     global num_nodes_augmented
     global num_compound_relationships
     global num_compound_iso_relationships
+    global unknown_vendor_compounds
     global isomol_smiles
     global nonisomol_smiles
 
@@ -547,10 +557,14 @@ def augment_colated_nodes(directory, filename, has_header):
                                    num_compound_relationships,
                                    num_compound_iso_relationships))
 
-            # Check SMILES against our nonisomol map.
-            # Then search for MolPort compound identities.
+            # Check thew fragments's SMILES against our nonisomol map.
+            # This is a map into our IsoMol table ansd is a surrogate
+            # for the lack of isomeric compound IDs that the colate
+            # utility should insert (but doesn't).
+            #
+            # Then search for MolPort compound identities on the line.
 
-            augmented = False
+            need_to_augment = False
             frag_smiles = line.split(',')[0]
 
             if frag_smiles in nonisomol_smiles:
@@ -572,57 +586,42 @@ def augment_colated_nodes(directory, filename, has_header):
                                             format(frag_smiles,
                                                    molport_compound_id))
 
-                # Augment the fragment entry...
-                new_line = line.strip() + ';CanSmi;Mol;V_MP\n'
-                gzip_ai_file.write(new_line)
-                augmented = True
-                num_nodes_augmented += 1
-
+                need_to_augment = True
                 num_compound_iso_relationships += 1
                 num_compound_relationships += 1
 
+            # We've looked up the SMILES string.
+            # Now search for compound IDs (that will be non-isomeric)
+            # on the fragment line...
+
+            match_ob = molport_re.findall(line)
+            if match_ob:
+                # Append a relationship in the fragment-suppliermol-edges
+                # file to the SupplierMol if a Vendor compound has been found.
+                # Do this for each compound that was found...
+                for compound_id in match_ob:
+                    molport_compound_id = molport_prefix + compound_id
+                    if molport_compound_id in vendor_compounds:
+                        # A relationship from Frag to SupplierMol
+                        gzip_smr_file.write('"{}",{},HasVendor\n'.
+                                            format(frag_smiles,
+                                                   molport_compound_id))
+
+                        num_compound_relationships += 1
+                        need_to_augment = True
+                    else:
+                        # Compound not found.
+                        # Place the unaltered compound ID in a list
+                        # of those not known...
+                        unknown_vendor_compounds.add(compound_id)
+
+            if need_to_augment:
+                # Augment the fragment entry...
+                new_line = line.strip() + ';CanSmi;Mol;V_MP\n'
+                gzip_ai_file.write(new_line)
+                num_nodes_augmented += 1
             else:
-
-                match_ob = molport_re.findall(line)
-                if match_ob:
-                    # Look for vendor compound nodes.
-                    # If there is one, add the label.
-                    for compound_id in match_ob:
-                        molport_compound_id = molport_prefix + compound_id
-
-                        if molport_compound_id in vendor_compounds:
-                            new_line = line.strip() + ';CanSmi;Mol;V_MP\n'
-                            gzip_ai_file.write(new_line)
-                            augmented = True
-                            num_nodes_augmented += 1
-                            break
-
-                    if augmented:
-                        # We've augmented the line (with at least one compound).
-                        # Append a relationship in the fragment-suppliermol-edges
-                        # file to the SupplierMol if the Vendor compound is not
-                        # isomeric. Otherwise, add a relationship to this SMILES
-                        # entry from the IsoMol node.
-                        # Do this for each compound that was found...
-                        for compound_id in match_ob:
-                            molport_compound_id = molport_prefix + compound_id
-                            if molport_compound_id in vendor_compounds:
-                                if molport_compound_id in compound_isomer_map:
-                                    isomol_smiles = compound_isomer_map[molport_compound_id]
-                                    # A relationship from IsoMol to Frag
-                                    gzip_ifr_file.write('"{}","{}",NonIso\n'.
-                                                        format(isomol_smiles,
-                                                               frag_smiles))
-                                    num_compound_iso_relationships += 1
-                                else:
-                                    # A relationship from Frag to SupplierMol
-                                    gzip_smr_file.write('"{}",{},HasVendor\n'.
-                                                        format(frag_smiles,
-                                                               molport_compound_id))
-                                num_compound_relationships += 1
-
-            if not augmented:
-                # No vendor for this line,
+                # No compounds for this line,
                 # just write it out 'as-is'
                 gzip_ai_file.write(line)
 
@@ -741,3 +740,24 @@ if __name__ == '__main__':
     logger.info('{:,} vendor molecule failures'.format(num_vendor_molecule_failures))
     logger.info('{:,}/{:,} nodes/augmented'.format(num_nodes, num_nodes_augmented))
     logger.info('{:,}/{:,} node compound relationships/iso'.format(num_compound_relationships, num_compound_iso_relationships))
+
+    # Dump compounds that were referenced in the fragment file
+    # but not found in the vendor data.
+    # Or remove any file that might already exist.
+    unknown_vendor_compounds_file_name = os.path.join(args.output,
+                             '{}-unknown_vendor_compounds.txt'.
+                             format(output_filename_prefix))
+    if unknown_vendor_compounds:
+        file_name = os.path.join(args.output,
+                                 '{}-unknown_vendor_compounds.txt'.
+                                 format(output_filename_prefix))
+        logger.info('{:,} unknown compounds (see {})'.
+                    format(len(unknown_vendor_compounds),
+                           unknown_vendor_compounds_file_name))
+        with open(unknown_vendor_compounds_file_name, 'wt') as unknown_vendor_compounds_file:
+            for unknown_vendor_compound in unknown_vendor_compounds:
+                unknown_vendor_compounds_file.write(unknown_vendor_compound + '\n')
+    else:
+        logger.info('0 unknown compounds')
+        if os.path.exists(unknown_vendor_compounds_file_name):
+            os.remove(unknown_vendor_compounds_file_name)
