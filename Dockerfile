@@ -8,9 +8,11 @@ RUN pip install /usr/local/mmpdb
 ADD . /usr/local/fragalysis
 RUN pip install /usr/local/fragalysis
 
-WORKDIR /usr/local/fragalysis/frag/network/scripts
-CMD ["./process_molport_compounds.py", \
-     "/exports/nextflow/fragbuilder/analysis/molport/2018-11", \
-     "iis_smiles", \
-     "/exports/nextflow/fragbuilder/analysis/molport/nodes.csv", \
-     "/exports/nextflow/fragbuilder/analysis/molport/neo"]
+# Conveneint command for built-in MolPort Neo4J processing...
+#
+#WORKDIR /usr/local/fragalysis/frag/network/scripts
+#CMD ["./process_molport_compounds.py", \
+#     "/exports/nextflow/fragbuilder/analysis/molport/2018-11", \
+#     "iis_smiles", \
+#     "/exports/nextflow/fragbuilder/analysis/molport/nodes.csv", \
+#     "/exports/nextflow/fragbuilder/analysis/molport/neo"]
