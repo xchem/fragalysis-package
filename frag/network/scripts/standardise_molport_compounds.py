@@ -4,8 +4,8 @@
 """standardise_molport_compounds.py
 
 Processes MolPort vendor compound files, expected to contain pricing
-information and generate a standard file with tab-separated fields.
-We create a 'standard-molport.tab' that contains a 1st-line
+information and generates a 'standard' tab-separated output.
+We create a 'molport-standardised-compounds.tab' file that contains a 1st-line
 'header' formed from the _OUTPUT_COLUMNS list.
 
 Alan Christie
