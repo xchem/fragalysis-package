@@ -148,7 +148,7 @@ compound_isomer_map = {}
 # Map of standardised SMILES to vendor compound(s)
 # that have isomeric representations.
 # The index is standardised (isomeric) SMILES
-# and the value is a list of Vendor compound IDs
+# and the value is a set() of Vendor compound IDs
 isomol_smiles = {}
 # Map of non-isomeric SMILES representations to isomeric smiles
 # (where the molecule is isomeric). This helps lookup
@@ -386,16 +386,16 @@ def extract_vendor_compounds(suppliermol_gzip_file,
                     # This standardised SMILES is not
                     # in the map of existing isomers
                     # so start a new list of customer compounds...
-                    isomol_smiles[iso] = [compound_id]
+                    isomol_smiles[iso] = set(compound_id)
                 else:
                     # Standard SMILES already
-                    isomol_smiles[iso].append(compound_id)
+                    isomol_smiles[iso].add(compound_id)
                 compound_isomer_map[compound_id] = iso
                 # Put a lookup of iso representation from the non-iso
                 if noniso not in nonisomol_smiles:
-                    nonisomol_smiles[noniso] = [iso]
+                    nonisomol_smiles[noniso] = set(iso)
                 else:
-                    nonisomol_smiles[noniso].append(iso)
+                    nonisomol_smiles[noniso].add(iso)
 
             # Write the SupplierMol entry
             suppliermol_gzip_file.write('{},"{}",Available\n'.
