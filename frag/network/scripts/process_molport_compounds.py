@@ -96,7 +96,7 @@ logger.setLevel(logging.INFO)
 
 # The minimum number of columns in the input data (a standardised file).
 # Essentially a map of expected column names indexed by column number.
-expected_min_num_cols = 9
+expected_min_num_cols = 8
 o_smiles_col = 0
 iso_smiles_col = 1
 noniso_smiles_col = 2
