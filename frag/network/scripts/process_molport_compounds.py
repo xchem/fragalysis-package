@@ -3,8 +3,9 @@
 
 """process_molport_compounds.py
 
-Processes MolPort vendor compound files, expected to contain pricing
-information, against the colated graph processing files.
+Processes standardised MolPort vendor compound files,
+expected to contain pricing information,
+against the colated graph processing files.
 
 Note:   This module does expect `colate_all` to have been used on the original
         graph files to produce normalised supplier identities in the node file
@@ -77,16 +78,11 @@ January 2019
 
 import argparse
 from collections import namedtuple
-import glob
 import gzip
 import logging
 import os
 import re
 import sys
-
-from rdkit import Chem
-from rdkit import RDLogger
-from frag.utils.rdkit_utils import standardize
 
 # Configure basic logging
 logger = logging.getLogger('molport')
@@ -98,31 +94,19 @@ out_hdlr.setLevel(logging.INFO)
 logger.addHandler(out_hdlr)
 logger.setLevel(logging.INFO)
 
-# The minimum number of columns in the input data and
-# a map of expected column names indexed by column number.
-#
-# The molecule data is spread over a number of `txt.gz` files
-# (i.e. files like `iis_smiles-000-000-000--000-499-999.txt.gz`)
-# in a common directory where the files have the following header
-# names and (0-based) positions:
-#
-# SMILES                0
-# SMILES_CANONICAL      1
-# MOLPORTID             2
-# STANDARD_INCHI        3
-# INCHIKEY              4
-# PRICERANGE_1MG        5
-# PRICERANGE_5MG        6
-# PRICERANGE_50MG       7
-# BEST_LEAD_TIME        8
-
+# The minimum number of columns in the input data (a standardised file).
+# Essentially a map of expected column names indexed by column number.
 expected_min_num_cols = 9
-smiles_col = 0
-compound_col = 2
-cost_col = {1: 5, 5: 6, 50: 7}
-blt_col = 8
-expected_input_cols = {smiles_col: 'SMILES',
-                       compound_col: 'MOLPORTID',
+o_smiles_col = 0
+iso_smiles_col = 1
+noniso_smiles_col = 2
+compound_col = 3
+cost_col = {1: 4, 5: 5, 50: 6}
+blt_col = 7
+expected_input_cols = {o_smiles_col: 'O_SMILES',
+                       iso_smiles_col: 'ISO_SMILES',
+                       noniso_smiles_col: 'NONISO_SMILES',
+                       compound_col: 'CMPD_ID',
                        cost_col[1]: 'PRICERANGE_1MG',
                        cost_col[5]: 'PRICERANGE_5MG',
                        cost_col[50]: 'PRICERANGE_50MG',
@@ -263,7 +247,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
     :param suppliermol_gzip_file: The SupplierMol node file
     :param suppliermol_edges_gzip_file: The SupplierMol to Supplier edges file
     :param supplier_id: The ID of the supplier node
-    :param gzip_filename: The compressed file to process
+    :param gzip_filename: The compressed standard file to process
     """
 
     global compound_isomer_map
@@ -305,78 +289,17 @@ def extract_vendor_compounds(suppliermol_gzip_file,
             if len(fields) <= 1:
                 continue
 
-            o_smiles = fields[smiles_col]
-            compound_id = molport_prefix + fields[compound_col].split(supplier_prefix)[1]
+            o_smiles = fields[o_smiles_col]
+            compound_id = fields[compound_col]
             blt = int(fields[blt_col].strip())
+            iso = fields[iso_smiles_col]
+            noniso = fields[noniso_smiles_col]
 
             # Add the compound (expected to be unique)
             # to our set of 'all compounds'.
             if compound_id in vendor_compounds:
                 error('Duplicate compound ID ({})'.format(compound_id))
             vendor_compounds.add(compound_id)
-
-            # Standardise and update global maps...
-            # And try and handle and report any catastrophic errors
-            # from dependent modules/functions.
-
-            mol = None
-            std = None
-            iso = None
-            noniso = None
-
-            try:
-                mol = Chem.MolFromSmiles(o_smiles)
-            except Exception as e:
-                logger.warning('MolFromSmiles(%s) exception: "%s"', o_smiles, e.message)
-            if not mol:
-                num_vendor_molecule_failures += 1
-                logger.error('Got nothing from MolFromSmiles(%s).'
-                             ' Skipping this Vendor compound'
-                             ' (id=%s line=%s failures=%s)',
-                             o_smiles, compound_id, num_lines,
-                             num_vendor_molecule_failures)
-                continue
-
-            # Got a molecule.
-            #
-            # Try to (safely) standardise,
-            # and create isomeric an non-isomeric representations.
-
-            try:
-                std = standardize(mol)
-            except Exception as e:
-                logger.warning('standardize(%s) exception: "%s"', o_smiles, e.message)
-            if not std:
-                num_vendor_molecule_failures += 1
-                logger.error('Got nothing from standardize(%s).'
-                             ' Skipping this Vendor compound'
-                             ' (line=%s failures=%s)',
-                             o_smiles, num_lines, num_vendor_molecule_failures)
-                continue
-
-            try:
-                iso = Chem.MolToSmiles(std, isomericSmiles=True, canonical=True)
-            except Exception as e:
-                logger.warning('MolToSmiles(%s, iso) exception: "%s"', o_smiles, e.message)
-            if not iso:
-                num_vendor_molecule_failures += 1
-                logger.error('Got nothing from MolToSmiles(%s, iso).'
-                             ' Skipping this Vendor compound'
-                             ' (line=%s failures=%s)',
-                             o_smiles, num_lines, num_vendor_molecule_failures)
-                continue
-
-            try:
-                noniso = Chem.MolToSmiles(std, isomericSmiles=False, canonical=True)
-            except Exception as e:
-                logger.warning('MolToSmiles(%s, noniso) exception: "%s"', o_smiles, e.message)
-            if not noniso:
-                num_vendor_molecule_failures += 1
-                logger.error('Got nothing from MolToSmiles(%s, noniso).'
-                             ' Skipping this Vendor compound'
-                             ' (line=%s failures=%s)',
-                             o_smiles, num_lines, num_vendor_molecule_failures)
-                continue
 
             # Is it isomeric?
             num_vendor_mols += 1
@@ -558,8 +481,8 @@ def augment_colated_nodes(directory, filename, has_header):
                                    num_compound_relationships,
                                    num_compound_iso_relationships))
 
-            # Check thew fragments's SMILES against our nonisomol map.
-            # This is a map into our IsoMol table ansd is a surrogate
+            # Check the fragments's SMILES against our nonisomol map.
+            # This is a map into our IsoMol table and is a surrogate
             # for the lack of isomeric compound IDs that the colate
             # utility should insert (but doesn't).
             #
@@ -567,6 +490,9 @@ def augment_colated_nodes(directory, filename, has_header):
 
             need_to_augment = False
             frag_smiles = line.split(',')[0]
+            # The compound relationships made for this fragment
+            # (used to avoid duplication)
+            compound_relationships = []
 
             if frag_smiles in nonisomol_smiles:
 
@@ -586,6 +512,7 @@ def augment_colated_nodes(directory, filename, has_header):
                         gzip_smr_file.write('"{}",{},HasVendor\n'.
                                             format(frag_smiles,
                                                    molport_compound_id))
+                        compound_relationships.append(molport_compound_id)
 
                 need_to_augment = True
                 num_compound_iso_relationships += 1
@@ -603,13 +530,15 @@ def augment_colated_nodes(directory, filename, has_header):
                 for compound_id in match_ob:
                     molport_compound_id = molport_prefix + compound_id
                     if molport_compound_id in vendor_compounds:
-                        # A relationship from Frag to SupplierMol
-                        gzip_smr_file.write('"{}",{},HasVendor\n'.
-                                            format(frag_smiles,
-                                                   molport_compound_id))
+                        if not molport_compound_id in compound_relationships:
+                            # A new relationship from Frag to SupplierMol
+                            gzip_smr_file.write('"{}",{},HasVendor\n'.
+                                                format(frag_smiles,
+                                                       molport_compound_id))
 
-                        num_compound_relationships += 1
-                        need_to_augment = True
+                            num_compound_relationships += 1
+                            need_to_augment = True
+                            compound_relationships.append(molport_compound_id)
                     else:
                         # Compound not found.
                         # Place the unaltered compound ID in a list
@@ -635,13 +564,8 @@ def augment_colated_nodes(directory, filename, has_header):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('Vendor Compound Processor (MolPort)')
-    parser.add_argument('vendor_dir',
-                        help='The MolPort vendor directory,'
-                             ' containing the ".gz" files to be processed.')
-    parser.add_argument('vendor_prefix',
-                        help='The MolPort vendor file prefix,'
-                             ' i.e. "iis_smiles". Only files with this prefix'
-                             ' in the vendor directory will be processed')
+    parser.add_argument('vendor_file',
+                        help='The vendor standardised file (gzipped).')
     parser.add_argument('nodes',
                         help='The uncompressed nodes file to augment with'
                              ' the collected vendor data')
@@ -662,9 +586,6 @@ if __name__ == '__main__':
     # -------
     # Stage 1 - Process Vendor Files
     # -------
-
-    # Suppress basic RDKit logging...
-    RDLogger.logger().setLevel(RDLogger.ERROR)
 
     # Open new files for writing.
     #
@@ -698,13 +619,9 @@ if __name__ == '__main__':
                                       ':TYPE\n'.format(suppliermol_namespace,
                                                        supplier_namespace))
 
-    # Process all the Vendor files...
-    molport_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir,
-                                                 args.vendor_prefix))
-    for molport_file in molport_files:
-        extract_vendor_compounds(suppliermol_gzip_file,
-                                 suppliermol_edges_gzip_file,
-                                 'MolPort', molport_file)
+    extract_vendor_compounds(suppliermol_gzip_file,
+                             suppliermol_edges_gzip_file,
+                             'MolPort', args.vendor_file)
 
     # Close the SupplierMol and the edges file.
     suppliermol_gzip_file.close()
