@@ -133,6 +133,8 @@ vendor_compounds = set()
 # where a Vendor compound was not found.
 unknown_vendor_compounds = set()
 
+# The supplier symbolic name
+supplier_name = 'MolPort'
 # Prefix for output files
 output_filename_prefix = 'molport'
 # The namespaces of the various indices
@@ -346,75 +348,95 @@ def extract_vendor_compounds(suppliermol_gzip_file,
                                      supplier_id))
 
 
-def write_isomol_nodes(directory, isomol_smiles):
+def write_isomol_nodes(directory,
+                       output_prefix,
+                       isomol_smiles,
+                       isomol_namespace_id,
+                       supplier_id):
     """Writes the IsoMol nodes file, including a header.
 
     :param directory: The sub-directory to write to
+    :param output_prefix: The output filename prefix
     :param isomol_smiles: A map of standard SMILES to a list of compounds
+    :param isomol_namespace_id: The graph namespace ID for the isomol record
+    :param supplier_id: The supplier
     """
 
     filename = os.path.join(directory,
                             '{}-isomol-nodes.csv.gz'.
-                            format(output_filename_prefix))
+                            format(output_prefix))
     logger.info('Writing %s...', filename)
 
     num_nodes = 0
     with gzip.open(filename, 'wb') as gzip_file:
         gzip_file.write('smiles:ID({}),'
                         'cmpd_ids:STRING[],'
-                        ':LABEL\n'.format(isomol_namespace))
+                        ':LABEL\n'.format(isomol_namespace_id))
         for smiles in isomol_smiles:
             # Construct the 'array' of compounds (';'-separated)
             compound_ids_str = ''
             for compound_id in isomol_smiles[smiles]:
                 compound_ids_str += '{};'.format(compound_id)
             # Write the row (omitting the trailing ';'...
-            gzip_file.write('"{}",{},CanSmi;Mol;MolPort\n'.
-                            format(smiles, compound_ids_str[:-1]))
+            gzip_file.write('"{}",{},CanSmi;Mol;{}\n'.
+                            format(smiles, compound_ids_str[:-1], supplier_id))
             num_nodes += 1
 
     logger.info(' {:,}'.format(num_nodes))
 
 
-def write_supplier_nodes(directory, supplier_id):
+def write_supplier_nodes(directory,
+                         output_prefix,
+                         supplier_id,
+                         supplier_namespace_id):
     """Writes the IsoMol nodes file, including a header.
 
     :param directory: The sub-directory to write to
+    :param output_prefix: The output filename prefix
     :param supplier_id: The supplier
+    :param supplier_namespace_id: The graph namespace ID for the supplier record
     """
 
     filename = os.path.join(directory,
                             '{}-supplier-nodes.csv.gz'.
-                            format(output_filename_prefix))
+                            format(output_prefix))
     logger.info('Writing %s...', filename)
 
     with gzip.open(filename, 'wb') as gzip_file:
         gzip_file.write('name:ID({}),'
-                        ':LABEL\n'.format(supplier_namespace))
+                        ':LABEL\n'.format(supplier_namespace_id))
         # Write the solitary row...
         gzip_file.write('"{}",Supplier\n'.format(supplier_id))
 
     logger.info(' 1')
 
 
-def write_isomol_suppliermol_relationships(directory, isomol_smiles):
+def write_isomol_suppliermol_relationships(directory,
+                                           output_prefix,
+                                           isomol_smiles,
+                                           isomol_namespace_id,
+                                           supplier_namespace_id):
     """Writes the IsoMol to SupplierMol relationships file, including a header.
 
     :param directory: The sub-directory to write to
+    :param output_prefix: The output filename prefix
     :param isomol_smiles: The map of standardised SMILES
                           to a list of Vendor compound IDs
+    :param isomol_namespace_id: The graph namespace ID for the isomol record
+    :param supplier_namespace_id: The graph namespace ID for the supplier record
     """
 
     filename = os.path.join(directory,
                             '{}-isomol-suppliermol-edges.csv.gz'.
-                            format(output_filename_prefix))
+                            format(output_prefix))
     logger.info('Writing %s...', filename)
 
     num_edges = 0
     with gzip.open(filename, 'wb') as gzip_file:
         gzip_file.write(':START_ID({}),'
                         ':END_ID({}),'
-                        ':TYPE\n'.format(isomol_namespace, suppliermol_namespace))
+                        ':TYPE\n'.format(isomol_namespace_id,
+                                         supplier_namespace_id))
         for smiles in isomol_smiles:
             for compound_id in isomol_smiles[smiles]:
                 gzip_file.write('"{}",{},HasVendor\n'.format(smiles, compound_id))
@@ -644,14 +666,17 @@ if __name__ == '__main__':
 
     extract_vendor_compounds(suppliermol_gzip_file,
                              suppliermol_edges_gzip_file,
-                             'MolPort', args.vendor_file)
+                             supplier_name, args.vendor_file)
 
     # Close the SupplierMol and the edges file.
     suppliermol_gzip_file.close()
     suppliermol_edges_gzip_file.close()
 
     # Write the supplier node file...
-    write_supplier_nodes(args.output, 'MolPort')
+    write_supplier_nodes(args.output,
+                         output_filename_prefix,
+                         supplier_name,
+                         supplier_namespace)
 
     # -------
     # Stage 2 - Write the IsoMol nodes
@@ -660,8 +685,16 @@ if __name__ == '__main__':
     # and relationships and have a map of the vendor molecules
     # that are isomeric.
 
-    write_isomol_nodes(args.output, isomol_smiles)
-    write_isomol_suppliermol_relationships(args.output, isomol_smiles)
+    write_isomol_nodes(args.output,
+                       output_filename_prefix,
+                       isomol_smiles,
+                       isomol_namespace,
+                       supplier_name)
+    write_isomol_suppliermol_relationships(args.output,
+                                           output_filename_prefix,
+                                           isomol_smiles,
+                                           isomol_namespace,
+                                           supplier_namespace)
 
     # -------
     # Stage 3 - Augment
