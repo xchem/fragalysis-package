@@ -24,7 +24,7 @@ from rdkit import RDLogger
 from frag.utils.rdkit_utils import standardize
 
 # The columns in our output file.
-_OUTPUT_COLUMNS = ['O_SMILES',
+_OUTPUT_COLUMNS = ['OSMILES',
                    'ISO_SMILES',
                    'NONISO_SMILES',
                    'CMPD_ID',
@@ -105,12 +105,12 @@ def error(msg):
     sys.exit(1)
 
 
-def standardise(o_smiles):
+def standardise(osmiles):
     """Given a vendor (original) SMILES this method standardises
     it into a canonical form and returns a list that contains:
     the standard form, the isomeric form and the non-isomeric form.
 
-    :param o_smiles: The original (non-standard) SMILES
+    :param osmiles: The original (non-standard) SMILES
     :return: A tuple containing the standard, isomeric and non-isomeric
              representations. Errors are logged and, on error,
              the standard form will be returned as None.
@@ -126,13 +126,13 @@ def standardise(o_smiles):
     noniso = None
 
     try:
-        mol = Chem.MolFromSmiles(o_smiles)
+        mol = Chem.MolFromSmiles(osmiles)
     except Exception as e:
         logger.warning('MolFromSmiles(%s) exception: "%s"',
-                       o_smiles, e.message)
+                       osmiles, e.message)
     if not mol:
         logger.error('Got nothing from MolFromSmiles(%s).'
-                     ' Skipping this Vendor compound', o_smiles)
+                     ' Skipping this Vendor compound', osmiles)
 
     if mol:
 
@@ -145,10 +145,10 @@ def standardise(o_smiles):
             std = standardize(mol)
         except Exception as e:
             logger.warning('standardize(%s) exception: "%s"',
-                           o_smiles, e.message)
+                           osmiles, e.message)
         if not std:
             logger.error('Got nothing from standardize(%s).'
-                         ' Skipping this Vendor compound', o_smiles)
+                         ' Skipping this Vendor compound', osmiles)
 
     if std:
 
@@ -159,10 +159,10 @@ def standardise(o_smiles):
             iso = Chem.MolToSmiles(std, isomericSmiles=True, canonical=True)
         except Exception as e:
             logger.warning('MolToSmiles(%s, iso) exception: "%s"',
-                           o_smiles, e.message)
+                           osmiles, e.message)
         if not iso:
             logger.error('Got nothing from MolToSmiles(%s, iso).'
-                         ' Skipping this Vendor compound', o_smiles)
+                         ' Skipping this Vendor compound', osmiles)
 
     if std:
 
@@ -173,10 +173,10 @@ def standardise(o_smiles):
             noniso = Chem.MolToSmiles(std, isomericSmiles=False, canonical=True)
         except Exception as e:
             logger.warning('MolToSmiles(%s, noniso) exception: "%s"',
-                           o_smiles, e.message)
+                           osmiles, e.message)
         if not noniso:
             logger.error('Got nothing from MolToSmiles(%s, noniso).'
-                         ' Skipping this Vendor compound', o_smiles)
+                         ' Skipping this Vendor compound', osmiles)
 
     # If anything went wrong, set std to None.
     # It's "all-or-nothing"...
@@ -236,7 +236,7 @@ def standardise_vendor_compounds(output_file, file_name):
             if line_num % report_rate == 0:
                 logger.info(' ...at compound {:,}'.format(line_num))
 
-            o_smiles = fields[smiles_col]
+            osmiles = fields[smiles_col]
             compound_id = molport_prefix + fields[compound_col].split(supplier_prefix)[1]
 
             # Add the compound (expected to be unique)
@@ -249,7 +249,7 @@ def standardise_vendor_compounds(output_file, file_name):
             # And try and handle and report any catastrophic errors
             # from dependent modules/functions.
 
-            std, iso, noniso = standardise(o_smiles)
+            std, iso, noniso = standardise(osmiles)
             if not std:
                 num_vendor_molecule_failures += 1
                 continue
@@ -257,7 +257,7 @@ def standardise_vendor_compounds(output_file, file_name):
 
             # Write the standardised data
 
-            output = [o_smiles,
+            output = [osmiles,
                       iso,
                       noniso,
                       compound_id,

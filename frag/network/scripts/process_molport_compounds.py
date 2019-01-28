@@ -82,13 +82,13 @@ logger.setLevel(logging.INFO)
 # The minimum number of columns in the input data (a standardised file).
 # Essentially a map of expected column names indexed by column number.
 expected_min_num_cols = 8
-o_smiles_col = 0
+osmiles_col = 0
 iso_smiles_col = 1
 noniso_smiles_col = 2
 compound_col = 3
 cost_col = {1: 4, 5: 5, 50: 6}
 blt_col = 7
-expected_input_cols = {o_smiles_col: 'O_SMILES',
+expected_input_cols = {osmiles_col: 'OSMILES',
                        iso_smiles_col: 'ISO_SMILES',
                        noniso_smiles_col: 'NONISO_SMILES',
                        compound_col: 'CMPD_ID',
@@ -278,7 +278,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
             if len(fields) <= 1:
                 continue
 
-            o_smiles = fields[o_smiles_col]
+            osmiles = fields[osmiles_col]
             compound_id = fields[compound_col]
             blt = int(fields[blt_col].strip())
             iso = fields[iso_smiles_col]
@@ -328,7 +328,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
             # Write the SupplierMol entry
             suppliermol_gzip_file.write('{},"{}",Available\n'.
                                         format(compound_id,
-                                               o_smiles))
+                                               osmiles))
 
             # And add suitable 'Availability' relationships with the Supplier
             for quantity in [1, 5, 50]:
@@ -475,7 +475,7 @@ def write_nodes(input_dir, output_dir):
         expected_hdr = 'smiles:ID(%s),' \
                        'hac:INT,' \
                        'chac:INT,' \
-                       'o_smiles,' \
+                       'osmiles,' \
                        'cmpd_ids:STRING[],' \
                        ':LABEL' % frag_namespace
         hdr = n_file.readline().strip()
@@ -607,7 +607,7 @@ if __name__ == '__main__':
         error('output ({}) is not a directory'.format(args.output))
 
     # -------
-    # Stage 1 - Process Vendor Files
+    # Stage 1 - Process our standardised Vendor File
     # -------
 
     # Open new files for writing.
