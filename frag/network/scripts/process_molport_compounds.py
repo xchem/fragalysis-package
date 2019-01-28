@@ -154,10 +154,6 @@ supplier_prefix = 'MolPort-'
 molport_prefix = 'MOLPORT:'
 
 # Various diagnostic counts
-num_nodes = 0
-num_nodes_augmented = 0
-num_compound_relationships = 0
-num_compound_iso_relationships = 0
 num_vendor_iso_mols = 0
 num_vendor_mols = 0
 num_vendor_molecule_failures = 0
@@ -445,47 +441,53 @@ def write_isomol_suppliermol_relationships(directory,
     logger.info(' {:,}'.format(num_edges))
 
 
-def write_nodes(input_dir, output_dir):
+def write_nodes(input_nodes,
+                output_dir,
+                output_prefix,
+                frag_namespace_id,
+                isomol_namespace_id,
+                suppliermol_namespace_id,
+                isomol_smiles,
+                non_isomol_isomol_smiles,
+                non_isomol_smiles,
+                vendor_code):
     """Augments the original nodes file and writes the relationships
     for nodes in this file to the Vendor nodes.
     """
 
-    global num_nodes
-    global num_nodes_augmented
-    global num_compound_relationships
-    global num_compound_iso_relationships
-    global unknown_vendor_compounds
-    global isomol_smiles
-    global non_isomol_isomol_smiles
+    num_nodes = 0
+    num_nodes_augmented = 0
+    num_compound_relationships = 0
+    num_compound_iso_relationships = 0
 
-    filename = os.path.join(input_dir, 'nodes.csv.gz')
+    filename = input_nodes
     logger.info('Augmenting %s as...', filename)
 
     # Augmented file
     augmented_filename = \
         os.path.join(output_dir,
-                     '{}-augmented-{}'.format(output_filename_prefix,
+                     '{}-augmented-{}'.format(output_prefix,
                                               os.path.basename(filename)))
     gzip_ai_file = gzip.open(augmented_filename, 'wt')
     # Frag to SupplierMol relationships file
     augmented_noniso_relationships_filename = \
         os.path.join(output_dir,
                      '{}-molecule-suppliermol-edges.csv.gz'.
-                     format(output_filename_prefix))
+                     format(output_prefix))
     gzip_smr_file = gzip.open(augmented_noniso_relationships_filename, 'wt')
     gzip_smr_file.write(':START_ID({}),'
                         ':END_ID({}),'
-                        ':TYPE\n'.format(frag_namespace, suppliermol_namespace))
+                        ':TYPE\n'.format(frag_namespace_id, suppliermol_namespace_id))
 
     # IsoMol to Frag relationships file
     augmented_iso_relationships_filename = \
         os.path.join(output_dir,
                      '{}-isomol-molecule-edges.csv.gz'.
-                     format(output_filename_prefix))
+                     format(output_prefix))
     gzip_ifr_file = gzip.open(augmented_iso_relationships_filename, 'wt')
     gzip_ifr_file.write(':START_ID({}),'
                         ':END_ID({}),'
-                        ':TYPE\n'.format(isomol_namespace, frag_namespace))
+                        ':TYPE\n'.format(isomol_namespace_id, frag_namespace_id))
 
     logger.info(' %s', augmented_filename)
     logger.info(' %s', augmented_noniso_relationships_filename)
@@ -499,7 +501,7 @@ def write_nodes(input_dir, output_dir):
                        'chac:INT,' \
                        'osmiles,' \
                        'cmpd_ids:STRING[],' \
-                       ':LABEL' % frag_namespace
+                       ':LABEL' % frag_namespace_id
         hdr = n_file.readline().strip()
         if hdr != expected_hdr:
             error('Node file header is wrong, expected "{}" got "{}"'.
@@ -558,14 +560,15 @@ def write_nodes(input_dir, output_dir):
                     # A relationship (or relationships)
                     # from Frag to SupplierMol
                     if noniso_isomol_smiles in isomol_smiles:
-                        for molport_compound_id in isomol_smiles[noniso_isomol_smiles]:
-                            if molport_compound_id not in frag_compounds:
+                        for compound_id in isomol_smiles[noniso_isomol_smiles]:
+                            if compound_id not in frag_compounds:
                                 gzip_smr_file.write('"{}",{},HasVendor\n'.
                                                     format(frag_smiles,
-                                                           molport_compound_id))
-                                frag_compounds.append(molport_compound_id)
+                                                           compound_id))
+                                frag_compounds.append(compound_id)
                     else:
-                        logger.warning('Failed to find "%s" in isomol_smiles', noniso_isomol_smiles)
+                        logger.warning('Failed to find "%s" in isomol_smiles',
+                                       noniso_isomol_smiles)
 
                     num_compound_iso_relationships += 1
                     num_compound_relationships += 1
@@ -575,12 +578,12 @@ def write_nodes(input_dir, output_dir):
 
                 # A relationship (or relationships)
                 # from Frag to SupplierMol
-                for molport_compound_id in non_isomol_smiles[frag_smiles]:
-                    if molport_compound_id not in frag_compounds:
+                for compound_id in non_isomol_smiles[frag_smiles]:
+                    if compound_id not in frag_compounds:
                         gzip_smr_file.write('"{}",{},HasVendor\n'.
                                             format(frag_smiles,
-                                                   molport_compound_id))
-                        frag_compounds.append(molport_compound_id)
+                                                   compound_id))
+                        frag_compounds.append(compound_id)
 
                         num_compound_relationships += 1
                         augment = True
@@ -590,8 +593,8 @@ def write_nodes(input_dir, output_dir):
                     frag_labels.append('CanSmi')
                 if 'Mol' not in frag_labels:
                     frag_labels.append('Mol')
-                if 'V_MP' not in frag_labels:
-                    frag_labels.append('V_MP')
+                if vendor_code not in frag_labels:
+                    frag_labels.append(vendor_code)
 
             # Augment the fragment line's first 4 items
             # and then adding the new compounds and label lists
@@ -607,15 +610,19 @@ def write_nodes(input_dir, output_dir):
     gzip_smr_file.close()
     gzip_ifr_file.close()
 
+    return  num_nodes, \
+            num_nodes_augmented, \
+            num_compound_relationships, \
+            num_compound_iso_relationships
+
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('Vendor Compound Processor (MolPort)')
     parser.add_argument('vendor_file',
                         help='The vendor standardised file (gzipped).')
-    parser.add_argument('input',
-                        help='The input directory that contains compressed'
-                             ' (gzipped) nodes and edges files to'
+    parser.add_argument('input_nodes',
+                        help='The compressed (gzipped) nodes file to'
                              ' augment with the collected vendor data')
     parser.add_argument('output',
                         help='The output directory')
@@ -706,7 +713,19 @@ if __name__ == '__main__':
     #   - IsoMol and Fragment Network
     #   - Fragment Network and SupplierMol
 
-    write_nodes(args.input, args.output)
+    num_nodes, \
+    num_nodes_augmented, \
+    num_compound_relationships, \
+    num_compound_iso_relationships = write_nodes(args.input_nodes,
+                                                 args.output,
+                                                 output_filename_prefix,
+                                                 frag_namespace,
+                                                 isomol_namespace,
+                                                 supplier_namespace,
+                                                 isomol_smiles,
+                                                 non_isomol_isomol_smiles,
+                                                 non_isomol_smiles,
+                                                 'V_MP')
 
     # Summary
     logger.info('{:,}/{:,} vendor molecules/iso'.format(num_vendor_mols, num_vendor_iso_mols))
