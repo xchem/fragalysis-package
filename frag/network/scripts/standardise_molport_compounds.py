@@ -88,7 +88,6 @@ molport_prefix = 'MOLPORT:'
 vendor_compounds = set()
 
 # Various diagnostic counts
-num_vendor_iso_mols = 0
 num_vendor_mols = 0
 num_vendor_molecule_failures = 0
 
@@ -132,7 +131,6 @@ def standardise(o_smiles):
         logger.warning('MolFromSmiles(%s) exception: "%s"',
                        o_smiles, e.message)
     if not mol:
-        num_vendor_molecule_failures += 1
         logger.error('Got nothing from MolFromSmiles(%s).'
                      ' Skipping this Vendor compound', o_smiles)
 
@@ -149,7 +147,6 @@ def standardise(o_smiles):
             logger.warning('standardize(%s) exception: "%s"',
                            o_smiles, e.message)
         if not std:
-            num_vendor_molecule_failures += 1
             logger.error('Got nothing from standardize(%s).'
                          ' Skipping this Vendor compound', o_smiles)
 
@@ -164,7 +161,6 @@ def standardise(o_smiles):
             logger.warning('MolToSmiles(%s, iso) exception: "%s"',
                            o_smiles, e.message)
         if not iso:
-            num_vendor_molecule_failures += 1
             logger.error('Got nothing from MolToSmiles(%s, iso).'
                          ' Skipping this Vendor compound', o_smiles)
 
@@ -179,7 +175,6 @@ def standardise(o_smiles):
             logger.warning('MolToSmiles(%s, noniso) exception: "%s"',
                            o_smiles, e.message)
         if not noniso:
-            num_vendor_molecule_failures += 1
             logger.error('Got nothing from MolToSmiles(%s, noniso).'
                          ' Skipping this Vendor compound', o_smiles)
 
@@ -203,7 +198,6 @@ def standardise_vendor_compounds(output_file, file_name):
     """
 
     global vendor_compounds
-    global num_vendor_iso_mols
     global num_vendor_mols
     global num_vendor_molecule_failures
 
@@ -257,7 +251,9 @@ def standardise_vendor_compounds(output_file, file_name):
 
             std, iso, noniso = standardise(o_smiles)
             if not std:
+                num_vendor_molecule_failures += 1
                 continue
+            num_vendor_mols += 1
 
             # Write the standardised data
 
@@ -317,5 +313,5 @@ if __name__ == '__main__':
             standardise_vendor_compounds(output_gzip_file, molport_file)
 
     # Summary
-    logger.info('{:,}/{:,} vendor molecules/iso'.format(num_vendor_mols, num_vendor_iso_mols))
+    logger.info('{:,} vendor molecules'.format(num_vendor_mols))
     logger.info('{:,} vendor molecule failures'.format(num_vendor_molecule_failures))
