@@ -480,7 +480,7 @@ def write_nodes(input_dir, output_dir):
                        ':LABEL' % frag_namespace
         hdr = n_file.readline().strip()
         if hdr != expected_hdr:
-            error('Nodes header is wrong, expected "%s" not "%s"'.
+            error('Node file header is wrong, expected "{}" got "{}"'.
                   format(expected_hdr, hdr))
         gzip_ai_file.write(hdr + '\n')
 
