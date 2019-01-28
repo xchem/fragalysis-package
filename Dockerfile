@@ -7,15 +7,3 @@ RUN git clone https://github.com/rdkit/mmpdb /usr/local/mmpdb
 RUN pip install /usr/local/mmpdb 
 ADD . /usr/local/fragalysis
 RUN pip install /usr/local/fragalysis
-
-# Conveneint command for built-in MolPort Neo4J processing...
-#
-WORKDIR /usr/local/fragalysis/frag/network/scripts
-CMD ["./process_molport_compounds.py", \
-     "/exports/nextflow/fragbuilder/analysis/molport/neo/molport-standardised-compounds.tab.gz", \
-     "/exports/nextflow/fragbuilder/analysis/molport/neo-molport", \
-     "/exports/nextflow/fragbuilder/analysis/molport/neo-molport"]
-
-#CMD ["./process_prep.py", \
-#     "/exports/nextflow/fragbuilder/analysis/molport", \
-#     "/exports/nextflow/fragbuilder/analysis/molport/neo-molport"]
