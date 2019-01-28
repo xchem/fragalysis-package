@@ -74,7 +74,7 @@ def prep(input_dir, output_dir):
     columns = ["smiles:ID(%s)" % frag_namespace,
                "hac:INT",
                "chac:INT",
-               "o_smiles",
+               "osmiles",
                "cmpd_ids:STRING[]",
                ":LABEL"]
     csv_file.write(','.join(columns) + '\n')
