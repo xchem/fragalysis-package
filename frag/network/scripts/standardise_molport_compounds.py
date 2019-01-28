@@ -93,8 +93,8 @@ num_vendor_mols = 0
 num_vendor_molecule_failures = 0
 
 # The line rate at which the process writes updates to stdout.
-# Every 20 million?
-augment_report_rate = 20000000
+# Every 1 million?
+report_rate = 1000000
 
 
 def error(msg):
@@ -104,6 +104,91 @@ def error(msg):
     """
     logger.error('ERROR: %s', msg)
     sys.exit(1)
+
+
+def standardise(o_smiles):
+    """Given a vendor (original) SMILES this method standardises
+    it into a canonical form and returns a list that contains:
+    the standard form, the isomeric form and the non-isomeric form.
+
+    :param o_smiles: The original (non-standard) SMILES
+    :return: A tuple containing the standard, isomeric and non-isomeric
+             representations. Errors are logged and, on error,
+             the standard form will be returned as None.
+    """
+
+    # Standardise and update global maps...
+    # And try and handle and report any catastrophic errors
+    # from dependent modules/functions.
+
+    mol = None
+    std = None
+    iso = None
+    noniso = None
+
+    try:
+        mol = Chem.MolFromSmiles(o_smiles)
+    except Exception as e:
+        logger.warning('MolFromSmiles(%s) exception: "%s"',
+                       o_smiles, e.message)
+    if not mol:
+        num_vendor_molecule_failures += 1
+        logger.error('Got nothing from MolFromSmiles(%s).'
+                     ' Skipping this Vendor compound', o_smiles)
+
+    if mol:
+
+        # Got a molecule.
+        #
+        # Try to (safely) standardise,
+        # and create isomeric an non-isomeric representations.
+
+        try:
+            std = standardize(mol)
+        except Exception as e:
+            logger.warning('standardize(%s) exception: "%s"',
+                           o_smiles, e.message)
+        if not std:
+            num_vendor_molecule_failures += 1
+            logger.error('Got nothing from standardize(%s).'
+                         ' Skipping this Vendor compound', o_smiles)
+
+    if std:
+
+        # We have a standard representation,
+        # Try to generate the isomeric version...
+
+        try:
+            iso = Chem.MolToSmiles(std, isomericSmiles=True, canonical=True)
+        except Exception as e:
+            logger.warning('MolToSmiles(%s, iso) exception: "%s"',
+                           o_smiles, e.message)
+        if not iso:
+            num_vendor_molecule_failures += 1
+            logger.error('Got nothing from MolToSmiles(%s, iso).'
+                         ' Skipping this Vendor compound', o_smiles)
+
+    if std:
+
+        # We have a standard representation,
+        # Try to generate the non-isomeric version...
+
+        try:
+            noniso = Chem.MolToSmiles(std, isomericSmiles=False, canonical=True)
+        except Exception as e:
+            logger.warning('MolToSmiles(%s, noniso) exception: "%s"',
+                           o_smiles, e.message)
+        if not noniso:
+            num_vendor_molecule_failures += 1
+            logger.error('Got nothing from MolToSmiles(%s, noniso).'
+                         ' Skipping this Vendor compound', o_smiles)
+
+    # If anything went wrong, set std to None.
+    # It's "all-or-nothing"...
+    if not iso or not noniso:
+        std = None
+
+    return std, iso, noniso
 
 
 def standardise_vendor_compounds(output_file, file_name):
@@ -124,7 +209,7 @@ def standardise_vendor_compounds(output_file, file_name):
 
     logger.info('Standardising %s...', file_name)
 
-    num_lines = 0
+    line_num = 0
     with gzip.open(file_name, 'rt') as gzip_file:
 
         # Check first line (a space-delimited header).
@@ -149,10 +234,13 @@ def standardise_vendor_compounds(output_file, file_name):
 
         for line in gzip_file:
 
-            num_lines += 1
+            line_num += 1
             fields = line.split('\t')
             if len(fields) <= 1:
                 continue
+
+            if line_num % report_rate == 0:
+                logger.info(' ...at compound {:,}'.format(line_num))
 
             o_smiles = fields[smiles_col]
             compound_id = molport_prefix + fields[compound_col].split(supplier_prefix)[1]
@@ -167,63 +255,8 @@ def standardise_vendor_compounds(output_file, file_name):
             # And try and handle and report any catastrophic errors
             # from dependent modules/functions.
 
-            mol = None
-            std = None
-            iso = None
-            noniso = None
-
-            try:
-                mol = Chem.MolFromSmiles(o_smiles)
-            except Exception as e:
-                logger.warning('MolFromSmiles(%s) exception: "%s"', o_smiles, e.message)
-            if not mol:
-                num_vendor_molecule_failures += 1
-                logger.error('Got nothing from MolFromSmiles(%s).'
-                             ' Skipping this Vendor compound'
-                             ' (id=%s line=%s failures=%s)',
-                             o_smiles, compound_id, num_lines,
-                             num_vendor_molecule_failures)
-                continue
-
-            # Got a molecule.
-            #
-            # Try to (safely) standardise,
-            # and create isomeric an non-isomeric representations.
-
-            try:
-                std = standardize(mol)
-            except Exception as e:
-                logger.warning('standardize(%s) exception: "%s"', o_smiles, e.message)
+            std, iso, noniso = standardise(o_smiles)
             if not std:
-                num_vendor_molecule_failures += 1
-                logger.error('Got nothing from standardize(%s).'
-                             ' Skipping this Vendor compound'
-                             ' (line=%s failures=%s)',
-                             o_smiles, num_lines, num_vendor_molecule_failures)
-                continue
-
-            try:
-                iso = Chem.MolToSmiles(std, isomericSmiles=True, canonical=True)
-            except Exception as e:
-                logger.warning('MolToSmiles(%s, iso) exception: "%s"', o_smiles, e.message)
-            if not iso:
-                num_vendor_molecule_failures += 1
-                logger.error('Got nothing from MolToSmiles(%s, iso).'
-                             ' Skipping this Vendor compound'
-                             ' (line=%s failures=%s)',
-                             o_smiles, num_lines, num_vendor_molecule_failures)
-                continue
-
-            try:
-                noniso = Chem.MolToSmiles(std, isomericSmiles=False, canonical=True)
-            except Exception as e:
-                logger.warning('MolToSmiles(%s, noniso) exception: "%s"', o_smiles, e.message)
-            if not noniso:
-                num_vendor_molecule_failures += 1
-                logger.error('Got nothing from MolToSmiles(%s, noniso).'
-                             ' Skipping this Vendor compound'
-                             ' (line=%s failures=%s)',
-                             o_smiles, num_lines, num_vendor_molecule_failures)
                 continue
 
             # Write the standardised data
