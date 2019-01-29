@@ -42,12 +42,14 @@ _OUTPUT_COLUMNS = ['OSMILES',
 
 # The minimum number of columns in the input files and
 # and a map of expected column names indexed by (0-based) column number.
+# Column names are lower-case as the test is case-insensitive
+# (file contents are converted to lower-case)
 expected_min_num_cols = 4
 compound_col = 1
 inhib_col = 2
 smiles_col = 3
-expected_input_cols = {compound_col: 'Molecule Name',
-                       inhib_col: '%Inhibition at 5 uM',
+expected_input_cols = {compound_col: 'molecule name',
+                       inhib_col: '%inhibition at 5 um',
                        smiles_col: 'smiles'}
 
 # The output file.
