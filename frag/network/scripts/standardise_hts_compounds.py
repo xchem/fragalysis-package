@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-"""standardise_enamine_compounds.py
+"""standardise_hts_compounds.py
 
-Processes Enamine Real vendor compound files, and generates a 'standard'
+Processes HTS SENP7 vendor compound files, and generates a 'standard'
 tab-separated output.
 
-We create a 'real-standardised-compounds.tab' file that contains a 1st-line
+We create a 'hts-standardised-compounds.tab' file that contains a 1st-line
 'header' formed from the _OUTPUT_COLUMNS list.
 
 Alan Christie
@@ -24,7 +24,7 @@ from rdkit import RDLogger
 from standardise_molport_compounds import standardise
 
 # Configure basic logging
-logger = logging.getLogger('real')
+logger = logging.getLogger('hts')
 out_hdlr = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s %(levelname)s # %(message)s',
                               '%Y-%m-%dT%H:%M:%S')
@@ -37,33 +37,25 @@ logger.setLevel(logging.INFO)
 _OUTPUT_COLUMNS = ['OSMILES',
                    'ISO_SMILES',
                    'NONISO_SMILES',
-                   'CMPD_ID']
+                   'CMPD_ID',
+                   'INHIB_5UM']
 
 # The minimum number of columns in the input files and
 # and a map of expected column names indexed by (0-based) column number.
-#
-# The 'standardised' files contain at least 3 columns...
-#
-# smiles    0
-# idnumber  1
-
-expected_min_num_cols = 2
-smiles_col = 0
+expected_min_num_cols = 4
 compound_col = 1
-expected_input_cols = {compound_col: 'idnumber',
+inhib_col = 2
+smiles_col = 3
+expected_input_cols = {compound_col: 'Molecule Name',
+                       inhib_col: '%Inhibition at 5 uM',
                        smiles_col: 'smiles'}
 
-# Prefix for output files
-output_filename_prefix = 'real'
 # The output file.
 # Which will be gzipped.
-output_filename = output_filename_prefix + '-standardised-compounds.tab'
+output_filename = 'hts-standardised-compounds.tab'
 
-# The compound identifier prefix
-# the vendor uses in the the compound files...
-supplier_prefix = 'Z'
 # The prefix we use in our fragment file
-real_prefix = 'REAL:'
+hts_prefix = 'SENP7:'
 
 # All the vendor compound IDs
 vendor_compounds = set()
@@ -109,7 +101,7 @@ def standardise_vendor_compounds(output_file, file_name):
         # names are what we expect.
 
         hdr = gzip_file.readline()
-        field_names = hdr.split()
+        field_names = hdr.split('\t')
         # Expected minimum number of columns...
         if len(field_names) < expected_min_num_cols:
             error('expected at least {} columns found {}'.
@@ -128,15 +120,16 @@ def standardise_vendor_compounds(output_file, file_name):
         for line in gzip_file:
 
             line_num += 1
-            fields = line.split()
+            fields = line.split('\t')
             if len(fields) <= 1:
                 continue
 
             if line_num % report_rate == 0:
                 logger.info(' ...at compound {:,}'.format(line_num))
 
-            osmiles = fields[smiles_col]
-            compound_id = real_prefix + fields[compound_col]
+            osmiles = fields[smiles_col].strip()
+            compound_id = hts_prefix + fields[compound_col].strip()
+            inhib = fields[compound_col].strip()
 
             # Add the compound (expected to be unique)
             # to our set of 'all compounds'.
@@ -159,20 +152,21 @@ def standardise_vendor_compounds(output_file, file_name):
             output = [osmiles,
                       iso,
                       noniso,
-                      compound_id]
+                      compound_id,
+                      inhib]
 
             output_file.write('\t'.join(output) + '\n')
 
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser('Vendor Compound Standardiser (MolPort)')
+    parser = argparse.ArgumentParser('Vendor Compound Standardiser (HTS)')
     parser.add_argument('vendor_dir',
-                        help='The Enamine vendor directory,'
+                        help='The HTS vendor directory,'
                              ' containing the ".gz" files to be processed.')
     parser.add_argument('vendor_prefix',
-                        help='The Enamine vendor file prefix,'
-                             ' i.e. "June2018". Only files with this prefix'
+                        help='The HTS vendor file prefix,'
+                             ' i.e. "HTS_". Only files with this prefix'
                              ' in the vendor directory will be processed')
     parser.add_argument('output',
                         help='The output directory')
@@ -202,10 +196,10 @@ if __name__ == '__main__':
         output_gzip_file.write('\t'.join(_OUTPUT_COLUMNS) + '\n')
 
         # Process all the Vendor files...
-        real_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir,
-                                                     args.vendor_prefix))
-        for real_file in real_files:
-            standardise_vendor_compounds(output_gzip_file, real_file)
+        hts_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir,
+                                                 args.vendor_prefix))
+        for hts_file in hts_files:
+            standardise_vendor_compounds(output_gzip_file, hts_file)
 
     # Summary
     logger.info('{:,} vendor molecules'.format(num_vendor_mols))
