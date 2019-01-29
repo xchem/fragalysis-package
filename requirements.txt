@@ -1,4 +1,5 @@
 ipython==5.4.1
+boto3==1.9.86
 tqdm
 neo4j-driver
 numpy
