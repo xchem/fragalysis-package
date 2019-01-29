@@ -1,41 +1,12 @@
 #!/usr/bin/env python
 
-"""standardise_enamine_compounds.py
+"""standardise_real_compounds.py
 
-Processes standardised Enamine vendor files, not expected to contain
-pricing information.
+Processes Enamine Real vendor compound files, and generates a 'standard'
+tab-separated output.
 
-Two new files are generated and the original nodes file augmented with a
-"V_E" label.
-
-Note:   This module does expect `colate_all` to have been used on the original
-        graph files to produce normalised supplier identities in the node file
-        this module uses.
-
-The purpose of this module is to create "Vendor" Compound nodes
-and relationships to augment the DLS fragment database.
-Every fragment line that has an Enamine identifier in the original data set
-is labelled and a relationship created between it and the Vendor's compound(s).
-
-Some vendor compound nodes may not exist in the original data set.
-
-The files generated (in a named output directory) are:
-
--   "enamine-compound-nodes.csv.gz"
-    containing all the nodes for the vendor compounds.
-
--   "enamine-molecule-compound_edges.csv.gz"
-    containing the relationships between the original node entries and
-    the "Vendor" nodes. There is a relationship for every Enamine
-    compound that was found in the earlier processing.
-
-The module augments the original nodes by adding the label
-"V_E" for all MolPort compounds that have been found
-to the augmented copy of the original node file that it creates.
-
-If the original nodes file is "nodes.csv" the augmented copy
-(in the named output directory) will be called
-"enamine-augmented-nodes.csv.gz".
+We create a 'real-standardised-compounds.tab' file that contains a 1st-line
+'header' formed from the _OUTPUT_COLUMNS list.
 
 Alan Christie
 January 2019
@@ -53,7 +24,7 @@ from rdkit import RDLogger
 from standardise_molport_compounds import standardise
 
 # Configure basic logging
-logger = logging.getLogger('enamine')
+logger = logging.getLogger('real')
 out_hdlr = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s %(levelname)s # %(message)s',
                               '%Y-%m-%dT%H:%M:%S')
@@ -63,7 +34,7 @@ logger.addHandler(out_hdlr)
 logger.setLevel(logging.INFO)
 
 # The columns in our output file.
-_OUTPUT_COLUMNS = ['O_SMILES',
+_OUTPUT_COLUMNS = ['OSMILES',
                    'ISO_SMILES',
                    'NONISO_SMILES',
                    'CMPD_ID']
@@ -83,7 +54,7 @@ expected_input_cols = {compound_col: 'idnumber',
                        smiles_col: 'smiles'}
 
 # Prefix for output files
-output_filename_prefix = 'enamine'
+output_filename_prefix = 'real'
 # The output file.
 # Which will be gzipped.
 output_filename = output_filename_prefix + '-standardised-compounds.tab'
@@ -92,13 +63,14 @@ output_filename = output_filename_prefix + '-standardised-compounds.tab'
 # the vendor uses in the the compound files...
 supplier_prefix = 'Z'
 # The prefix we use in our fragment file
-# and the prefix we use for our copy of the
-enamine_prefix = 'REAL:'
+real_prefix = 'REAL:'
+
+# All the vendor compound IDs
+vendor_compounds = set()
 
 # Various diagnostic counts
-num_nodes = 0
-num_nodes_augmented = 0
-num_compound_relationships = 0
+num_vendor_mols = 0
+num_vendor_molecule_failures = 0
 
 # The line rate at which the process writes updates to stdout.
 # Every 1 million?
@@ -125,7 +97,6 @@ def standardise_vendor_compounds(output_file, file_name):
     :param file_name: The (compressed) file to process
     """
     global vendor_compounds
-    global num_vendor_iso_mols
     global num_vendor_mols
     global num_vendor_molecule_failures
 
@@ -139,18 +110,19 @@ def standardise_vendor_compounds(output_file, file_name):
         # names are what we expect.
 
         hdr = gzip_file.readline()
-        field_names = hdr.split('\t')
+        field_names = hdr.split()
         # Expected minimum number of columns...
         if len(field_names) < expected_min_num_cols:
             error('expected at least {} columns found {}'.
                   format(expected_input_cols, len(field_names)))
-        # Check salient columns...
+        # Check salient columns (ignoring case)...
         for col_num in expected_input_cols:
-            if field_names[col_num].strip() != expected_input_cols[col_num]:
+            actual_name = field_names[col_num].strip().lower()
+            if actual_name != expected_input_cols[col_num]:
                 error('expected "{}" in column {} found "{}"'.
                       format(expected_input_cols[col_num],
                              col_num,
-                             field_names[col_num]))
+                             actual_name))
 
         # Columns look right...
 
@@ -164,8 +136,8 @@ def standardise_vendor_compounds(output_file, file_name):
             if line_num % report_rate == 0:
                 logger.info(' ...at compound {:,}'.format(line_num))
 
-            o_smiles = fields[smiles_col]
-            compound_id = enamine_prefix + fields[compound_col].split(supplier_prefix)[1]
+            osmiles = fields[smiles_col]
+            compound_id = real_prefix + fields[compound_col]
 
             # Add the compound (expected to be unique)
             # to our set of 'all compounds'.
@@ -177,13 +149,15 @@ def standardise_vendor_compounds(output_file, file_name):
             # And try and handle and report any catastrophic errors
             # from dependent modules/functions.
 
-            std, iso, noniso = standardise(o_smiles)
+            std, iso, noniso = standardise(osmiles)
             if not std:
+                num_vendor_molecule_failures += 1
                 continue
+            num_vendor_mols += 1
 
             # Write the standardised data
 
-            output = [o_smiles,
+            output = [osmiles,
                       iso,
                       noniso,
                       compound_id]
@@ -229,11 +203,11 @@ if __name__ == '__main__':
         output_gzip_file.write('\t'.join(_OUTPUT_COLUMNS) + '\n')
 
         # Process all the Vendor files...
-        molport_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir,
+        real_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir,
                                                      args.vendor_prefix))
-        for molport_file in molport_files:
-            standardise_vendor_compounds(output_gzip_file, enamine_file)
+        for real_file in real_files:
+            standardise_vendor_compounds(output_gzip_file, real_file)
 
     # Summary
-    logger.info('{:,}/{:,} vendor molecules/iso'.format(num_vendor_mols, num_vendor_iso_mols))
+    logger.info('{:,} vendor molecules'.format(num_vendor_mols))
     logger.info('{:,} vendor molecule failures'.format(num_vendor_molecule_failures))

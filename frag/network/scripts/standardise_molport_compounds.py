@@ -218,11 +218,12 @@ def standardise_vendor_compounds(output_file, file_name):
                   format(expected_input_cols, len(field_names)))
         # Check salient columns...
         for col_num in expected_input_cols:
-            if field_names[col_num].strip() != expected_input_cols[col_num]:
+            actual_name = field_names[col_num].strip().upper()
+            if actual_name != expected_input_cols[col_num]:
                 error('expected "{}" in column {} found "{}"'.
                       format(expected_input_cols[col_num],
                              col_num,
-                             field_names[col_num]))
+                             actual_name))
 
         # Columns look right...
 
