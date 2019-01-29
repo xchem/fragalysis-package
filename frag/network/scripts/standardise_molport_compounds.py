@@ -92,8 +92,7 @@ num_vendor_mols = 0
 num_vendor_molecule_failures = 0
 
 # The line rate at which the process writes updates to stdout.
-# Every 1 million?
-report_rate = 1000000
+report_rate = 250000
 
 
 def error(msg):
