@@ -131,7 +131,7 @@ def standardise_vendor_compounds(output_file, file_name):
 
             osmiles = fields[smiles_col].strip()
             compound_id = hts_prefix + fields[compound_col].strip()
-            inhib = fields[compound_col].strip()
+            inhib = fields[inhib_col].strip()
 
             # Add the compound (expected to be unique)
             # to our set of 'all compounds'.
