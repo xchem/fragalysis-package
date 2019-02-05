@@ -1,4 +1,5 @@
 # Series of functions to parse input files
+from collections import namedtuple
 from frag.alysis.models import Object, Owner
 from frag.utils.rdkit_utils import (
     _parse_ligand_sdf,
@@ -13,6 +14,7 @@ from frag.utils.rdkit_utils import (
 )
 from rdkit import Chem
 
+Standard = namedtuple('standard', 'smiles cmpd_id')
 
 def _get_c_of_mass_list(mols):
     c_of_mass_list = []
@@ -104,3 +106,30 @@ def parse_mols(input_file, input_format):
         return Chem.SmilesMolSupplier(input_file)
     else:
         return Chem.SDMolSupplier(input_file)
+
+def parse_standard(input_file):
+    """Parses an Informatics Matters 'standard' SMILES file.
+    The file is not expected to be compressed but is expected to contain
+    columns for osmiles, isomeric and non-isomeric representations along with
+    a compound identifier.
+
+    :param input_file: The name of the standard file (expected to be compressed)
+    :returns: a set of 'Standard' namedtuples
+    """
+    standards = set()
+    with open(input_file, 'r') as standard_file:
+
+        # Read (and verify) the header...
+        hdr = standard_file.readline()
+        hdr_items = hdr.split('\t')
+        if len(hdr_items) < 4:
+            raise Exception('Standard file needs at least 4 columns')
+        if hdr_items[1].upper() != 'ISO_SMILES' or hdr_items[3] != 'CMPD_ID':
+            raise Exception('The column header is not correct')
+
+        # Process the rest of the file...
+        for line in standard_file:
+            items = line.split('\t')
+            standards.add(Standard(items[0], items[3]))
+
+    return standards
