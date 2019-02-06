@@ -107,7 +107,7 @@ def parse_mols(input_file, input_format):
     else:
         return Chem.SDMolSupplier(input_file)
 
-def parse_standard(input_file):
+def parse_standard_file(input_file):
     """Parses an Informatics Matters 'standard' SMILES file.
     The file is not expected to be compressed but is expected to contain
     columns for osmiles, isomeric and non-isomeric representations along with

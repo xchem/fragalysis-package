@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Based on build.db.py, this module build the network from
+# Based on build_db.py, this module builds the graph network from
 # the Informatics Matters 'standard' (uncompressed) file representation.
 #
 # Alan Christie
@@ -12,10 +12,11 @@ import sys
 
 from frag.network.models import NodeHolder, Attr
 from frag.utils.network_utils import build_network, write_data
+from frag.utils.parser import parse_standard_file
 
 
 def main():
-    """Read in a a standard file - then write out into a specified directory
+    """Read in a 'standard' file - then write out into a specified directory
     """
     parser = argparse.ArgumentParser(
         description="Convert un-compressed standard SMILES"
@@ -37,18 +38,19 @@ def main():
         sys.exit(1)
     if not os.path.isfile(args.input):
         print('ERROR: input (%s) does not exist' % args.input)
-        sys.exit(1)
+        sys.exit(2)
     if not args.base_dir:
         print('ERROR: Must specify a base directory')
-        sys.exit(1)
-    if not os.path.isdir(args.base_dir):
-        print('ERROR:input base directory (%s) does not exist' % args.base_dir)
-        sys.exit(1)
+        sys.exit(3)
 
     attrs = []
-    standards = parser.parse_standard(args.input)
-    for standard in standards:
-        attrs.append(Attr(standard.smiles, ['EM', standard.compd_id]))
+    standard_representations = parse_standard_file(args.input)
+    for standard_representation in standard_representations:
+        attrs.append(Attr(standard_representation.smiles,
+                          ['EM', standard_representation.cmpd_id]))
+
+    if not os.path.isdir(args.base_dir):
+        os.mkdir(args.base_dir)
 
     # Build the network
     node_holder = NodeHolder()
