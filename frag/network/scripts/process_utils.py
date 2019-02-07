@@ -7,6 +7,7 @@ Alan Christie
 January 2019
 """
 
+from collections import namedtuple
 import gzip
 import logging
 import os
@@ -22,6 +23,12 @@ out_hdlr.setLevel(logging.INFO)
 logger.addHandler(out_hdlr)
 logger.setLevel(logging.INFO)
 
+# The Vendor Assay node has...
+# assay.name
+# assay.description
+# assay.type
+AssayNode = namedtuple('AssayNode', 'name description type')
+
 
 def error(msg):
     """Prints an error message and exits.
@@ -34,13 +41,13 @@ def error(msg):
 
 def write_assay_nodes(directory,
                       output_prefix,
-                      assay_namedtuples,
+                      assays,
                       assay_namespace_id):
     """Writes the Assay nodes file, including a header.
 
     :param directory: The sub-directory to write to
     :param output_prefix: The output filename prefix
-    :param assay_namedtuples: The set of assays to write
+    :param assays: The set of assays to write
     :param assay_namespace_id: The indexing ID for the nodes
     """
 
@@ -55,7 +62,7 @@ def write_assay_nodes(directory,
                         'description:STRING,'
                         'type:STRING,'
                         ':LABEL\n'.format(assay_namespace_id))
-        for assay in assay_namedtuples:
+        for assay in assays:
             # Write the row (omitting the trailing ';'...
             gzip_file.write('"{}","{}","{}",Activity\n'.
                             format(assay.name, assay.description, assay.type))
@@ -131,7 +138,10 @@ def write_isomol_suppliermol_relationships(directory,
                                            output_prefix,
                                            isomol_smiles,
                                            isomol_namespace_id,
-                                           supplier_namespace_id):
+                                           supplier_namespace_id,
+                                           assay_name=None,
+                                           assay_namespace_id=None,
+                                           assay_compound_values=None):
     """Writes the IsoMol to SupplierMol relationships file, including a header.
 
     :param directory: The sub-directory to write to
@@ -147,6 +157,22 @@ def write_isomol_suppliermol_relationships(directory,
                             format(output_prefix))
     logger.info('Writing %s...', filename)
 
+    gzip_iar_file = None
+    if assay_name:
+
+        # Fragment to Assay relationships file
+        # Fragment to Assay relationships file
+        molecule_assay_relationships_filename = \
+            os.path.join(directory,
+                         '{}-isomol-assay-edges.csv.gz'.
+                         format(output_prefix))
+        gzip_iar_file = gzip.open(molecule_assay_relationships_filename, 'wt')
+        gzip_iar_file.write(':START_ID({}),'
+                            'value:FLOAT,'
+                            ':END_ID({}),'
+                            ':TYPE\n'.format(isomol_namespace_id,
+                                             assay_namespace_id))
+
     num_edges = 0
     with gzip.open(filename, 'wb') as gzip_file:
         gzip_file.write(':START_ID({}),'
@@ -155,8 +181,19 @@ def write_isomol_suppliermol_relationships(directory,
                                          supplier_namespace_id))
         for smiles in isomol_smiles:
             for compound_id in isomol_smiles[smiles]:
+
                 gzip_file.write('"{}",{},HasVendor\n'.format(smiles, compound_id))
                 num_edges += 1
+
+                # IsoMol to Assay?
+                if gzip_iar_file:
+                    gzip_iar_file.write('"{}",{},{},Activity\n'.
+                                        format(smiles,
+                                               assay_compound_values[compound_id],
+                                               assay_name))
+
+    if gzip_iar_file:
+        gzip_iar_file.close()
 
     logger.info(' {:,}'.format(num_edges))
 
@@ -170,7 +207,10 @@ def write_nodes(input_nodes,
                 isomol_smiles,
                 non_isomol_isomol_smiles,
                 non_isomol_smiles,
-                vendor_code):
+                vendor_code,
+                assay_name=None,
+                assay_namespace_id=None,
+                assay_compound_values=None):
     """Augments the original nodes file and writes the relationships
     for nodes in this file to the Vendor nodes.
     """
@@ -208,6 +248,21 @@ def write_nodes(input_nodes,
     gzip_ifr_file.write(':START_ID({}),'
                         ':END_ID({}),'
                         ':TYPE\n'.format(isomol_namespace_id, frag_namespace_id))
+
+    gzip_mar_file = None
+    if assay_name:
+
+        # Fragment to Assay relationships file
+        molecule_assay_relationships_filename = \
+            os.path.join(output_dir,
+                         '{}-molecule-assay-edges.csv.gz'.
+                         format(output_prefix))
+        gzip_mar_file = gzip.open(molecule_assay_relationships_filename, 'wt')
+        gzip_mar_file.write(':START_ID({}),'
+                            'value:FLOAT,'
+                            ':END_ID({}),'
+                            ':TYPE\n'.format(frag_namespace_id,
+                                             assay_namespace_id))
 
     logger.info(' %s', augmented_filename)
     logger.info(' %s', augmented_noniso_relationships_filename)
@@ -300,13 +355,19 @@ def write_nodes(input_nodes,
                 # from Frag to SupplierMol
                 for compound_id in non_isomol_smiles[frag_smiles]:
                     if compound_id not in frag_compounds:
+                        augment = True
+                        # Fragment to Supplier
                         gzip_smr_file.write('"{}",{},HasVendor\n'.
                                             format(frag_smiles,
                                                    compound_id))
                         frag_compounds.append(compound_id)
-
                         num_compound_relationships += 1
-                        augment = True
+                        # Fragment (molecule) to Assay?
+                        if gzip_mar_file:
+                            gzip_mar_file.write('"{}",{},{},Activity\n'.
+                                                format(frag_smiles,
+                                                       assay_compound_values[compound_id],
+                                                       assay_name))
 
             if augment:
                 if 'CanSmi' not in frag_labels:
@@ -329,6 +390,10 @@ def write_nodes(input_nodes,
     gzip_ai_file.close()
     gzip_smr_file.close()
     gzip_ifr_file.close()
+    # And assay relations (if used)
+    if gzip_mar_file:
+        gzip_mar_file.close()
+
 
     return  num_nodes, \
             num_nodes_augmented, \

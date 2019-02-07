@@ -122,7 +122,8 @@ num_vendor_molecule_failures = 0
 def extract_vendor_compounds(suppliermol_gzip_file,
                              suppliermol_edges_gzip_file,
                              supplier_id,
-                             gzip_filename):
+                             gzip_filename,
+                             limit):
     """Process the given file and extract vendor (and pricing) information.
     Vendor nodes are only created when there is at least one
     column of pricing information.
@@ -146,6 +147,9 @@ def extract_vendor_compounds(suppliermol_gzip_file,
     :param suppliermol_edges_gzip_file: The SupplierMol to Supplier edges file
     :param supplier_id: The ID of the supplier node
     :param gzip_filename: The compressed standard file to process
+    :param limit: If non-zero, limit precessing to only the first N molecules
+
+    :returns: The number of molecules processed
     """
 
     global compound_isomer_map
@@ -159,6 +163,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
     logger.info('Processing %s...', gzip_filename)
 
     num_lines = 0
+    num_processed = 0
     with gzip.open(gzip_filename, 'rt') as gzip_file:
 
         # Check first line (a space-delimited header).
@@ -189,9 +194,9 @@ def extract_vendor_compounds(suppliermol_gzip_file,
                 continue
 
             osmiles = fields[osmiles_col]
-            compound_id = fields[compound_col]
             iso = fields[iso_smiles_col]
             noniso = fields[noniso_smiles_col]
+            compound_id = fields[compound_col]
 
             # Add the compound (expected to be unique)
             # to our set of 'all compounds'.
@@ -245,6 +250,13 @@ def extract_vendor_compounds(suppliermol_gzip_file,
                       format(compound_id,
                              supplier_id))
 
+            # Enough?
+            num_processed += 1
+            if limit and num_processed >= limit:
+                break
+
+    return num_processed
+
 
 if __name__ == '__main__':
 
@@ -256,6 +268,10 @@ if __name__ == '__main__':
                              ' augment with the collected vendor data')
     parser.add_argument('output',
                         help='The output directory')
+    parser.add_argument('-l', '--limit',
+                        type=int, default=0,
+                        help='Limit processing to the first N molecules,'
+                             ' process all otherwise.')
 
     args = parser.parse_args()
 
@@ -296,9 +312,11 @@ if __name__ == '__main__':
                                       ':TYPE\n'.format(suppliermol_namespace,
                                                        supplier_namespace))
 
-    extract_vendor_compounds(suppliermol_gzip_file,
-                             suppliermol_edges_gzip_file,
-                             'Real', args.vendor_file)
+    _ = extract_vendor_compounds(suppliermol_gzip_file,
+                                 suppliermol_edges_gzip_file,
+                                 'Real',
+                                 args.vendor_file,
+                                 args.limit)
 
     # Close the SupplierMol and the edges file.
     suppliermol_gzip_file.close()

@@ -27,13 +27,18 @@ November 2018
 """
 
 import argparse
-from collections import namedtuple
-import glob
 import gzip
 import logging
 import os
-import re
 import sys
+
+from process_utils import error
+from process_utils import write_supplier_nodes
+from process_utils import write_isomol_nodes
+from process_utils import write_isomol_suppliermol_relationships
+from process_utils import write_nodes
+from process_utils import write_assay_nodes
+from process_utils import AssayNode
 
 # Configure basic logging
 logger = logging.getLogger('hts')
@@ -47,66 +52,90 @@ logger.setLevel(logging.INFO)
 
 # The minimum number of columns in the input files and
 # and a map of expected column names indexed by (0-based) column number.
-#
-# The 'standardised' files contain at least 3 columns...
-#
-# SMILES            0
-# MoleculeName      1
-# %Inhibition@5uM   2
+expected_min_num_cols = 5
+osmiles_col = 0
+iso_smiles_col = 1
+noniso_smiles_col = 2
+compound_col = 3
+activity_col = 4
+expected_input_cols = {osmiles_col: 'OSMILES',
+                       iso_smiles_col: 'ISO_SMILES',
+                       noniso_smiles_col: 'NONISO_SMILES',
+                       compound_col: 'CMPD_ID',
+                       activity_col: 'INHIB_5UM'}
 
-expected_min_num_cols = 2
-smiles_col = 0
-compound_col = 1
-activity_col = 2
-expected_input_cols = {smiles_col: 'SMILES',
-                       compound_col: 'MoleculeName',
-                       activity_col: '%Inhibition@5uM'}
+# Map of Vendor compounds that are isomeric, and their standard representation.
+# The index is a Vendor compound ID and the value is the standardised form.
+# If the compound is in this map it is isometric.
+compound_isomer_map = {}
+# Map of standardised SMILES to vendor compound(s)
+# that have isomeric representations.
+# The index is standardised (isomeric) SMILES
+# and the value is a set() of Vendor compound IDs
+isomol_smiles = {}
+# Map of standardised SMILES to vendor compounds(s)
+# that are not isomeric representations.
+non_isomol_smiles = {}
+# Map of non-isomeric SMILES representations to isomeric smiles
+# (where the molecule is isomeric). This helps lookup
+# Vendor molecules that are isomeric rather than using the
+# Vendor's compound ID.
+non_isomol_isomol_smiles = {}
+# All the vendor compound IDs
+vendor_compounds = set()
+# The set of all vendor compounds found in the fragment line
+# where a Vendor compound was not found.
+unknown_vendor_compounds = set()
+# Compound ID to Assay activity map.
+assay_compound_values = {}
 
-# The Vendor Compound node has...
-# a compound id (A number)
-# a SMILES string
-# an activity (floating-point percentage)
-CompoundNode = namedtuple('CompoundNode', 'c s a')
-# The unique set of vendor compound nodes.
-compound_nodes = set()
-# The vendor compound IDs that have a node.
-# The index is the compound ID, the value is the VendorNode
-compound_map = {}
-
+# The supplier symbolic name
+supplier_name = 'SENP7'
 # Prefix for output files
-output_filename_prefix = 'hts'
+output_filename_prefix = 'senp7'
 # The namespaces of the various indices
-smiles_namespace = 'F2'
-compound_namespace = 'VHTS'
-
-# Regular expression to find
-# HTS compound IDs in the original nodes file.
-hts_re = re.compile(r'HTS:(\d+)')
+frag_namespace = 'F2'
+suppliermol_namespace = 'SM_SENP7'
+supplier_namespace = 'S'
+isomol_namespace = 'ISO-SENP7'
+assay_namespace = 'A_SENP7'
 
 # Various diagnostic counts
-num_nodes = 0
-num_nodes_augmented = 0
-num_compound_relationships = 0
+num_vendor_iso_mols = 0
+num_vendor_mols = 0
+num_vendor_molecule_failures = 0
+num_activity_value_failures = 0
 
 
-def error(msg):
-    """Prints an error message and exists.
-
-    :param msg: The message to print
-    """
-    logger.error('ERROR: {}'.format(msg))
-    sys.exit(1)
-
-
-def extract_vendor(gzip_filename):
+def extract_vendor_compounds(suppliermol_gzip_file,
+                             suppliermol_edges_gzip_file,
+                             supplier_id,
+                             gzip_filename,
+                             limit):
     """Process the given file and extract vendor information.
-    """
 
-    global compound_nodes
+    :param suppliermol_gzip_file: The SupplierMol node file
+    :param suppliermol_edges_gzip_file: The SupplierMol to Supplier edges file
+    :param supplier_id: The ID of the supplier node
+    :param gzip_filename: The compressed standard file to process
+    :param limit: If non-zero, limit precessing to only the first N molecules
+
+    :returns: The number of molecules processed
+    """
+    global compound_isomer_map
+    global isomol_smiles
+    global non_isomol_smiles
+    global non_isomol_isomol_smiles
+    global assay_compound_values
+    global num_vendor_iso_mols
+    global num_vendor_mols
+    global num_vendor_molecule_failures
+    global num_activity_value_failures
 
     logger.info('Processing {}...'.format(gzip_filename))
 
     num_lines = 0
+    num_processed = 0
     with gzip.open(gzip_filename, 'rt') as gzip_file:
 
         # Check first line (a space-delimited header).
@@ -135,141 +164,91 @@ def extract_vendor(gzip_filename):
             num_lines += 1
             fields = line.split()
 
-            smiles = fields[smiles_col]
+            osmiles = fields[osmiles_col]
+            iso = fields[iso_smiles_col]
+            noniso = fields[noniso_smiles_col]
             compound_id = fields[compound_col]
-            activity = fields[activity_col]
+            activity = 0.0
+            try:
+                activity = float(fields[activity_col])
+            except ValueError:
+                num_activity_value_failures += 1
 
             # The compound ID must be unique
-            if compound_id in compound_map:
+            if compound_id in vendor_compounds:
                 error('Duplicate compound "{}"'.format(compound_id))
+            vendor_compounds.add(compound_id)
 
-            compound_node = CompoundNode(compound_id, smiles, activity)
-            compound_nodes.add(compound_node)
-            # Put in a map, indexed by compound ID for fast lookup later
-            compound_map[compound_id] = compound_node
+            # Add activity to compound-id map...
+            assay_compound_values[compound_id] = activity
 
+            # Is it isomeric?
+            num_vendor_mols += 1
+            if iso != noniso:
 
-def write_compound_nodes(directory, compounds):
-    """Writes the CompoundNodes to a node file, including a header.
+                # Yes
+                num_vendor_iso_mols += 1
+                if iso not in isomol_smiles:
+                    # This standardised SMILES is not
+                    # in the map of existing isomers
+                    # so start a new list of customer compounds...
+                    new_set = set()
+                    new_set.add(compound_id)
+                    isomol_smiles[iso] = new_set
+                else:
+                    # Standard SMILES already
+                    isomol_smiles[iso].add(compound_id)
+                compound_isomer_map[compound_id] = iso
+                # Put a lookup of iso representation from the non-iso
+                if noniso not in non_isomol_isomol_smiles:
+                    new_set = set()
+                    new_set.add(iso)
+                    non_isomol_isomol_smiles[noniso] = new_set
+                else:
+                    non_isomol_isomol_smiles[noniso].add(iso)
 
-    :param directory: The output directory
-    :param compounds: The set of compound namedtuples
-    """
+            else:
 
-    filename = os.path.join(directory,
-                            '{}-compound-nodes.csv.gz'.
-                            format(output_filename_prefix))
-    logger.info('Writing {}...'.format(filename))
+                # Not an isomeric representation
+                if noniso not in non_isomol_smiles:
+                    new_set = set()
+                    new_set.add(compound_id)
+                    non_isomol_smiles[noniso] = new_set
+                else:
+                    non_isomol_smiles[noniso].add(compound_id)
 
-    with gzip.open(filename, 'wb') as gzip_file:
-        gzip_file.write('cmpd_id:ID({}),'
-                        'smiles,'
-                        'activity:FLOAT,'
-                        ':LABEL\n'.format(compound_namespace))
-        for compound in compounds:
-            gzip_file.write('{},"{}",{},VENDOR;HTS\n'.
-                            format(compound.c, compound.s, compound.a))
+            # Write the SupplierMol entry
+            suppliermol_gzip_file.write('{},"{}",Available\n'.
+                                        format(compound_id,
+                                               osmiles))
 
+            # And add a suitable 'Availability' relationship with the Supplier
+            suppliermol_edges_gzip_file. \
+                write('{},{},Availability\n'.
+                      format(compound_id, supplier_id))
 
-def augment_original_nodes(directory, filename, has_header):
-    """Augments the original nodes file and writes the relationships
-    for nodes in this file to the Vendor nodes.
+            # Enough?
+            num_processed += 1
+            if limit and num_processed >= limit:
+                break
 
-    :param directory: The output directory
-    :param filename: The name of the original data file (to be augmented)
-    :param has_header: True if the original file has a header
-    """
-
-    global num_nodes
-    global num_nodes_augmented
-    global num_compound_relationships
-
-    logger.info('Augmenting {} as...'.format(filename))
-
-    # Augmented file
-    augmented_filename =\
-        os.path.join(directory,
-                     '{}-augmented-{}.gz'.format(output_filename_prefix,
-                                                 os.path.basename(filename)))
-    gzip_ai_file = gzip.open(augmented_filename, 'wt')
-    # Frag to Vendor Compound relationships file
-    augmented_relationships_filename =\
-        os.path.join(directory,
-                     '{}-molecule-compound-edges.csv.gz'.
-                     format(output_filename_prefix))
-    gzip_cr_file = gzip.open(augmented_relationships_filename, 'wt')
-    gzip_cr_file.write(':START_ID({}),'
-                       ':END_ID({}),'
-                       ':TYPE\n'.format(smiles_namespace, compound_namespace))
-
-    logger.info(' {}'.format(augmented_filename))
-    logger.info(' {}'.format(augmented_relationships_filename))
-
-    with open(filename) as i_file:
-
-        if has_header:
-            # Copy first line (header)
-            hdr = i_file.readline()
-            gzip_ai_file.write(hdr)
-
-        for line in i_file:
-
-            num_nodes += 1
-            # Search for a potential MolPort identity
-            # Get the MolPort compound
-            # if we know the compound add a label
-            augmented = False
-            match_ob = hts_re.findall(line)
-            if match_ob:
-                # Look for compounds where we have a vendor.
-                # If there is one, add the label.
-                for compound_id in match_ob:
-                    if compound_id in compound_map:
-                        new_line = line.strip() + ';V_HTS\n'
-                        gzip_ai_file.write(new_line)
-                        augmented = True
-                        num_nodes_augmented += 1
-                        break
-                if augmented:
-                    # If we've augmented the line
-                    # append a relationship to the relationships file
-                    # for each compound that was found...
-                    for compound_id in match_ob:
-                        if compound_id in compound_map:
-                            # Now add vendor relationships to this row
-                            frag_id = line.split(',')[0]
-                            gzip_cr_file.write('"{}",{},HAS_VENDOR\n'.
-                                               format(frag_id, compound_id))
-                            num_compound_relationships += 1
-
-            if not augmented:
-                # No vendor for this line,
-                # just write it out 'as-is'
-                gzip_ai_file.write(line)
-
-    # Close augmented nodes and the relationships
-    gzip_ai_file.close()
-    gzip_cr_file.close()
+    return num_processed
 
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser('Vendor Compound Processor (HTS)')
-    parser.add_argument('vendor_dir',
-                        help='The HTS vendor directory,'
-                             ' containing the ".gz" files to be processed.')
-    parser.add_argument('vendor_prefix',
-                        help='The HTS vendor file prefix,'
-                             ' i.e. "hts". Only files with this prefix'
-                             ' in the vendor directory will be processed')
-    parser.add_argument('nodes',
-                        help='The nodes file to augment with the collected'
-                             ' vendor data')
+    parser = argparse.ArgumentParser('Vendor Compound Processor (HTS/SENP7)')
+    parser.add_argument('vendor_file',
+                        help='The vendor standardised file (gzipped).')
+    parser.add_argument('input_nodes',
+                        help='The compressed (gzipped) nodes file to'
+                             ' augment with the collected vendor data')
     parser.add_argument('output',
                         help='The output directory')
-    parser.add_argument('--nodes-has-header',
-                        help='Use if the nodes file has a header',
-                        action='store_true')
+    parser.add_argument('-l', '--limit',
+                        type=int, default=0,
+                        help='Limit processing to the first N molecules,'
+                             ' process all otherwise.')
 
     args = parser.parse_args()
 
@@ -279,19 +258,157 @@ if __name__ == '__main__':
     if not os.path.isdir(args.output):
         error('output ({}) is not a directory'.format(args.output))
 
-    # Process all the files...
-    hts_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir, args.vendor_prefix))
-    for hts_file in hts_files:
-        extract_vendor(hts_file)
+    # -------
+    # Stage 1 - Process our standardised Vendor File
+    # -------
 
-    # Write the new nodes and relationships
-    # and augment the original nodes file.
-    if compound_map:
-        write_compound_nodes(args.output, compound_nodes)
-        augment_original_nodes(args.output, args.nodes, has_header=args.nodes_has_header)
+    # Open new files for writing.
+    #
+    # The output files are: -
+    # - One for the SupplierMol nodes
+    # - And one for the relationships to the (expected) supplier node
+    # - And one for the molecule to assay relationships
+    suppliermol_filename = os.path. \
+        join(args.output,
+             '{}-suppliermol-nodes.csv.gz'.
+             format(output_filename_prefix))
+    logger.info('Writing %s...', suppliermol_filename)
+    suppliermol_gzip_file = gzip.open(suppliermol_filename, 'wt')
+    suppliermol_gzip_file.write('cmpd_id:ID({}),'
+                                'osmiles,'
+                                ':LABEL\n'.format(suppliermol_namespace))
+
+    suppliermol_edges_filename = os.path. \
+        join(args.output,
+             '{}-suppliermol-supplier-edges.csv.gz'.
+             format(output_filename_prefix))
+    logger.info('Writing %s...', suppliermol_edges_filename)
+    suppliermol_edges_gzip_file = gzip.open(suppliermol_edges_filename, 'wt')
+    suppliermol_edges_gzip_file.write(':START_ID({}),'
+                                      'quantity,'
+                                      'price_min,'
+                                      'price_max,'
+                                      'currency,'
+                                      'lead_time,'
+                                      ':END_ID({}),'
+                                      ':TYPE\n'.format(suppliermol_namespace,
+                                                       supplier_namespace))
+
+    mol_assay_edge_filename = os.path. \
+        join(args.output,
+             '{}-molecule-assay-edges.csv.gz'.
+             format(output_filename_prefix))
+    logger.info('Writing %s...', mol_assay_edge_filename)
+    mol_assay_edge_gzip_file = gzip.open(mol_assay_edge_filename, 'wt')
+    mol_assay_edge_gzip_file.write(':START_ID({}),'
+                                   'osmiles,'
+                                   'value,'
+                                   ':END_ID({}),'
+                                   ':TYPE\n'.format(frag_namespace,
+                                                    assay_namespace))
+
+    _ = extract_vendor_compounds(suppliermol_gzip_file,
+                                 suppliermol_edges_gzip_file,
+                                 supplier_name,
+                                 args.vendor_file,
+                                 args.limit)
+
+    # Close the opened files.
+    suppliermol_gzip_file.close()
+    suppliermol_edges_gzip_file.close()
+    mol_assay_edge_gzip_file.close()
+
+    # Write the supplier node file...
+    write_supplier_nodes(args.output,
+                         output_filename_prefix,
+                         supplier_name,
+                         supplier_namespace)
+
+    # Write assay node file...
+    # There's just one assay here.
+    # Our 'assay' record...
+    assay_name = 'Percent inhibition'
+    assay_description = 'Percent inhibition against SENP7'
+    assay_type = '%INH'
+
+    assays = [AssayNode(assay_name, assay_description, assay_type)]
+    write_assay_nodes(args.output,
+                      output_filename_prefix,
+                      assays,
+                      assay_namespace)
+
+    # -------
+    # Stage 2 - Write the IsoMol nodes
+    # -------
+    # We have collected and written SupplierMol nodes, Supplier nodes
+    # and relationships and have a map of the vendor molecules
+    # that are isomeric.
+
+    write_isomol_nodes(args.output,
+                       output_filename_prefix,
+                       isomol_smiles,
+                       isomol_namespace,
+                       supplier_name)
+    write_isomol_suppliermol_relationships(args.output,
+                                           output_filename_prefix,
+                                           isomol_smiles,
+                                           isomol_namespace,
+                                           supplier_namespace,
+                                           assay_name,
+                                           assay_namespace,
+                                           assay_compound_values)
+
+    # -------
+    # Stage 3 - Augment
+    # -------
+    # Augment the processed nodes file
+    # and attach relationships between it, the IsoMol and SupplierMol nodes.
+    # This stage: -
+    # - Creates up to 2 new relationships between:
+    #   - IsoMol and Fragment Network
+    #   - Fragment Network and SupplierMol
+
+    num_nodes, \
+    num_nodes_augmented, \
+    num_compound_relationships, \
+    num_compound_iso_relationships = write_nodes(args.input_nodes,
+                                                 args.output,
+                                                 output_filename_prefix,
+                                                 frag_namespace,
+                                                 isomol_namespace,
+                                                 supplier_namespace,
+                                                 isomol_smiles,
+                                                 non_isomol_isomol_smiles,
+                                                 non_isomol_smiles,
+                                                 'V_HTS',
+                                                 assay_name,
+                                                 assay_namespace,
+                                                 assay_compound_values)
 
     # Summary
-    logger.info('{} compounds'.format(len(compound_map)))
-    logger.info('{} nodes'.format(num_nodes))
-    logger.info('{} augmented nodes'.format(num_nodes_augmented))
-    logger.info('{} node compound relationships'.format(num_compound_relationships))
+    logger.info('{:,}/{:,} vendor molecules/iso'.format(num_vendor_mols, num_vendor_iso_mols))
+    logger.info('{:,} vendor molecule failures'.format(num_vendor_molecule_failures))
+    logger.info('{:,} vendor activity value failures'.format(num_activity_value_failures))
+    logger.info('{:,}/{:,} nodes/augmented'.format(num_nodes, num_nodes_augmented))
+    logger.info('{:,}/{:,} node compound relationships/iso'.format(num_compound_relationships, num_compound_iso_relationships))
+
+    # Dump compounds that were referenced in the fragment file
+    # but not found in the vendor data.
+    # Or remove any file that might already exist.
+    unknown_vendor_compounds_file_name = os.path.join(args.output,
+                                                      '{}-unknown_vendor_compounds.txt'.
+                                                      format(output_filename_prefix))
+    if unknown_vendor_compounds:
+        file_name = os.path.join(args.output,
+                                 '{}-unknown_vendor_compounds.txt'.
+                                 format(output_filename_prefix))
+        logger.info('{:,} unknown compounds (see {})'.
+                    format(len(unknown_vendor_compounds),
+                           unknown_vendor_compounds_file_name))
+        with open(unknown_vendor_compounds_file_name, 'wt') as unknown_vendor_compounds_file:
+            for unknown_vendor_compound in unknown_vendor_compounds:
+                unknown_vendor_compounds_file.write(unknown_vendor_compound + '\n')
+    else:
+        logger.info('0 unknown compounds')
+        if os.path.exists(unknown_vendor_compounds_file_name):
+            os.remove(unknown_vendor_compounds_file_name)
