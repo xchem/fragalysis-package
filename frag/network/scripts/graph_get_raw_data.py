@@ -79,7 +79,7 @@ if resp and 'KeyCount' in resp:
                 logger.info('<- %s', filename)
                 s3_client.download_file(s3_archive_bucket,
                                         content['Key'],
-                                        filename)
+                                        os.path.join(args.destination, filename))
                 num_files += 1
         logger.info('Done (%d)', num_files)
 
