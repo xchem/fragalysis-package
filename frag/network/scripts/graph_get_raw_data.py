@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-"""A utility to combine processed graph data to form a neo4j-compliant set
-of data files. This module assumes that the source of the combined data
+"""A utility to get raw (vendor) data files from AWS S3.
+This utility collects data, normally prior to standardising.
+
+This module assumes that the source of the data
 resides in an S3 bucket with a directory structure that complies with the
 **Fragalysis S3 Data Archive** definition.
 
@@ -20,7 +22,6 @@ import argparse
 import logging
 import os
 import sys
-import pprint
 
 import boto3
 
@@ -32,7 +33,7 @@ out_hdlr = logging.StreamHandler()
 out_hdlr.setFormatter(formatter)
 out_hdlr.setLevel(logging.INFO)
 
-logger = logging.getLogger('graph-combiner')
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(out_hdlr)
 
