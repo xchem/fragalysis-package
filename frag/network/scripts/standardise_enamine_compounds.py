@@ -2,14 +2,14 @@
 
 """standardise_enamine_compounds.py
 
-Processes Enamine Real vendor compound files, and generates a 'standard'
+Processes Enamine (Real) vendor compound files, and generates a 'standard'
 tab-separated output.
 
 We create a 'real-standardised-compounds.tab' file that contains a 1st-line
 'header' formed from the _OUTPUT_COLUMNS list.
 
 Alan Christie
-January 2019
+February 2019
 """
 
 import argparse
@@ -21,7 +21,7 @@ import sys
 
 from rdkit import RDLogger
 
-from standardise_molport_compounds import standardise
+import standardise_utils
 
 # Configure basic logging
 logger = logging.getLogger('real')
@@ -34,10 +34,8 @@ logger.addHandler(out_hdlr)
 logger.setLevel(logging.INFO)
 
 # The columns in our output file.
-_OUTPUT_COLUMNS = ['OSMILES',
-                   'ISO_SMILES',
-                   'NONISO_SMILES',
-                   'CMPD_ID']
+# In this file we don't add any of our own.
+_OUTPUT_COLUMNS = standardise_utils.STANDARD_COLUMNS
 
 # The minimum number of columns in the input files and
 # and a map of expected column names indexed by (0-based) column number.
@@ -146,8 +144,8 @@ def standardise_vendor_compounds(output_file, file_name):
             # And try and handle and report any catastrophic errors
             # from dependent modules/functions.
 
-            std, iso, noniso = standardise(osmiles)
-            if not std:
+            std_info = standardise_utils.standardise(osmiles)
+            if not std_info.std:
                 num_vendor_molecule_failures += 1
                 continue
             num_vendor_mols += 1
@@ -155,8 +153,9 @@ def standardise_vendor_compounds(output_file, file_name):
             # Write the standardised data
 
             output = [osmiles,
-                      iso,
-                      noniso,
+                      std_info.iso,
+                      std_info.noniso,
+                      std_info.hac,
                       compound_id]
 
             output_file.write('\t'.join(output) + '\n')

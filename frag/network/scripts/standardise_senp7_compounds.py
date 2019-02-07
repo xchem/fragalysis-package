@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
-"""standardise_hts_compounds.py
+"""standardise_senp7_compounds.py
 
-Processes HTS SENP7 vendor compound files, and generates a 'standard'
+Processes SENP7 (HTS) vendor compound files, and generates a 'standard'
 tab-separated output.
 
-We create a 'hts-standardised-compounds.tab' file that contains a 1st-line
+We create a standardised file that contains a 1st-line
 'header' formed from the _OUTPUT_COLUMNS list.
 
 Alan Christie
-January 2019
+February 2019
 """
 
 import argparse
@@ -21,10 +21,10 @@ import sys
 
 from rdkit import RDLogger
 
-from standardise_molport_compounds import standardise
+import standardise_utils
 
 # Configure basic logging
-logger = logging.getLogger('hts')
+logger = logging.getLogger('senp7')
 out_hdlr = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s %(levelname)s # %(message)s',
                               '%Y-%m-%dT%H:%M:%S')
@@ -34,11 +34,8 @@ logger.addHandler(out_hdlr)
 logger.setLevel(logging.INFO)
 
 # The columns in our output file.
-_OUTPUT_COLUMNS = ['OSMILES',
-                   'ISO_SMILES',
-                   'NONISO_SMILES',
-                   'CMPD_ID',
-                   'INHIB_5UM']
+_OUTPUT_COLUMNS = standardise_utils.STANDARD_COLUMNS + \
+                  ['INHIB_5UM']
 
 # The minimum number of columns in the input files and
 # and a map of expected column names indexed by (0-based) column number.
@@ -54,7 +51,7 @@ expected_input_cols = {compound_col: 'molecule name',
 
 # The output file.
 # Which will be gzipped.
-output_filename = 'hts-standardised-compounds.tab'
+output_filename = 'senp7-standardised-compounds.tab'
 
 # The prefix we use in our fragment file
 hts_prefix = 'SENP7:'
@@ -143,8 +140,8 @@ def standardise_vendor_compounds(output_file, file_name):
             # And try and handle and report any catastrophic errors
             # from dependent modules/functions.
 
-            std, iso, noniso = standardise(osmiles)
-            if not std:
+            std_info = standardise_utils.standardise(osmiles)
+            if not std_info.std:
                 num_vendor_molecule_failures += 1
                 continue
             num_vendor_mols += 1
@@ -152,8 +149,9 @@ def standardise_vendor_compounds(output_file, file_name):
             # Write the standardised data
 
             output = [osmiles,
-                      iso,
-                      noniso,
+                      std_info.iso,
+                      std_info.noniso,
+                      std_info.hac,
                       compound_id,
                       inhib]
 
@@ -164,10 +162,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('Vendor Compound Standardiser (HTS)')
     parser.add_argument('vendor_dir',
-                        help='The HTS vendor directory,'
+                        help='The vendor directory,'
                              ' containing the ".gz" files to be processed.')
     parser.add_argument('vendor_prefix',
-                        help='The HTS vendor file prefix,'
+                        help='The vendor file prefix,'
                              ' i.e. "HTS_". Only files with this prefix'
                              ' in the vendor directory will be processed')
     parser.add_argument('output',

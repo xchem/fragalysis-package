@@ -1,5 +1,5 @@
 ipython == 5.4.1
-boto3 == 1.9.86
+boto3 == 1.9.89
 PyYAML == 3.13
 pytz == 2018.9
 munch == 2.3.2
