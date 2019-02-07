@@ -199,6 +199,10 @@ if __name__ == '__main__':
     # Suppress basic RDKit logging...
     RDLogger.logger().setLevel(RDLogger.ERROR)
 
+    # Report any limiting...?
+    if args.limit:
+        logger.warning('Limiting processing to first {:,} molecules'.format(args.limit))
+
     # Open the file we'll write the standardised data set to.
     # A text, tab-separated file.
     output_filename = os.path.join(args.output, '{}.gz'.format(output_filename))
