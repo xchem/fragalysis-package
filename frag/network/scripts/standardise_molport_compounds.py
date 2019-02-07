@@ -21,7 +21,7 @@ import sys
 
 from rdkit import RDLogger
 
-import standardise_utils
+from frag.utils import standardise_utils
 
 # The columns in our output file.
 _OUTPUT_COLUMNS = standardise_utils.STANDARD_COLUMNS + \

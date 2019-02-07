@@ -1,7 +1,7 @@
 # Series of functions to parse input files
 from collections import namedtuple
 
-from frag.network.scripts.standardise_utils import get_standard_items, verify_header
+from frag.utils.standardise_utils import get_standard_items, verify_header
 from frag.alysis.models import Object, Owner
 from frag.utils.rdkit_utils import (
     _parse_ligand_sdf,

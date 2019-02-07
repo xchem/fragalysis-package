@@ -21,7 +21,7 @@ import sys
 
 from rdkit import RDLogger
 
-import standardise_utils
+from frag.utils import standardise_utils
 
 # Configure basic logging
 logger = logging.getLogger('real')
