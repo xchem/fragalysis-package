@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-"""A utility to write a standard file to AWS S3.
+"""A utility to write a raw vendor/data files to AWS S3.
 
 To use this utility you will need to ensure that your AWS credentials
 are available via expected environment variables. Please refer to
@@ -34,31 +34,31 @@ logger.addHandler(out_hdlr)
 
 # Expected environment variables (that define the bucket)
 s3_bucket_env = 'FRAGALYSIS_S3_BUCKET'
-s3_standard_root = 'standard'
-s3_standard_file = 'standardised-compounds.tab.gz'
+s3_raw_root = 'raw'
 s3_archive_bucket = os.environ.get(s3_bucket_env)
 if not s3_archive_bucket:
     logger.error('You must define %s', s3_bucket_env)
     sys.exit(1)
 
-parser = argparse.ArgumentParser('Graph Standard File Putter')
+parser = argparse.ArgumentParser('Graph Raw File Putter')
 parser.add_argument('source', metavar='DIR', type=str,
-                    help='The local directory (where the standard file exists)')
+                    help='The local directory (where the raw date exists)')
+parser.add_argument('prefix', metavar='PREFIX', type=str,
+                    help='The file prefix'
+                         ' (only files with this prefix will be written)')
 parser.add_argument('path', metavar='PATH', type=str,
-                    help='The path, relative to the "standard" directory'
-                         ' in your S3 bucket. e.g. "activity/senp7/standard-1"')
+                    help='The path, relative to the "raw" directory'
+                         ' in your S3 bucket. e.g. "activity/senp7"')
 
 args = parser.parse_args()
 
-# Standard file
-filename = os.path.join(args.source, s3_standard_file)
-if not os.path.isfile(filename):
-    logger.error('Your standard file (%s) does not exist', filename)
+# Check source directory
+if not os.path.isdir(args.source):
+    logger.error('The source directory does not exist', args.source)
     sys.exit(1)
 
-# The filename of the standard?
-dst = s3_standard_root + '/' + args.path + '/' + s3_standard_file
-logger.info('Putting "%s"...', dst)
+# The S3 raw path...
+dst = s3_raw_root + '/' + args.path + '/'
 
 s3_client = boto3.client('s3')
 
@@ -68,9 +68,15 @@ s3_client = boto3.client('s3')
 target = s3_client.list_objects_v2(Bucket=s3_archive_bucket,
                                    Prefix=dst)
 if 'KeyCount' in target and target['KeyCount']:
-    logger.error('The standard file already exists in S3.'
+    logger.error('The raw path already exists in S3.'
                  ' You cannot "put" to existing locations.')
     sys.exit(1)
 
-# Upload the standard file...
-s3_client.upload_file(filename, s3_archive_bucket, dst)
+# Upload the list of files...
+potential_files = os.listdir(args.source)
+for potential_file in potential_files:
+    src = os.path.join(args.source, potential_file)
+    if os.path.isfile(src) and potential_file.startswith(args.prefix):
+        dst = s3_raw_root + '/' + args.path + '/' + potential_file
+        logger.info('Putting "%s"...', dst)
+        s3_client.upload_file(src, s3_archive_bucket, dst)
