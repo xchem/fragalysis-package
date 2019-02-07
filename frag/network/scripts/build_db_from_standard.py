@@ -24,6 +24,18 @@ def main():
     )
     parser.add_argument("--input")
     parser.add_argument("--base_dir")
+    parser.add_argument('-l', '--limit',
+                        type=int, default=0,
+                        help='Limit processing to the first N molecules,'
+                             ' process all otherwise')
+    parser.add_argument('--min-hac',
+                        type=int, default=0,
+                        help='Limit processing to molecules with at least this'
+                             ' number of heady atoms')
+    parser.add_argument('--max-hac',
+                        type=int, default=0,
+                        help='Limit processing to molecules with no more than'
+                             ' this number of heavy atoms')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-v", dest="verbosity", action="store_const", const=1)
@@ -44,7 +56,10 @@ def main():
         sys.exit(3)
 
     attrs = []
-    standard_representations = parse_standard_file(args.input)
+    standard_representations = parse_standard_file(args.input,
+                                                   args.limit,
+                                                   args.min_hac,
+                                                   args.max_hac)
     for standard_representation in standard_representations:
         attrs.append(Attr(standard_representation.smiles,
                           ['EM', standard_representation.cmpd_id]))
