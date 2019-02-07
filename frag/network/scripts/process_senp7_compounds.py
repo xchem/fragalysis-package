@@ -32,13 +32,13 @@ import logging
 import os
 import sys
 
-from process_utils import error
-from process_utils import write_supplier_nodes
-from process_utils import write_isomol_nodes
-from process_utils import write_isomol_suppliermol_relationships
-from process_utils import write_nodes
-from process_utils import write_assay_nodes
-from process_utils import AssayNode
+from frag.utils.process_utils import error
+from frag.utils.process_utils import write_supplier_nodes
+from frag.utils.process_utils import write_isomol_nodes
+from frag.utils.process_utils import write_isomol_suppliermol_relationships
+from frag.utils.process_utils import write_nodes
+from frag.utils.process_utils import write_assay_nodes
+from frag.utils.process_utils import AssayNode
 
 # Configure basic logging
 logger = logging.getLogger('hts')
