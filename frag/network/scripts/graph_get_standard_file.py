@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-"""A utility to get raw (vendor) data files from AWS S3.
-This utility collects data, normally prior to standardising.
+"""A utility to get a standard data file from AWS S3.
 
 This module assumes that the source of the data
 resides in an S3 bucket with a directory structure that complies with the
@@ -39,18 +38,19 @@ logger.addHandler(out_hdlr)
 
 # Expected environment variables (that define the bucket)
 s3_bucket_env = 'FRAGALYSIS_S3_BUCKET'
-s3_data_root = 'raw'
+s3_standard_root = 'standard'
+s3_standard_file = 'standardised-compounds.tab.gz'
 s3_archive_bucket = os.environ.get(s3_bucket_env)
 if not s3_archive_bucket:
     logger.error('You must define %s', s3_bucket_env)
     sys.exit(1)
 
-parser = argparse.ArgumentParser('Graph Raw File Getter')
+parser = argparse.ArgumentParser('Graph Standard File Getter')
 parser.add_argument('path', metavar='PATH', type=str,
-                    help='The path, relative to the "raw" directory'
-                         ' in your S3 bucket. e.g. "activity/senp7"')
+                    help='The path, relative to the "standard" directory'
+                         ' in your S3 bucket. e.g. "activity/senp7/standard-2"')
 parser.add_argument('destination', metavar='DIR', type=str,
-                    help='The local destination directory for the data,'
+                    help='The local destination directory for the standard file,'
                          ' which must exist')
 
 args = parser.parse_args()
@@ -60,37 +60,22 @@ if not os.path.isdir(args.destination):
     logger.error('Destination is not a directory')
     sys.exit(1)
 
-src = s3_data_root + '/' + args.path + '/'
-logger.info('Getting files from "%s"...', src)
+src = s3_standard_root + '/' + args.path + '/' + s3_standard_file
+logger.info('Getting "%s"...', src)
 
 # Get the contents of the selected directory...
 s3_client = boto3.client('s3')
 resp = s3_client.list_objects_v2(Bucket=s3_archive_bucket,
                                  Prefix=src)
 
-# And download everything that looks like a file...
-if resp and 'KeyCount' in resp:
+# Download (if present)...
+# An error if it isn't.
+if resp and 'KeyCount' in resp and resp['KeyCount'] == 1:
 
-    if resp['KeyCount']:
-
-        num_files = 0
-        for content in resp['Contents']:
-            if not content['Key'].endswith('/'):
-                filename = content['Key'].split('/')[-1]
-                logger.info('%s > %s', filename, args.destination)
-                s3_client.download_file(s3_archive_bucket,
-                                        content['Key'],
-                                        os.path.join(args.destination, filename))
-                num_files += 1
-        logger.info('Done (%d)', num_files)
-
-    else:
-
-        # KeyCount was zero
-        logger.warning('No files found')
-        sys.exit(1)
-
+    s3_client.download_file(s3_archive_bucket,
+                            src,
+                            os.path.join(args.destination, s3_standard_file))
 else:
 
-    logger.error('Unexpected response (expected KeyCount)')
+    logger.error('Standard file does not exist')
     sys.exit(1)
