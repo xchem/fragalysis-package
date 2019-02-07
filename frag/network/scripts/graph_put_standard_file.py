@@ -51,14 +51,14 @@ parser.add_argument('source', metavar='DIR', type=str,
                     help='The local directory (where the standard file exists)')
 parser.add_argument('path', metavar='PATH', type=str,
                     help='The path, relative to the "standard" directory'
-                         ' in your S3 bucket. e.g. "activity/senp7"')
+                         ' in your S3 bucket. e.g. "activity/senp7/standard-1"')
 
 args = parser.parse_args()
 
 # Standard file
 filename = os.path.join(args.source, s3_standard_file)
 if not os.path.isfile(args.source):
-    logger.error('You standard file (%s) does not exist', filename)
+    logger.error('Your standard file (%s) does not exist', filename)
     sys.exit(1)
 
 # The filename of the standard?

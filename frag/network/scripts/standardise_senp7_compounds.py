@@ -51,7 +51,7 @@ expected_input_cols = {compound_col: 'molecule name',
 
 # The output file.
 # Which will be gzipped.
-output_filename = 'senp7-standardised-compounds.tab'
+output_filename = 'standardised-compounds.tab'
 
 # The prefix we use in our fragment file
 hts_prefix = 'SENP7:'

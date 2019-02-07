@@ -53,7 +53,7 @@ expected_input_cols = {compound_col: 'idnumber',
 
 # The output file.
 # Which will be gzipped.
-output_filename = 'enamine-standardised-compounds.tab'
+output_filename = 'standardised-compounds.tab'
 
 # The compound identifier prefix
 # the vendor uses in the the compound files...
