@@ -1,12 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-"""A utility to write standard file to AWS S3.
-This utility saves data, normally after initial standardising.
-
-This module assumes that the source of the data
-resides in an S3 bucket with a directory structure that complies with the
-**Fragalysis S3 Data Archive** definition.
+"""A utility to write a standard file to AWS S3.
 
 To use this utility you will need to ensure that your AWS credentials
 are available via expected environment variables. Please refer to
@@ -65,6 +60,17 @@ if not os.path.isfile(filename):
 dst = s3_standard_root + '/' + args.path + '/' + s3_standard_file
 logger.info('Putting "%s"...', dst)
 
-# Upload the standard file...
 s3_client = boto3.client('s3')
+
+# We must not write to an existing path (key).
+# It is up to the user to make sure the destination does not exist,
+# it's too easy to over-write files in S3.
+target = s3_client.list_objects_v2(Bucket=s3_archive_bucket,
+                                   Prefix=dst)
+if 'KeyCount' in target and target['KeyCount']:
+    logger.error('The standard file already exists in S3.'
+                 ' You cannot "put" to existing locations')
+    sys.exit(1)
+
+# Upload the standard file...
 s3_client.upload_file(filename, s3_archive_bucket, dst)
