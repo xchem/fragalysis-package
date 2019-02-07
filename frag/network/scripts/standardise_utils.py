@@ -35,6 +35,7 @@ STANDARD_COLUMNS = ['OSMILES',
 
 # The tuple returned by calls to 'standardise()'.
 # If the first field (std) is None then the standard cannot be used.
+# All items are rendered as strings.
 StandardInfo = namedtuple('StandardInfo', 'std iso noniso hac')
 # A named-tuple representation of the standard contents of
 # a file line, returned by the convenient function 'get_standard_items()'.
@@ -129,7 +130,7 @@ def standardise(osmiles):
     if not iso or not noniso:
         std = None
 
-    return StandardInfo(std, iso, noniso, hac)
+    return StandardInfo(std, iso, noniso, str(hac))
 
 
 def get_standard_items(line_items):

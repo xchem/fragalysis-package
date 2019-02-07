@@ -76,7 +76,7 @@ if resp and 'KeyCount' in resp:
         for content in resp['Contents']:
             if not content['Key'].endswith('/'):
                 filename = content['Key'].split('/')[-1]
-                logger.info('<- %s', filename)
+                logger.info('%s > %s', filename, args.destination)
                 s3_client.download_file(s3_archive_bucket,
                                         content['Key'],
                                         os.path.join(args.destination, filename))
