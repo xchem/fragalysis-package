@@ -57,7 +57,7 @@ args = parser.parse_args()
 
 # Standard file
 filename = os.path.join(args.source, s3_standard_file)
-if not os.path.isfile(args.source):
+if not os.path.isfile(filename):
     logger.error('Your standard file (%s) does not exist', filename)
     sys.exit(1)
 
