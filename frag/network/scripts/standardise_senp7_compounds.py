@@ -181,7 +181,7 @@ if __name__ == '__main__':
                         help='The output directory')
     parser.add_argument('-l', '--limit',
                         type=int, default=0,
-                        help='Limit processing to the first N values,'
+                        help='Limit processing to the first N molecules,'
                              ' process all otherwise')
 
     args = parser.parse_args()

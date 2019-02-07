@@ -101,7 +101,7 @@ def error(msg):
     sys.exit(1)
 
 
-def standardise_vendor_compounds(output_file, file_name):
+def standardise_vendor_compounds(output_file, file_name, limit):
     """Process the given file and standardise the vendor (and pricing)
     information, writing it as tab-separated fields to the output.
 
@@ -110,6 +110,8 @@ def standardise_vendor_compounds(output_file, file_name):
 
     :param output_file: The tab-separated standardised output file
     :param file_name: The (compressed) file to process
+    :param limit: Limit processing to this number of values (or all if 0)
+    :returns: The number of items processed
     """
 
     global vendor_compounds
@@ -119,6 +121,7 @@ def standardise_vendor_compounds(output_file, file_name):
     logger.info('Standardising %s...', file_name)
 
     line_num = 0
+    num_processed = 0
     with gzip.open(file_name, 'rt') as gzip_file:
 
         # Check first line (a space-delimited header).
@@ -185,6 +188,13 @@ def standardise_vendor_compounds(output_file, file_name):
 
             output_file.write('\t'.join(output) + '\n')
 
+            # Enough?
+            num_processed += 1
+            if limit and num_processed >= limit:
+                break
+
+    return num_processed
+
 
 if __name__ == '__main__':
 
@@ -198,6 +208,10 @@ if __name__ == '__main__':
                              ' in the vendor directory will be processed')
     parser.add_argument('output',
                         help='The output directory')
+    parser.add_argument('-l', '--limit',
+                        type=int, default=0,
+                        help='Limit processing to the first N molecules,'
+                             ' process all otherwise')
 
     args = parser.parse_args()
 
@@ -214,10 +228,15 @@ if __name__ == '__main__':
     # Suppress basic RDKit logging...
     RDLogger.logger().setLevel(RDLogger.ERROR)
 
+    # Report any limiting...?
+    if args.limit:
+        logger.warning('Limiting processing to first {:,} molecules'.format(args.limit))
+
     # Open the file we'll write the standardised data set to.
     # A text, tab-separated file.
     output_filename = os.path.join(args.output, '{}.gz'.format(output_filename))
     logger.info('Writing %s...', output_filename)
+    num_processed = 0
     with gzip.open(output_filename, 'wt') as output_gzip_file:
 
         # Write the header...
@@ -227,7 +246,11 @@ if __name__ == '__main__':
         molport_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir,
                                                      args.vendor_prefix))
         for molport_file in molport_files:
-            standardise_vendor_compounds(output_gzip_file, molport_file)
+            num_processed += standardise_vendor_compounds(output_gzip_file,
+                                                          molport_file,
+                                                          args.limit)
+            if args.limit and num_processed >= args.limit:
+                break
 
     # Summary
     logger.info('{:,} vendor molecules'.format(num_vendor_mols))
