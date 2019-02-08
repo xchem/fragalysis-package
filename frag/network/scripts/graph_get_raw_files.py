@@ -59,7 +59,6 @@ args = parser.parse_args()
 if os.path.isdir(args.destination):
     logger.error('Destination exists')
     sys.exit(1)
-os.mkdir(args.destination)
 
 src = s3_data_root + '/' + args.path + '/'
 logger.info('Getting files from "%s"...', args.path)
@@ -73,6 +72,8 @@ resp = s3_client.list_objects_v2(Bucket=s3_archive_bucket,
 if resp and 'KeyCount' in resp:
 
     if resp['KeyCount']:
+
+        os.mkdir(args.destination)
 
         num_files = 0
         for content in resp['Contents']:
