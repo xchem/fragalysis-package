@@ -51,14 +51,15 @@ parser.add_argument('path', metavar='PATH', type=str,
                          ' in your S3 bucket. e.g. "activity/senp7"')
 parser.add_argument('destination', metavar='DIR', type=str,
                     help='The local destination directory for the data,'
-                         ' which must exist')
+                         ' which must not exist and will be created')
 
 args = parser.parse_args()
 
 # Destination?
-if not os.path.isdir(args.destination):
-    logger.error('Destination is not a directory')
+if os.path.isdir(args.destination):
+    logger.error('Destination exists')
     sys.exit(1)
+os.mkdir(args.destination)
 
 src = s3_data_root + '/' + args.path + '/'
 logger.info('Getting files from "%s"...', src)

@@ -51,14 +51,15 @@ parser.add_argument('path', metavar='PATH', type=str,
                          ' in your S3 bucket. e.g. "activity/senp7/standard-2"')
 parser.add_argument('destination', metavar='DIR', type=str,
                     help='The local destination directory for the standard file,'
-                         ' which must exist')
+                         ' which must not exist and will be created')
 
 args = parser.parse_args()
 
 # Destination?
-if not os.path.isdir(args.destination):
-    logger.error('Destination is not a directory')
+if os.path.isdir(args.destination):
+    logger.error('Destination exists')
     sys.exit(1)
+os.mkdir(args.destination)
 
 src = s3_standard_root + '/' + args.path + '/' + s3_standard_file
 logger.info('Getting "%s"...', src)
