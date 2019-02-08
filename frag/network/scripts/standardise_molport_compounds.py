@@ -216,7 +216,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Create the output directory
-    if os.path.exists(args.destination):
+    if os.path.exists(args.output):
         logger.error('Output exists')
         sys.exit(1)
     os.mkdir(args.output)
