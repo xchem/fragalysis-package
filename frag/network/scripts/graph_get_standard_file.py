@@ -62,7 +62,7 @@ if os.path.isdir(args.destination):
 os.mkdir(args.destination)
 
 src = s3_standard_root + '/' + args.path + '/' + s3_standard_file
-logger.info('Getting "%s"...', src)
+logger.info('Getting standard file from "%s"...', args.path)
 
 # Get the contents of the selected directory...
 s3_client = boto3.client('s3')
