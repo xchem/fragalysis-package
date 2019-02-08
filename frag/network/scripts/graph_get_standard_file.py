@@ -76,6 +76,8 @@ if resp and 'KeyCount' in resp and resp['KeyCount'] == 1:
     s3_client.download_file(s3_archive_bucket,
                             src,
                             os.path.join(args.destination, s3_standard_file))
+    logger.info('Done')
+
 else:
 
     logger.error('Standard file does not exist')
