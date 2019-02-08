@@ -191,10 +191,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Create the output directory
-    if not os.path.exists(args.output):
-        os.mkdir(args.output)
-    if not os.path.isdir(args.output):
-        error('output ({}) is not a directory'.format(args.output))
+    if os.path.exists(args.destination):
+        logger.error('Output exists')
+        sys.exit(1)
+    os.mkdir(args.output)
 
     # -------
     # Stage 1 - Process Vendor Files
