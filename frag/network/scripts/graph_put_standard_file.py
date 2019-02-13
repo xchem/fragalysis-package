@@ -56,15 +56,15 @@ if not os.path.isfile(filename):
     logger.error('Your standard file (%s) does not exist', filename)
     sys.exit(1)
 
-# The filename of the standard?
-dst = s3_standard_root + '/' + args.path + '/' + s3_standard_file
-logger.info('Putting "%s"...', dst)
-
 s3_client = boto3.client('s3')
 
 # We must not write to an existing path (key).
 # It is up to the user to make sure the destination does not exist,
 # it's too easy to over-write files in S3.
+
+logger.info('Putting %s -> %s...', s3_standard_file, args.path)
+
+dst = s3_standard_root + '/' + args.path + '/' + s3_standard_file
 target = s3_client.list_objects_v2(Bucket=s3_archive_bucket,
                                    Prefix=dst)
 if 'KeyCount' in target and target['KeyCount']:

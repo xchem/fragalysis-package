@@ -191,7 +191,7 @@ if __name__ == '__main__':
         logger.error('Output exists')
         sys.exit(1)
     os.mkdir(args.output)
-    os.chmod(args.output, 0o766)
+    os.chmod(args.output, 0o777)
 
     # -------
     # Stage 1 - Process Vendor Files

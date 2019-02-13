@@ -59,7 +59,6 @@ if not os.path.isdir(args.source):
 
 # The S3 raw path...
 dst = s3_raw_root + '/' + args.path + '/'
-
 s3_client = boto3.client('s3')
 
 # We must not write to an existing path (key).
@@ -78,5 +77,5 @@ for potential_file in potential_files:
     src = os.path.join(args.source, potential_file)
     if os.path.isfile(src) and potential_file.startswith(args.prefix):
         dst = s3_raw_root + '/' + args.path + '/' + potential_file
-        logger.info('Putting "%s"...', dst)
+        logger.info('Putting %s -> %s...', potential_file, args.path)
         s3_client.upload_file(src, s3_archive_bucket, dst)
