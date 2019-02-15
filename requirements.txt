@@ -1,4 +1,6 @@
 ipython == 5.4.1
+
+awscli == 1.16.105
 boto3 == 1.9.89
 PyYAML == 3.13
 pytz == 2018.9
