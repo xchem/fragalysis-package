@@ -113,7 +113,8 @@ def parse_mols(input_file, input_format):
 def parse_standard_file(input_file,
                         limit=0,
                         min_hac=0,
-                        max_hac=0):
+                        max_hac=0,
+                        iso_flag=True):
     """Parses an Informatics Matters 'standard' SMILES file.
     The file is not expected to be compressed but is expected to contain
     columns for osmiles, isomeric and non-isomeric representations along with
@@ -129,6 +130,8 @@ def parse_standard_file(input_file,
                     of heavy atoms will be considered.
     :param max_hac: if grater than zero then only molecules with no more
                     than the provided number of heavy atoms will be considered.
+    :param iso_flag: True to use the standard isomeric representation,
+                     False to use the non-isomeric representation.
 
     :returns: a set of 'Standard' namedtuples
     """
@@ -151,7 +154,10 @@ def parse_standard_file(input_file,
                 continue
 
             # Collect..
-            standards.add(Standard(std.iso, std.cmpd_id))
+            if iso_flag:
+                standards.add(Standard(std.iso, std.cmpd_id))
+            else:
+                standards.add(Standard(std.noniso, std.cmpd_id))
 
             # Enough?
             num_collected += 1

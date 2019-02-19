@@ -36,12 +36,15 @@ def main():
                         type=int, default=0,
                         help='Limit processing to molecules with no more than'
                              ' this number of heavy atoms')
+    parser.add_argument("--isomeric", dest="iso_flag", action="store_true")
+    parser.add_argument("--non_isomeric", dest="iso_flag", action="store_false")
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-v", dest="verbosity", action="store_const", const=1)
     group.add_argument("-vv", dest="verbosity", action="store_const", const=2)
 
     parser.set_defaults(verbosity=0)
+    parser.set_defaults(iso_flag=True)
     args = parser.parse_args()
 
     # Do we have an input and base directory?
@@ -59,7 +62,8 @@ def main():
     standard_representations = parse_standard_file(args.input,
                                                    args.limit,
                                                    args.min_hac,
-                                                   args.max_hac)
+                                                   args.max_hac,
+                                                   args.iso_flag)
     for standard_representation in standard_representations:
         attrs.append(Attr(standard_representation.smiles,
                           ['EM', standard_representation.cmpd_id]))
@@ -68,7 +72,7 @@ def main():
         os.mkdir(args.base_dir)
 
     # Build the network
-    node_holder = NodeHolder()
+    node_holder = NodeHolder(iso_flag=args.iso_flag)
     node_holder = build_network(attrs, node_holder,
                                 args.base_dir,
                                 args.verbosity)
