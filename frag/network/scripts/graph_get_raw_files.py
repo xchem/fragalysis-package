@@ -52,11 +52,12 @@ parser.add_argument('path', metavar='PATH', type=str,
 parser.add_argument('destination', metavar='DIR', type=str,
                     help='The local destination directory for the data,'
                          ' which must not exist and will be created')
+parser.add_argument("--force", dest="force", action="store_true")
 
 args = parser.parse_args()
 
 # Destination?
-if os.path.isdir(args.destination):
+if not args.force and os.path.isdir(args.destination):
     logger.error('Destination exists')
     sys.exit(1)
 
