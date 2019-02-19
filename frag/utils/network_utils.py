@@ -415,10 +415,13 @@ def canon_input(smi, isomericSmiles=True):
         return iso_smiles
 
 
-def create_children(input_node, node_holder):
+def create_children(input_node, node_holder, smiles=None, log_file=None):
     """
     Create a series of edges from an input molecule. Iteratively
     :param input_node:
+    :param smiles: A SMILES string, for log/diagnostics only.
+                   Written to the log if specified
+    :param log_file: A file if information is to be logged, otherwise None
     :return: A tuple, the number of direct children
     """
     # Get all ring-ring splits
@@ -430,6 +433,8 @@ def create_children(input_node, node_holder):
             )
     fragments = get_fragments(input_node.RDMol)
     num_fragments = len(fragments)
+    if log_file:
+        log_file.write('F%s,%s\n' % (num_fragments, smiles))
     if num_fragments < 2:
         return num_fragments, 0
 
@@ -482,7 +487,7 @@ def build_network(attrs, node_holder, base_dir='.', verbosity=0):
         create_end_time = None
         direct_frags = 0
         if is_node:
-            direct_frags, total_frags = create_children(node, node_holder)
+            direct_frags, total_frags = create_children(node, node_holder, attr.SMILES, log_file)
             create_end_time = timeit.default_timer()
 
         if verbosity:
