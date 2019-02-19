@@ -74,7 +74,8 @@ if resp and 'KeyCount' in resp:
 
     if resp['KeyCount']:
 
-        os.mkdir(args.destination)
+        if not os.path.isdir(args.destination):
+            os.mkdir(args.destination)
 
         num_files = 0
         for content in resp['Contents']:

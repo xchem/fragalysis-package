@@ -73,7 +73,8 @@ resp = s3_client.list_objects_v2(Bucket=s3_archive_bucket,
 # An error if it isn't.
 if resp and 'KeyCount' in resp and resp['KeyCount'] == 1:
 
-    os.mkdir(args.destination)
+    if not os.path.isdir(args.destination):
+        os.mkdir(args.destination)
     s3_client.download_file(s3_archive_bucket,
                             src,
                             os.path.join(args.destination, s3_standard_file))
