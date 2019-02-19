@@ -480,6 +480,7 @@ def build_network(attrs, node_holder, base_dir='.', verbosity=0):
         node, is_node = node_holder.create_or_retrieve_node(attr.SMILES)
         retrieve_end_time = timeit.default_timer()
         create_end_time = None
+        direct_frags = 0
         if is_node:
             direct_frags, total_frags = create_children(node, node_holder)
             create_end_time = timeit.default_timer()
@@ -494,7 +495,7 @@ def build_network(attrs, node_holder, base_dir='.', verbosity=0):
                 retrieve_dur = retrieve_end_time - start_time
                 create_dur = create_end_time - retrieve_end_time
                 total_dur = create_end_time - start_time
-                log_file.write('1,%s,%s,%s,%s,%s,%s\n' % (attr.SMILES, retrieve_dur, create_dur, total_dur, nh_nodes, nh_edges))
+                log_file.write('1,%s,%s,%s,%s,%s,%s,%s\n' % (attr.SMILES, retrieve_dur, create_dur, total_dur, nh_nodes, nh_edges, direct_frags))
                 log_file.flush()
                 os.fsync(log_file)
             else:
