@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 
-"""process_hts_compounds.py
+"""process_senp7_compounds.py
 
-Processes standardised HTS vendor files.
+Processes standardised senp7 vendor files.
 
 The files generated (in a named output directory) are:
 
--   "hts-compound-nodes.csv.gz"
+-   "senp7-compound-nodes.csv.gz"
     containing all the nodes for the vendor compounds.
 
--   "hts-molecule-compound_edges.csv.gz"
+-   "senp7-molecule-compound_edges.csv.gz"
     containing the relationships between the original node entries and
-    the "Vendor" nodes. There is a relationship for every Enamine
+    the "Vendor" nodes. There is a relationship for every senp7
     compound that was found in the earlier processing.
 
 The module augments the original nodes by adding the label
@@ -32,13 +32,13 @@ import logging
 import os
 import sys
 
-from frag.utils.process_utils import error
-from frag.utils.process_utils import write_supplier_nodes
-from frag.utils.process_utils import write_isomol_nodes
-from frag.utils.process_utils import write_isomol_suppliermol_relationships
-from frag.utils.process_utils import write_nodes
-from frag.utils.process_utils import write_assay_nodes
-from frag.utils.process_utils import AssayNode
+from process_utils import error
+from process_utils import write_supplier_nodes
+from process_utils import write_isomol_nodes
+from process_utils import write_isomol_suppliermol_relationships
+from process_utils import write_nodes
+from process_utils import write_assay_nodes
+from process_utils import AssayNode
 
 # Configure basic logging
 logger = logging.getLogger('hts')
