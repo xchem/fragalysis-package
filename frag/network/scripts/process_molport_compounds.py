@@ -472,6 +472,15 @@ if __name__ == '__main__':
                                                  non_isomol_smiles,
                                                  'V_MP')
 
+    # Now complete we write a "done" file to the output.
+    # Processing may be time-consuming
+    # so this file helps us avoid unnecessary re-processing on failure.
+    # This can be used by the automation (ansible) framework to
+    # decide whether processing was completed successfully.
+    # If there's a 'done' file we can safely assume that processing
+    # is complete.
+    open(os.path.join(args.output, 'done'), 'a').close()
+
     # Summary
     logger.info('{:,}/{:,} vendor molecules/iso'.format(num_vendor_mols, num_vendor_iso_mols))
     logger.info('{:,} vendor molecule failures'.format(num_vendor_molecule_failures))
