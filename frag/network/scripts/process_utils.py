@@ -29,6 +29,9 @@ logger.setLevel(logging.INFO)
 # assay.type
 AssayNode = namedtuple('AssayNode', 'name description type')
 
+# Augmenting report rate...
+AUGMENT_REPORT_RATE = 10000000
+
 
 def error(msg):
     """Prints an error message and exits.
@@ -288,7 +291,7 @@ def write_nodes(input_nodes,
             num_nodes += 1
             # Give user a gentle reminder to stdout
             # that all is progressing...
-            if num_nodes % augment_report_rate == 0:
+            if num_nodes % AUGMENT_REPORT_RATE == 0:
                 logger.info(' ...at node {:,} ({:,}/{:,})'.
                             format(num_nodes,
                                    num_compound_relationships,
