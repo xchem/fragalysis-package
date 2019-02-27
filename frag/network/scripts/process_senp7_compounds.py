@@ -52,15 +52,17 @@ logger.setLevel(logging.INFO)
 
 # The minimum number of columns in the input files and
 # and a map of expected column names indexed by (0-based) column number.
-expected_min_num_cols = 5
+expected_min_num_cols = 6
 osmiles_col = 0
 iso_smiles_col = 1
 noniso_smiles_col = 2
-compound_col = 3
-activity_col = 4
+hac_col = 3
+compound_col = 4
+activity_col = 5
 expected_input_cols = {osmiles_col: 'OSMILES',
                        iso_smiles_col: 'ISO_SMILES',
                        noniso_smiles_col: 'NONISO_SMILES',
+                       hac_col: 'HAC',
                        compound_col: 'CMPD_ID',
                        activity_col: 'INHIB_5UM'}
 
