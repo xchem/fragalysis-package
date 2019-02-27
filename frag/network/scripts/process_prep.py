@@ -152,3 +152,12 @@ if __name__ == '__main__':
         error('Input ({}) is not a directory'.format(args.input))
 
     prep(args.input, args.output)
+
+    # Now complete we write a "done" file to the output.
+    # Processing may be time-consuming
+    # so this file helps us avoid unnecessary re-processing on failure.
+    # This can be used by the automation (ansible) framework to
+    # decide whether processing was completed successfully.
+    # If there's a 'done' file we can safely assume that processing
+    # is complete.
+    open(os.path.join(args.output, 'done'), 'a').close()
