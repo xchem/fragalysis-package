@@ -15,7 +15,7 @@ import argparse
 import gzip
 
 
-def _split(input_stream, output_base, output_size, limit, extension):
+def _split(input_stream, output_base, output_size, skip, limit, extension):
     """Splits the lines in an input file (including a header)
     into a series of output files.
 
@@ -28,6 +28,8 @@ def _split(input_stream, output_base, output_size, limit, extension):
     :type output_base: ``str``
     :param output_size: The number of lines in each output file.
     :type output_size: ``int``
+    :param skip: Skip the first N molecules.
+    :type skip: ``int``
     :param limit: Limit the total number of molecules to this value.
                   Process all if zero.
     :type limit: ``int``
@@ -40,32 +42,37 @@ def _split(input_stream, output_base, output_size, limit, extension):
 
     file_line_count = 0
     file_number = 1
-    num_molecules = 0
+    molecule_number = 0
+    molecules_written = 0
     output_file = None
     line = input_stream.readline()
     while line and line.strip():
 
-        if file_line_count == 0:
-            # Start a new file and write the header
-            name = output_base + "_" + str(file_number) + extension
-            output_file = open(name, "w")
-            output_file.write(header)
-            file_line_count = 0
+        # First molecule in the inout file is '1'
+        molecule_number += 1
+        if molecule_number > skip:
 
-        output_file.write(line)
-        file_line_count += 1
+            if file_line_count == 0:
+                # Start a new file and write the header
+                name = output_base + "_" + str(file_number) + extension
+                output_file = open(name, "w")
+                output_file.write(header)
+                file_line_count = 0
 
-        if file_line_count == output_size:
-            # Close file
-            output_file.close()
-            output_file = None
-            file_line_count = 0
-            file_number += 1
+            output_file.write(line)
+            file_line_count += 1
 
-        # Enough?
-        num_molecules += 1
-        if limit > 0 and num_molecules >= limit:
-            break
+            if file_line_count == output_size:
+                # Close file
+                output_file.close()
+                output_file = None
+                file_line_count = 0
+                file_number += 1
+
+            # Enough?
+            molecules_written += 1
+            if limit > 0 and molecules_written >= limit:
+                break
 
         # Next line...
         line = input_stream.readline()
@@ -76,7 +83,8 @@ def _split(input_stream, output_base, output_size, limit, extension):
         output_file.close()
 
 
-def header_split(input_file, output_base, output_size, limit, extension=".smi"):
+def header_split(input_file, output_base, output_size,
+                 skip, limit, extension=".smi"):
     """Splits the lines in an input file (including a header)
     into a series of output files.
 
@@ -89,6 +97,8 @@ def header_split(input_file, output_base, output_size, limit, extension=".smi"):
     :type output_base: ``str``
     :param output_size: The number of lines in each output file.
     :type output_size: ``int``
+    :param skip: Skip the first N molecules.
+    :type skip: ``int``
     :param limit: Limit the total number of molecules to this value.
                   Process all if zero.
     :type limit: ``int``
@@ -98,10 +108,12 @@ def header_split(input_file, output_base, output_size, limit, extension=".smi"):
 
     if input_file.endswith('.gz'):
         with gzip.open(input_file, 'rt') as smiles_file:
-            _split(smiles_file, output_base, output_size, limit, extension)
+            _split(smiles_file, output_base, output_size, skip, limit,
+                   extension)
     else:
         with open(input_file) as smiles_file:
-            _split(smiles_file, output_base, output_size, limit, extension)
+            _split(smiles_file, output_base, output_size, skip, limit,
+                   extension)
 
 
 def main():
@@ -134,16 +146,20 @@ def main():
         required=True,
         type=int,
     )
-    parser.add_argument('-l',
-                        '--limit',
+    parser.add_argument('--limit',
                         help='Limit processing to the first N molecules,'
                              ' process all otherwise.',
+                        type=int,
+                        default=0)
+    parser.add_argument('--skip',
+                        help='Skip processing of the first N molecules,'
+                             ' process all (up to thew limit) otherwise.',
                         type=int,
                         default=0)
     ARGS = PARSER.parse_args()
 
     header_split(ARGS.input_file, ARGS.output_base,
-                 int(ARGS.output_size), int(ARGS.limit))
+                 int(ARGS.output_size), int(ARGS.skip), int(ARGS.limit))
 
 
 if __name__ == "__main__":
