@@ -15,7 +15,7 @@ import argparse
 import gzip
 
 
-def _split(input_stream, output_base, output_size, extension):
+def _split(input_stream, output_base, output_size, limit, extension):
     """Splits the lines in an input file (including a header)
     into a series of output files.
 
@@ -28,6 +28,9 @@ def _split(input_stream, output_base, output_size, extension):
     :type output_base: ``str``
     :param output_size: The number of lines in each output file.
     :type output_size: ``int``
+    :param limit: Limit the total number of molecules to this value.
+                  Process all if zero.
+    :type limit: ``int``
     :param extension: The extension for the output files.
     :type extension: ``str``
     """
@@ -37,6 +40,7 @@ def _split(input_stream, output_base, output_size, extension):
 
     file_line_count = 0
     file_number = 1
+    num_molecules = 0
     output_file = None
     line = input_stream.readline()
     while line and line.strip():
@@ -58,6 +62,11 @@ def _split(input_stream, output_base, output_size, extension):
             file_line_count = 0
             file_number += 1
 
+        # Enough?
+        num_molecules += 1
+        if limit > 0 and num_molecules >= limit:
+            break
+
         # Next line...
         line = input_stream.readline()
 
@@ -67,7 +76,7 @@ def _split(input_stream, output_base, output_size, extension):
         output_file.close()
 
 
-def header_slit(input_file, output_base, output_size, extension=".smi"):
+def header_split(input_file, output_base, output_size, limit, extension=".smi"):
     """Splits the lines in an input file (including a header)
     into a series of output files.
 
@@ -80,16 +89,19 @@ def header_slit(input_file, output_base, output_size, extension=".smi"):
     :type output_base: ``str``
     :param output_size: The number of lines in each output file.
     :type output_size: ``int``
+    :param limit: Limit the total number of molecules to this value.
+                  Process all if zero.
+    :type limit: ``int``
     :param extension: The extension for the output files.
     :type extension: ``str``
     """
 
     if input_file.endswith('.gz'):
         with gzip.open(input_file, 'rt') as smiles_file:
-            _split(smiles_file, output_base, output_size, extension)
+            _split(smiles_file, output_base, output_size, limit, extension)
     else:
         with open(input_file) as smiles_file:
-            _split(smiles_file, output_base, output_size, extension)
+            _split(smiles_file, output_base, output_size, limit, extension)
 
 
 def main():
@@ -122,9 +134,16 @@ def main():
         required=True,
         type=int,
     )
+    parser.add_argument('-l',
+                        '--limit',
+                        help='Limit processing to the first N molecules,'
+                             ' process all otherwise.',
+                        type=int,
+                        default=0)
     ARGS = PARSER.parse_args()
 
-    header_slit(ARGS.input_file, ARGS.output_base, int(ARGS.output_size))
+    header_split(ARGS.input_file, ARGS.output_base,
+                 int(ARGS.output_size), int(ARGS.limit))
 
 
 if __name__ == "__main__":
