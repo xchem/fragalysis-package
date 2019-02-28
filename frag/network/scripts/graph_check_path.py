@@ -39,7 +39,7 @@ parser.add_argument('path', metavar='PATH', type=str,
 args = parser.parse_args()
 
 # The S3 path path...
-dst = + args.path + '/'
+dst = args.path + '/'
 s3_client = boto3.client('s3')
 
 # List objects at the destination
