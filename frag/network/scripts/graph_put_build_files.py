@@ -43,7 +43,7 @@ if not s3_archive_bucket:
     logger.error('You must define %s', s3_bucket_env)
     sys.exit(1)
 
-parser = argparse.ArgumentParser('Graph Builkd File Putter')
+parser = argparse.ArgumentParser('Graph Build File Putter')
 parser.add_argument('source', metavar='DIR', type=str,
                     help='The local directory (where the raw date exists)')
 parser.add_argument('path', metavar='PATH', type=str,
@@ -57,7 +57,7 @@ if not os.path.isdir(args.source):
     logger.error('The source directory does not exist', args.source)
     sys.exit(1)
 
-# The S3 raw path...
+# The S3 build path...
 dst = s3_build_root + '/' + args.path + '/'
 s3_client = boto3.client('s3')
 
