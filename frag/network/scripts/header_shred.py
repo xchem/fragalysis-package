@@ -146,12 +146,12 @@ def main():
         required=True,
         type=int,
     )
-    parser.add_argument('--limit',
+    PARSER.add_argument('--limit',
                         help='Limit processing to the first N molecules,'
                              ' process all otherwise.',
                         type=int,
                         default=0)
-    parser.add_argument('--skip',
+    PARSER.add_argument('--skip',
                         help='Skip processing of the first N molecules,'
                              ' process all (up to thew limit) otherwise.',
                         type=int,
