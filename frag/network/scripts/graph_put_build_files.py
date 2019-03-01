@@ -72,8 +72,7 @@ if 'KeyCount' in target and target['KeyCount']:
     sys.exit(1)
 
 # Upload the list of files...
-build_files = ['attributes.txt.gz',
-               'nodes.txt.gz',
+build_files = ['nodes.txt.gz',
                'edges.txt.gz',
                'nodes.csv.gz',
                'edges.csv.gz']
