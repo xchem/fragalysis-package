@@ -456,18 +456,29 @@ def neutralise_3d_mol(input_mol):
 
 
 def write_data(output_dir, node_holder, attrs):
+    """Write the node holder (nodes and edges) and, if attrs is not None
+    the attributes.
+
+    :param output_dir: The output directory
+    :param node_holder: Written as nodes.txt and edges.txt
+    :param attrs: Written as attributes.txt if not None
+    """
     out_f = open(os.path.join(output_dir, "nodes.txt"), "w")
     for node in node_holder.node_list:
         out_f.write(str(node))
         out_f.write("\n")
+    out_f.close()
     out_f = open(os.path.join(output_dir, "edges.txt"), "w")
     for edge in node_holder.get_edges():
         out_f.write(str(edge))
         out_f.write("\n")
-    out_f = open(os.path.join(output_dir, "attributes.txt"), "w")
-    for attr in attrs:
-        out_f.write(str(attr))
-        out_f.write("\n")
+    out_f.close()
+    if attrs:
+        out_f = open(os.path.join(output_dir, "attributes.txt"), "w")
+        for attr in attrs:
+            out_f.write(str(attr))
+            out_f.write("\n")
+        out_f.close()
 
 
 def build_network(attrs, node_holder, base_dir='.', verbosity=0):

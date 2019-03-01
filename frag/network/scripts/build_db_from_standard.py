@@ -76,7 +76,7 @@ def main():
                                 args.base_dir,
                                 args.verbosity)
     # Write the data out
-    write_data(args.base_dir, node_holder, attrs)
+    write_data(args.base_dir, node_holder, None)
 
 
 if __name__ == "__main__":
