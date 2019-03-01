@@ -65,8 +65,7 @@ def main():
                                                    args.max_hac,
                                                    args.iso_flag)
     for standard_representation in standard_representations:
-        attrs.append(Attr(standard_representation.smiles,
-                          ['EM', standard_representation.cmpd_id]))
+        attrs.append(Attr(standard_representation.smiles, []))
 
     if not os.path.isdir(args.base_dir):
         os.mkdir(args.base_dir)
