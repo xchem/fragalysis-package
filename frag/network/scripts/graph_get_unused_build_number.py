@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # coding=utf-8
 
 """A utility to get the next available build number for a build path.
@@ -16,12 +16,14 @@ March 2019
 
 import argparse
 import os
+import pprint
 import sys
 
 import boto3
 
 # Expected environment variables (that define the bucket)
 s3_bucket_env = 'FRAGALYSIS_S3_BUCKET'
+s3_build_root = 'build'
 s3_archive_bucket = os.environ.get(s3_bucket_env)
 if not s3_archive_bucket:
     print('You must define %s', s3_bucket_env)
@@ -40,16 +42,22 @@ s3_client = boto3.client('s3')
 # Query S3 until we find a build that's not used.
 next_free_number = 1
 found = False
-while not found:
-    # The S3 path path...
-    dst = args.path + '/build-%d' % next_free_number
 
-    # List objects at the destination
-    target = s3_client.list_objects_v2(Bucket=s3_archive_bucket,
-                                       Prefix=dst)
-    if 'KeyCount' not in target and target['KeyCount']:
-        found = True
-    else:
-        next_free_number += 1
+# The S3 path path...
+dst = s3_build_root + '/' + args.path + '/'
 
+# List objects at the destination.
+# This will include things like 'build/activity/senp7/build-1/nodes.txt.gz'.
+# For each key, look for a 'build' and then inspect its number.
+target = s3_client.list_objects_v2(Bucket=s3_archive_bucket,
+                                   Prefix=dst)
+for content in target['Contents']:
+    fields = content['Key'].split('/')
+    for field in fields:
+        if field.startswith('build-'):
+            number = int(field.split('-')[1])
+            if number >= next_free_number:
+                next_free_number = number + 1
+
+# The next available build number...
 print(next_free_number)
