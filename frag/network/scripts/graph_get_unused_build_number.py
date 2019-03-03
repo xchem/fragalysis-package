@@ -16,7 +16,6 @@ March 2019
 
 import argparse
 import os
-import pprint
 import sys
 
 import boto3
