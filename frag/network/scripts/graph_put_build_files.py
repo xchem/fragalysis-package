@@ -45,7 +45,7 @@ if not s3_archive_bucket:
 
 parser = argparse.ArgumentParser('Graph Build File Putter')
 parser.add_argument('source', metavar='DIR', type=str,
-                    help='The local directory (where the raw date exists)')
+                    help='The local directory (where the raw data exists)')
 parser.add_argument('path', metavar='PATH', type=str,
                     help='The path, relative to the "raw" directory'
                          ' in your S3 bucket. e.g. "activity/senp7/build-1"')

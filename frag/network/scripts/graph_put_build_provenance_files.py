@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # coding=utf-8
 
-"""A utility to write a raw vendor/data files to AWS S3.
+"""A utility to write a build provenance files to AWS S3.
+All files in the source directory that end '.prov' will be written.
 
 To use this utility you will need to ensure that your AWS credentials
 are available via expected environment variables. Please refer to
@@ -10,7 +11,7 @@ the AWS boto3 documentation, which describes this: -
     https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html
 
 Alan Christie
-February 2019
+March 2019
 """
 
 import argparse
@@ -34,21 +35,19 @@ logger.addHandler(out_hdlr)
 
 # Expected environment variables (that define the bucket)
 s3_bucket_env = 'FRAGALYSIS_S3_BUCKET'
-s3_raw_root = 'raw'
+s3_build_root = 'build'
 s3_archive_bucket = os.environ.get(s3_bucket_env)
 if not s3_archive_bucket:
     logger.error('You must define %s', s3_bucket_env)
     sys.exit(1)
 
-parser = argparse.ArgumentParser('Graph Raw File Putter')
+parser = argparse.ArgumentParser('Graph Build Provenance File Putter')
 parser.add_argument('source', metavar='DIR', type=str,
-                    help='The local directory (where the raw data exists)')
-parser.add_argument('prefix', metavar='PREFIX', type=str,
-                    help='The file prefix'
-                         ' (only files with this prefix will be written)')
+                    help='The local directory (where the .prov files exist)')
 parser.add_argument('path', metavar='PATH', type=str,
-                    help='The path, relative to the "raw" directory'
-                         ' in your S3 bucket. e.g. "activity/senp7"')
+                    help='The path, relative to the "build" directory'
+                         ' in your S3 bucket of the build.'
+                         'e.g. "activity/senp7/build-2"')
 
 args = parser.parse_args()
 
@@ -57,25 +56,13 @@ if not os.path.isdir(args.source):
     logger.error('The source directory does not exist', args.source)
     sys.exit(1)
 
-# The S3 raw path...
-dst = s3_raw_root + '/' + args.path + '/'
 s3_client = boto3.client('s3')
 
-# We must not write to an existing path (key).
-# It is up to the user to make sure the destination does not exist,
-# it's too easy to over-write files in S3.
-target = s3_client.list_objects_v2(Bucket=s3_archive_bucket,
-                                   Prefix=dst)
-if 'KeyCount' in target and target['KeyCount']:
-    logger.error('The raw path already exists in S3.'
-                 ' You cannot "put" to existing locations.')
-    sys.exit(1)
-
-# Upload the list of files...
+# Upload the provenance files in the source directory...
 potential_files = os.listdir(args.source)
 for potential_file in potential_files:
     src = os.path.join(args.source, potential_file)
-    if os.path.isfile(src) and potential_file.startswith(args.prefix):
-        dst = s3_raw_root + '/' + args.path + '/' + potential_file
+    if os.path.isfile(src) and potential_file.endswith('.prov'):
+        dst = s3_build_root + '/' + args.path + '/' + potential_file
         logger.info('Putting %s -> %s...', potential_file, args.path)
         s3_client.upload_file(src, s3_archive_bucket, dst)
