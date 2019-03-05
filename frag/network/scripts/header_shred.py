@@ -125,25 +125,20 @@ def main():
         " to new files."
     )
     PARSER.add_argument(
-        "-i", "--input_file",
+        "input_file",
         help="The name of the input file. If the input file ends '.gz'"
              " it is assumed to be compressed and a gzip reader is used.",
-        required=True
     )
     PARSER.add_argument(
-        "-o",
-        "--output_base",
+        "output_base",
         help="The basename you want to use for your output"
         " files. Each output file will use this as a base"
         " name and will append a unique decimal number to"
         " the end before adding a .smi extension.",
-        required=True,
     )
     PARSER.add_argument(
-        "-s",
-        "--output_size",
+        "output_size",
         help="The (maximum) number of lines in each output" " file.",
-        required=True,
         type=int,
     )
     PARSER.add_argument('--limit',
