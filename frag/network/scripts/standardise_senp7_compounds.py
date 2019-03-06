@@ -191,19 +191,17 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    # Output is either s fixed name in an output directory
+    # or a prefixed filename (without an output directory)
     if args.output_is_prefix:
-
         output_filename = '{}.{}.gz'.format(args.output, output_filename)
-
     else:
-
         # Create the output directory
         if os.path.exists(args.output):
             logger.error('Output exists')
             sys.exit(1)
         os.mkdir(args.output)
         os.chmod(args.output, 0o777)
-
         output_filename = os.path.join(args.output,
                                        '{}.gz'.format(output_filename))
 

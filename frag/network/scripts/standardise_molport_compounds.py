@@ -208,6 +208,11 @@ if __name__ == '__main__':
                              ' in the vendor directory will be processed')
     parser.add_argument('output',
                         help='The output directory')
+    parser.add_argument('--output-is-prefix',
+                        action='store_true',
+                        help='Use the output as filename prefix rather than'
+                             ' a directory. This is useful in nextflow'
+                             ' workflows')
     parser.add_argument('-l', '--limit',
                         type=int, default=0,
                         help='Limit processing to the first N molecules,'
@@ -215,16 +220,19 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # Create the output directory
-    if os.path.exists(args.output):
-        logger.error('Output exists')
-        sys.exit(1)
-    os.mkdir(args.output)
-    os.chmod(args.output, 0o777)
-
-    # -------
-    # Stage 1 - Process Vendor Files
-    # -------
+    # Output is either s fixed name in an output directory
+    # or a prefixed filename (without an output directory)
+    if args.output_is_prefix:
+        output_filename = '{}.{}.gz'.format(args.output, output_filename)
+    else:
+        # Create the output directory
+        if os.path.exists(args.output):
+            logger.error('Output exists')
+            sys.exit(1)
+        os.mkdir(args.output)
+        os.chmod(args.output, 0o777)
+        output_filename = os.path.join(args.output,
+                                       '{}.gz'.format(output_filename))
 
     # Suppress basic RDKit logging...
     RDLogger.logger().setLevel(RDLogger.ERROR)
@@ -235,7 +243,6 @@ if __name__ == '__main__':
 
     # Open the file we'll write the standardised data set to.
     # A text, tab-separated file.
-    output_filename = os.path.join(args.output, '{}.gz'.format(output_filename))
     logger.info('Writing %s...', output_filename)
     num_processed = 0
     with gzip.open(output_filename, 'wt') as output_gzip_file:
