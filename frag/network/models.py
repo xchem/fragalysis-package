@@ -13,7 +13,17 @@ class NodeHolder(object):
         self.iso_flag = iso_flag
 
     def create_or_retrieve_node(self, child_smi):
-        new_node = Node(Chem.MolFromSmiles(child_smi), self.iso_flag)
+        """
+        :param child_smi: The SMILES representation
+        :return: The new node and a flag (True if new)
+                 If a node could not be created (for example if
+                 MolFromSmiles() fails then None is returned as the
+                 node instance.
+        """
+        mol = Chem.MolFromSmiles(child_smi)
+        if not mol:
+            return None, False
+        new_node = Node(mol, self.iso_flag)
         if new_node not in self.node_list:
             self.node_list.add(new_node)
             return new_node, True

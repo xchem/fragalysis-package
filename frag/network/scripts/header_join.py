@@ -32,7 +32,7 @@ def header_join(input_dir, prefix, output_filename):
     # We'll only process those that begin with the given prefix.
     possible_files = os.listdir(input_dir)
 
-    output_file = gzip.open(output_filename + '.gz', 'wb')
+    output_file = gzip.open(output_filename + '.gz', 'wt')
     written_header = False
 
     for possible_file in possible_files:

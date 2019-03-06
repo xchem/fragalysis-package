@@ -15,7 +15,8 @@ import argparse
 import gzip
 
 
-def _split(input_stream, output_base, output_size, skip, limit, extension):
+def _split(input_stream, output_base, output_size, skip, limit, compress,
+           extension):
     """Splits the lines in an input file (including a header)
     into a series of output files.
 
@@ -33,6 +34,8 @@ def _split(input_stream, output_base, output_size, skip, limit, extension):
     :param limit: Limit the total number of molecules to this value.
                   Process all if zero.
     :type limit: ``int``
+    :param compress: Compress the output file.
+    :type compress: ``bool``
     :param extension: The extension for the output files.
     :type extension: ``str``
     """
@@ -55,7 +58,11 @@ def _split(input_stream, output_base, output_size, skip, limit, extension):
             if file_line_count == 0:
                 # Start a new file and write the header
                 name = output_base + "_" + str(file_number) + extension
-                output_file = open(name, "w")
+                if compress:
+                    name += '.gz'
+                    output_file = gzip.open(name, 'wt')
+                else:
+                    output_file = open(name, 'w')
                 output_file.write(header)
                 file_line_count = 0
 
@@ -84,7 +91,7 @@ def _split(input_stream, output_base, output_size, skip, limit, extension):
 
 
 def header_split(input_file, output_base, output_size,
-                 skip, limit, extension=".smi"):
+                 skip, limit, compress, extension=".smi"):
     """Splits the lines in an input file (including a header)
     into a series of output files.
 
@@ -102,17 +109,19 @@ def header_split(input_file, output_base, output_size,
     :param limit: Limit the total number of molecules to this value.
                   Process all if zero.
     :type limit: ``int``
+    :param compress: Compress the output file.
+    :type compress: ``bool``
     :param extension: The extension for the output files.
     :type extension: ``str``
     """
 
     if input_file.endswith('.gz'):
         with gzip.open(input_file, 'rt') as smiles_file:
-            _split(smiles_file, output_base, output_size, skip, limit,
+            _split(smiles_file, output_base, output_size, skip, limit, compress,
                    extension)
     else:
         with open(input_file) as smiles_file:
-            _split(smiles_file, output_base, output_size, skip, limit,
+            _split(smiles_file, output_base, output_size, skip, limit, compress,
                    extension)
 
 
@@ -151,10 +160,14 @@ def main():
                              ' process all (up to thew limit) otherwise.',
                         type=int,
                         default=0)
+    PARSER.add_argument('--compress',
+                        action='store_true',
+                        help='Compress (gzip) the output file.')
     ARGS = PARSER.parse_args()
 
     header_split(ARGS.input_file, ARGS.output_base,
-                 int(ARGS.output_size), int(ARGS.skip), int(ARGS.limit))
+                 int(ARGS.output_size), int(ARGS.skip), int(ARGS.limit),
+                 ARGS.compress)
 
 
 if __name__ == "__main__":

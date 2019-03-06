@@ -399,11 +399,16 @@ def add_child_and_edge(new_list, input_node, excluded_smi, node_holder,
     if child_smi is None:
         return
     # Now generate the edges with input and this node
-    new_node, is_new = node_holder.create_or_retrieve_node(child_smi)
-    node_holder.create_or_retrieve_edge(excluded_smi, rebuilt_smi, input_node, new_node)
-    # Now generate the children for this too
-    if is_new:
-        create_children(new_node, node_holder)
+    # (catering for node failure)
+    node, is_new = node_holder.create_or_retrieve_node(child_smi)
+    if node:
+        node_holder.create_or_retrieve_edge(excluded_smi,
+                                            rebuilt_smi,
+                                            input_node,
+                                            node)
+        # Now generate the children for this too
+        if is_new:
+            create_children(node, node_holder)
 
 
 def canon_input(smi, isomericSmiles=True):
@@ -493,11 +498,11 @@ def build_network(attrs, node_holder, base_dir='.', verbosity=0):
     for attr in tqdm(attrs, disable=tqdm_disable):
 
         start_time = timeit.default_timer()
-        node, is_node = node_holder.create_or_retrieve_node(attr.SMILES)
+        node, is_new = node_holder.create_or_retrieve_node(attr.SMILES)
         retrieve_end_time = timeit.default_timer()
         create_end_time = None
         direct_frags = 0
-        if is_node:
+        if node and is_new:
             direct_frags, total_frags = create_children(node, node_holder, attr.SMILES, log_file)
             create_end_time = timeit.default_timer()
 
@@ -507,16 +512,17 @@ def build_network(attrs, node_holder, base_dir='.', verbosity=0):
 
         if log_file:
             nh_nodes, nh_edges = node_holder.size()
-            if is_node:
+            node_created = True if node else False
+            if is_new:
                 retrieve_dur = retrieve_end_time - start_time
                 create_dur = create_end_time - retrieve_end_time
                 total_dur = create_end_time - start_time
-                log_file.write('1,%s,%s,%s,%s,%s,%s,%s\n' % (attr.SMILES, retrieve_dur, create_dur, total_dur, nh_nodes, nh_edges, direct_frags))
+                log_file.write('1,%s,%s,%s,%s,%s,%s,%s,%s\n' % (attr.SMILES, node_created, retrieve_dur, create_dur, total_dur, nh_nodes, nh_edges, direct_frags))
                 log_file.flush()
                 os.fsync(log_file)
             else:
                 retrieve_dur = retrieve_end_time - start_time
-                log_file.write('0,%s,%s,%s,%s,%s,%s\n' % (attr.SMILES, retrieve_dur, 0, retrieve_dur, nh_nodes, nh_edges))
+                log_file.write('0,%s,%s,%s,%s,%s,%s,%s\n' % (attr.SMILES, node_created, retrieve_dur, 0, retrieve_dur, nh_nodes, nh_edges))
                 log_file.flush()
                 os.fsync(log_file)
 
