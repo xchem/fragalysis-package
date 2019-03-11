@@ -36,6 +36,10 @@ def main():
                         type=int, default=0,
                         help='Limit processing to molecules with no more than'
                              ' this number of heavy atoms')
+    parser.add_argument('--max-frag',
+                        type=int, default=0,
+                        help='Limit processing to molecules with no more than'
+                             ' this number of initial fragment (no limit if 0)')
     parser.add_argument("--isomeric", dest="iso_flag", action="store_true")
     parser.add_argument("--non_isomeric", dest="iso_flag", action="store_false")
 
@@ -73,6 +77,7 @@ def main():
     # Build the network
     node_holder = NodeHolder(iso_flag=args.iso_flag)
     node_holder = build_network(attrs, node_holder,
+                                args.max_frag,
                                 args.base_dir,
                                 args.verbosity)
     # Write the data out

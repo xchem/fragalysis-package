@@ -420,14 +420,15 @@ def canon_input(smi, isomericSmiles=True):
         return iso_smiles
 
 
-def create_children(input_node, node_holder, smiles=None, log_file=None):
+def create_children(input_node, node_holder, max_frag=0, smiles=None, log_file=None):
     """
     Create a series of edges from an input molecule. Iteratively
     :param input_node:
+    :param max_frag: Max initial fragments (or no limit if 0)
     :param smiles: A SMILES string, for log/diagnostics only.
                    Written to the log if specified
     :param log_file: A file if information is to be logged, otherwise None
-    :return: A tuple, the number of direct children
+    :return: A tuple, the number of direct children and (atm 0)
     """
     # Get all ring-ring splits
     ring_ring_splits = get_ring_ring_splits(input_node.RDMol)
@@ -440,7 +441,17 @@ def create_children(input_node, node_holder, smiles=None, log_file=None):
     num_fragments = len(fragments)
     if log_file:
         log_file.write('F%s,%s\n' % (num_fragments, smiles))
+
+    # Ditch processing if no fragments
+    # or (if a maximum is defined) too many.
+    # If a log file is provided
+    # we write a line that starts MF (MaxFrags), the number of fragment
+    # and the SMILES string
     if num_fragments < 2:
+        return num_fragments, 0
+    elif max_frag > 0 and num_fragments > max_frag:
+        if log_file:
+            log_file.write('MF%s,%s\n' % (num_fragments, smiles))
         return num_fragments, 0
 
     # Now remove one item on each iteration
@@ -486,7 +497,8 @@ def write_data(output_dir, node_holder, attrs):
         out_f.close()
 
 
-def build_network(attrs, node_holder, base_dir='.', verbosity=0):
+def build_network(attrs, node_holder,
+                  max_frags=0, base_dir='.', verbosity=0):
 
     log_file = None
     if ENABLE_BUILD_NETWORK_LOG:
@@ -503,7 +515,9 @@ def build_network(attrs, node_holder, base_dir='.', verbosity=0):
         create_end_time = None
         direct_frags = 0
         if node and is_new:
-            direct_frags, total_frags = create_children(node, node_holder, attr.SMILES, log_file)
+            direct_frags, total_frags = create_children(node, node_holder,
+                                                        max_frags, attr.SMILES,
+                                                        log_file)
             create_end_time = timeit.default_timer()
 
         if verbosity:
