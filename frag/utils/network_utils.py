@@ -430,6 +430,23 @@ def create_children(input_node, node_holder, max_frag=0, smiles=None, log_file=N
     :param log_file: A file if information is to be logged, otherwise None
     :return: A tuple, the number of direct children and (atm 0)
     """
+    fragments = get_fragments(input_node.RDMol)
+
+    # Ditch processing if too few fragments
+    # or (if a maximum is defined) too many.
+    # If a log file is provided
+    # we write a line that starts MF (MaxFrags), the number of fragments
+    # and the SMILES string
+    num_fragments = len(fragments)
+    if num_fragments < 2:
+        return num_fragments, 0
+    elif max_frag > 0 and num_fragments > max_frag:
+        if log_file:
+            log_file.write('MF%s,%s\n' % (num_fragments, smiles))
+        return num_fragments, 0
+    if log_file:
+        log_file.write('F%s,%s\n' % (num_fragments, smiles))
+
     # Get all ring-ring splits
     ring_ring_splits = get_ring_ring_splits(input_node.RDMol)
     if ring_ring_splits:
@@ -437,25 +454,9 @@ def create_children(input_node, node_holder, max_frag=0, smiles=None, log_file=N
             add_child_and_edge(
                 ring_ring_split, input_node, "[Xe]", node_holder, ring_ring=True
             )
-    fragments = get_fragments(input_node.RDMol)
-    num_fragments = len(fragments)
-    if log_file:
-        log_file.write('F%s,%s\n' % (num_fragments, smiles))
-
-    # Ditch processing if no fragments
-    # or (if a maximum is defined) too many.
-    # If a log file is provided
-    # we write a line that starts MF (MaxFrags), the number of fragment
-    # and the SMILES string
-    if num_fragments < 2:
-        return num_fragments, 0
-    elif max_frag > 0 and num_fragments > max_frag:
-        if log_file:
-            log_file.write('MF%s,%s\n' % (num_fragments, smiles))
-        return num_fragments, 0
 
     # Now remove one item on each iteration
-    for i in range(len(fragments)):
+    for i in range(num_fragments):
         new_list = []
         for j, item in enumerate(fragments):
             if i == j:
