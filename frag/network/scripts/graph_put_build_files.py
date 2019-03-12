@@ -71,20 +71,24 @@ if 'KeyCount' in target and target['KeyCount']:
                  ' You cannot "put" to existing locations.')
     sys.exit(1)
 
-# Upload the list of files...
-build_files = ['nodes.txt.gz',
-               'edges.txt.gz',
-               'nodes.csv.gz',
-               'edges.csv.gz']
+# The list of files to load...
+required_build_files = ['nodes.txt.gz',
+                        'edges.txt.gz',
+                        'nodes.csv.gz',
+                        'edges.csv.gz']
+optional_build_files = ['excluded.csv.gz']
+
 # Check that all the files exist...
-for build_file in build_files:
+for build_file in required_build_files:
     src = os.path.join(args.source, build_file)
     if not os.path.isfile(src):
         logger.error('Missing "%s" build file.', src)
         sys.exit(1)
 
+build_files = required_build_files + optional_build_files
 for build_file in build_files:
     src = os.path.join(args.source, build_file)
-    dst = s3_build_root + '/' + args.path + '/' + build_file
-    logger.info('Putting %s -> %s...', build_file, args.path)
-    s3_client.upload_file(src, s3_archive_bucket, dst)
+    if os.path.isfile(src):
+        dst = s3_build_root + '/' + args.path + '/' + build_file
+        logger.info('Putting %s -> %s...', build_file, args.path)
+        s3_client.upload_file(src, s3_archive_bucket, dst)
