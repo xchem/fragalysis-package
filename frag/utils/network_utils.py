@@ -434,18 +434,23 @@ def create_children(input_node, node_holder, max_frag=0, smiles=None, log_file=N
 
     # Ditch processing if too few fragments
     # or (if a maximum is defined) too many.
-    # If a log file is provided
-    # we write a line that starts MF (MaxFrags), the number of fragments
-    # and the SMILES string
+    #
+    # All exclusions are written to a log file (if provided)
+    # using 'X' as a prefix followed by letters that indicate the
+    # excluded reason (MF=MaxFrag) and then a period
+    # followed by a number (in this case the fragment count)
     num_fragments = len(fragments)
     if num_fragments < 2:
         return num_fragments, 0
     elif max_frag > 0 and num_fragments > max_frag:
         if log_file:
-            log_file.write('MF%s,%s\n' % (num_fragments, smiles))
+            log_file.write('XMF.%s,%s\n' % (num_fragments, smiles))
         return num_fragments, 0
+
+    # OK if we get here.
+    # If we have a log file write the fragment count.
     if log_file:
-        log_file.write('F%s,%s\n' % (num_fragments, smiles))
+        log_file.write('F.%s,%s\n' % (num_fragments, smiles))
 
     # Get all ring-ring splits
     ring_ring_splits = get_ring_ring_splits(input_node.RDMol)
