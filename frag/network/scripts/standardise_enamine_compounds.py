@@ -216,6 +216,12 @@ if __name__ == '__main__':
     if args.limit:
         logger.warning('Limiting processing to first {:,} molecules'.format(args.limit))
 
+    # Before we open the output file
+    # get a lit of all the input files (the prefix may be the same)
+    # so we don't want our file in the list of files to be processed)
+    real_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir,
+                                              args.vendor_prefix))
+
     # Open the file we'll write the standardised data set to.
     # A text, tab-separated file.
     logger.info('Writing %s...', output_filename)
@@ -226,8 +232,6 @@ if __name__ == '__main__':
         output_gzip_file.write('\t'.join(_OUTPUT_COLUMNS) + '\n')
 
         # Process all the Vendor files...
-        real_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir,
-                                                     args.vendor_prefix))
         for real_file in real_files:
             num_processed += standardise_vendor_compounds(output_gzip_file,
                                                           real_file,

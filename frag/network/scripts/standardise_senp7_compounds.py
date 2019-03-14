@@ -106,16 +106,17 @@ def standardise_vendor_compounds(output_file, file_name, limit):
         field_names = hdr.split('\t')
         # Expected minimum number of columns...
         if len(field_names) < expected_min_num_cols:
-            error('expected at least {} columns found {}'.
-                  format(expected_input_cols, len(field_names)))
+            error('expected at least {} columns found {} ("{}")'.
+                  format(expected_min_num_cols, len(field_names), hdr))
         # Check salient columns (ignoring case)...
         for col_num in expected_input_cols:
             actual_name = field_names[col_num].strip().lower()
             if actual_name != expected_input_cols[col_num]:
-                error('expected "{}" in column {} found "{}"'.
+                error('expected "{}" in column {} found "{}" ("{}")'.
                       format(expected_input_cols[col_num],
                              col_num,
-                             actual_name))
+                             actual_name,
+                             hdr))
 
         # Columns look right...
 
@@ -212,6 +213,12 @@ if __name__ == '__main__':
     if args.limit:
         logger.warning('Limiting processing to first {:,} molecules'.format(args.limit))
 
+    # Before we open the output file
+    # get a lit of all the input files (the prefix may be the same)
+    # so we don't want our file in the list of files to be processed)
+    senp7_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir,
+                                               args.vendor_prefix))
+
     # Open the file we'll write the standardised data set to.
     # A text, tab-separated file.
     logger.info('Writing %s...', output_filename)
@@ -222,8 +229,6 @@ if __name__ == '__main__':
         output_gzip_file.write('\t'.join(_OUTPUT_COLUMNS) + '\n')
 
         # Process all the Vendor files...
-        senp7_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir,
-                                                   args.vendor_prefix))
         for senp7_file in senp7_files:
             num_processed += standardise_vendor_compounds(output_gzip_file,
                                                           senp7_file,
