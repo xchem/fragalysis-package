@@ -76,7 +76,13 @@ required_build_files = ['nodes.txt.gz',
                         'edges.txt.gz',
                         'nodes.csv.gz',
                         'edges.csv.gz']
-optional_build_files = ['excluded.csv.gz']
+# Optional files.
+# an excluded molecule list
+# and files from nextflow (report, timeline, trace)
+optional_build_files = ['excluded.csv.gz',
+                        'report.html',
+                        'timeline.html',
+                        'trace.txt']
 
 # Check that all the files exist...
 for build_file in required_build_files:
