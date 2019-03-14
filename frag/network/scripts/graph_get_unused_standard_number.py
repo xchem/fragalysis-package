@@ -51,13 +51,14 @@ dst = s3_standard_root + '/' + args.path + '/'
 # For each key, look for a 'standard' and then inspect its number.
 target = s3_client.list_objects_v2(Bucket=s3_archive_bucket,
                                    Prefix=dst)
-for content in target['Contents']:
-    fields = content['Key'].split('/')
-    for field in fields:
-        if field.startswith('standard-'):
-            number = int(field.split('-')[1])
-            if number >= next_free_number:
-                next_free_number = number + 1
+if 'Contents' in target:
+    for content in target['Contents']:
+        fields = content['Key'].split('/')
+        for field in fields:
+            if field.startswith('standard-'):
+                number = int(field.split('-')[1])
+                if number >= next_free_number:
+                    next_free_number = number + 1
 
 # The next available build number...
 print(next_free_number)
