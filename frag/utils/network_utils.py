@@ -383,7 +383,8 @@ def get_ring_ring_splits(input_mol, labels=False, do_comb_index=False):
                     for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")
                 ]
             out_mols.append(mols)
-        return out_mols
+
+    return out_mols
 
 
 def add_child_and_edge(new_list, input_node, excluded_smi, node_holder,
@@ -454,11 +455,11 @@ def create_children(input_node, node_holder, max_frag=0, smiles=None, log_file=N
 
     # Get all ring-ring splits
     ring_ring_splits = get_ring_ring_splits(input_node.RDMol)
-    if ring_ring_splits:
-        for ring_ring_split in ring_ring_splits:
-            add_child_and_edge(
-                ring_ring_split, input_node, "[Xe]", node_holder, ring_ring=True
-            )
+
+    num_ring_ring_splits = len(ring_ring_splits)
+    num_total = num_ring_ring_splits + num_fragments
+    if num_total < 2:
+        return num_ring_ring_splits, num_fragments
 
     # Now remove one item on each iteration
     for i in range(num_fragments):
@@ -470,7 +471,13 @@ def create_children(input_node, node_holder, max_frag=0, smiles=None, log_file=N
             new_list.append(item)
         add_child_and_edge(new_list, input_node, excluded_smi, node_holder)
 
-    return num_fragments, 0
+    if ring_ring_splits:
+        for ring_ring_split in ring_ring_splits:
+            add_child_and_edge(
+                ring_ring_split, input_node, "[Xe]", node_holder, ring_ring=True
+            )
+
+    return num_ring_ring_splits, 0
 
 def neutralise_3d_mol(input_mol):
     neutral_mol = NeutraliseCharges(Chem.MolFromMolBlock(input_mol), as_mol=True)[0]
@@ -521,14 +528,16 @@ def build_network(attrs, node_holder,
         create_end_time = None
         direct_frags = 0
         if node and is_new:
-            direct_frags, total_frags = create_children(node, node_holder,
-                                                        max_frags, attr.SMILES,
-                                                        log_file)
+            direct_ring_ring_splits, direct_frags =\
+                create_children(node, node_holder,
+                                max_frags, attr.SMILES,
+                                log_file)
             create_end_time = timeit.default_timer()
 
         if verbosity:
             total_dur = create_end_time - start_time
-            print('{} {} {}'.format(attr.SMILES, total_dur, direct_frags))
+            print('{} {} {}'.format(attr.SMILES, total_dur,
+                                    direct_ring_ring_splits + direct_frags))
 
         if log_file:
             nh_nodes, nh_edges = node_holder.size()
