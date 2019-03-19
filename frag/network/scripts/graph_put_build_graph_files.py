@@ -63,6 +63,7 @@ dst = s3_build_root + '/' + args.path + '/'
 s3_client = boto3.client('s3')
 
 # We write everything in the source directory that's a file...
+num_files_saved = 0
 items = os.path.listdir(args.source)
 for item in items:
     # Skip any .prov files.
@@ -73,3 +74,9 @@ for item in items:
         dst = s3_build_root + '/' + args.path + '/' + item
         logger.info('Putting %s -> %s...', item, args.path)
         s3_client.upload_file(src, s3_archive_bucket, dst)
+        num_files_saved += 1
+
+# It's an error not to have saved any files
+if num_files_saved == 0:
+    logger.error('No files were saved, is the directory empty?')
+    sys.exit(2)
