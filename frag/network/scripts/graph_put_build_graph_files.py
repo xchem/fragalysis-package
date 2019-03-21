@@ -64,7 +64,7 @@ s3_client = boto3.client('s3')
 
 # We write everything in the source directory that's a file...
 num_files_saved = 0
-items = os.path.listdir(args.source)
+items = os.listdir(args.source)
 for item in items:
     # Skip any .prov files.
     if item.endswith('.prov'):
