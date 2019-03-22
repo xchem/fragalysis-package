@@ -513,8 +513,8 @@ def write_load_script(output_dir, generated_files):
 
     # Remove the trailing whitespace and character (\)
     relationships = relationships.rstrip()[:-1]
-    script_variables['nodes'] = nodes
-    script_variables['relationships'] = relationships
+    script_variables = {'nodes': nodes,
+                        'relationships': relationships}
     # Render the file content
     load_script_content = LOAD_SCRIPT_CONTENT.format(**script_variables)
     # Trip the script and insert a trailing line-feed
