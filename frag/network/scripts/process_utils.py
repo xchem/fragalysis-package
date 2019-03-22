@@ -51,13 +51,14 @@ echo "($ME) $(date) Starting (from $IMPORT_DIRECTORY)..."
 
 # If the destination database exists
 # then do nothing...
-if [ ! -d /neo4j/graph/databases/{database} ]; then
+if [ ! -d /neo4j/graph/databases/$IMPORT_TO.db ]; then
     echo "Running as $(id)"
-    echo "($ME) $(date) Importing into '{database}'..."
+    echo "($ME) $(date) Importing into '$IMPORT_TO.db'..."
 
     cd $IMPORT_DIRECTORY
     /var/lib/neo4j/bin/neo4j-admin import \\
-        --database {database} \\
+        --database $IMPORT_TO.db \\
+        --ignore-missing-nodes \\
         {nodes}{relationships}
 
     #echo "($ME) Indexing..."
@@ -67,7 +68,7 @@ if [ ! -d /neo4j/graph/databases/{database} ]; then
 
     echo "($ME) $(date) Imported."
 else
-    echo "($ME) $(date) Database '{database}' already exists."
+    echo "($ME) $(date) Database '$IMPORT_TO' already exists."
 fi
 
 echo "($ME) $(date) Finished."
@@ -494,7 +495,6 @@ def write_load_script(output_dir, generated_files):
 
     # Generate a map of variables and values to
     # that will be used to modify the script content
-    script_variables = {'database': 'graph.db'}
     nodes = ''
     for entry in generated_files['nodes']:
         if nodes:
