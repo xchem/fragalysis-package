@@ -52,7 +52,7 @@ from process_utils import write_supplier_nodes
 from process_utils import write_isomol_nodes
 from process_utils import write_isomol_suppliermol_relationships
 from process_utils import write_nodes
-
+from process_utils import write_load_script
 
 # Configure basic logging
 logger = logging.getLogger('real')
@@ -108,6 +108,14 @@ frag_namespace = 'F2'
 suppliermol_namespace = 'SM_R'
 supplier_namespace = 'S'
 isomol_namespace = 'ISO-R'
+
+# The list of files generated.
+# Used to generate the accompanying `load_neo4j.sh`.
+# We add to this every time we open a file for writing.
+#
+# There is an implicit 'edges.csv.gz'
+generated_files = {'nodes': [],
+                   'edges': ['edges.csv.gz']}
 
 # Various diagnostic counts
 num_nodes = 0
@@ -296,6 +304,7 @@ if __name__ == '__main__':
              '{}-suppliermol-nodes.csv.gz'.
              format(output_filename_prefix))
     logger.info('Writing %s...', suppliermol_filename)
+    generated_files['nodes'].append(suppliermol_filename)
     suppliermol_gzip_file = gzip.open(suppliermol_filename, 'wt')
     suppliermol_gzip_file.write('cmpd_id:ID({}),'
                                 'osmiles,'
@@ -306,6 +315,7 @@ if __name__ == '__main__':
              '{}-suppliermol-supplier-edges.csv.gz'.
              format(output_filename_prefix))
     logger.info('Writing %s...', suppliermol_edges_filename)
+    generated_files['edges'].append(suppliermol_edges_filename)
     suppliermol_edges_gzip_file = gzip.open(suppliermol_edges_filename, 'wt')
     suppliermol_edges_gzip_file.write(':START_ID({}),'
                                       ':END_ID({}),'
@@ -325,6 +335,7 @@ if __name__ == '__main__':
     # Write the supplier node file...
     write_supplier_nodes(args.output,
                          output_filename_prefix,
+                         generated_files,
                          supplier_name,
                          supplier_namespace)
 
@@ -337,11 +348,13 @@ if __name__ == '__main__':
 
     write_isomol_nodes(args.output,
                        output_filename_prefix,
+                       generated_files,
                        isomol_smiles,
                        isomol_namespace,
                        supplier_name)
     write_isomol_suppliermol_relationships(args.output,
                                            output_filename_prefix,
+                                           generated_files,
                                            isomol_smiles,
                                            isomol_namespace,
                                            supplier_namespace)
@@ -362,6 +375,7 @@ if __name__ == '__main__':
     num_compound_iso_relationships = write_nodes(args.input_nodes,
                                                  args.output,
                                                  output_filename_prefix,
+                                                 generated_files,
                                                  frag_namespace,
                                                  isomol_namespace,
                                                  supplier_namespace,
@@ -369,6 +383,12 @@ if __name__ == '__main__':
                                                  non_isomol_isomol_smiles,
                                                  non_isomol_smiles,
                                                  'V_REAL')
+
+    # Before we finish,
+    # write a convenient loader script
+    # for all the files we generated...
+    logger.info('Writing load script...')
+    write_load_script(args.output, generated_files)
 
     # Now complete we write a "done" file to the output.
     # Processing may be time-consuming

@@ -32,6 +32,33 @@ AssayNode = namedtuple('AssayNode', 'name description type')
 # Augmenting report rate...
 AUGMENT_REPORT_RATE = 10000000
 
+# The 'load_neo4j.sh' script content.
+# this is used in write_load_script()
+# which takes a dictionary of nodes and edges
+# (relationships) and formats the
+# database, nodes and relationships blocks...
+LOAD_SCRIPT_CONTENT = """
+#!/usr/bin/env bash
+
+# If the destination database exists
+# then do nothing...
+if [ ! -d /neo4j/graph/databases/{database} ]; then
+    echo "Running as $(id)"
+    echo "(load_neo4j.sh) $(date) Importing into '{database}'..."
+
+    cd /data-loader
+    /var/lib/neo4j/bin/neo4j-admin import \\
+        --database {database} \\
+        {nodes}{relationships}
+
+    #echo "(load_neo4j.sh) Indexing..."
+    #cd /var/lib/neo4j
+    #/data-loader/index_neo4j.sh
+    #echo "(load_neo4j.sh) Done."
+
+    echo "(load_neo4j.sh) $(date) Imported."
+fi
+"""
 
 def error(msg):
     """Prints an error message and exits.
@@ -44,12 +71,16 @@ def error(msg):
 
 def write_assay_nodes(directory,
                       output_prefix,
+                      generated_files,
                       assays,
                       assay_namespace_id):
     """Writes the Assay nodes file, including a header.
 
     :param directory: The sub-directory to write to
     :param output_prefix: The output filename prefix
+    :param generated_files: A dictionary with 'nodes' and 'edges'
+                            keys that we write to when we open a file
+                            for writing.
     :param assays: The set of assays to write
     :param assay_namespace_id: The indexing ID for the nodes
     """
@@ -60,6 +91,7 @@ def write_assay_nodes(directory,
     logger.info('Writing %s...', filename)
 
     num_nodes = 0
+    generated_files['nodes'].append(filename)
     with gzip.open(filename, 'wb') as gzip_file:
         gzip_file.write('name:ID({}),'
                         'description:STRING,'
@@ -76,6 +108,7 @@ def write_assay_nodes(directory,
 
 def write_isomol_nodes(directory,
                        output_prefix,
+                       generated_files,
                        isomol_smiles,
                        isomol_namespace_id,
                        supplier_id):
@@ -83,6 +116,9 @@ def write_isomol_nodes(directory,
 
     :param directory: The sub-directory to write to
     :param output_prefix: The output filename prefix
+    :param generated_files: A dictionary with 'nodes' and 'edges'
+                            keys that we write to when we open a file
+                            for writing.
     :param isomol_smiles: A map of standard SMILES to a list of compounds
     :param isomol_namespace_id: The graph namespace ID for the isomol record
     :param supplier_id: The supplier
@@ -94,6 +130,7 @@ def write_isomol_nodes(directory,
     logger.info('Writing %s...', filename)
 
     num_nodes = 0
+    generated_files['nodes'].append(filename)
     with gzip.open(filename, 'wb') as gzip_file:
         gzip_file.write('smiles:ID({}),'
                         'cmpd_ids:STRING[],'
@@ -113,12 +150,16 @@ def write_isomol_nodes(directory,
 
 def write_supplier_nodes(directory,
                          output_prefix,
+                         generated_files,
                          supplier_id,
                          supplier_namespace_id):
     """Writes the IsoMol nodes file, including a header.
 
     :param directory: The sub-directory to write to
     :param output_prefix: The output filename prefix
+    :param generated_files: A dictionary with 'nodes' and 'edges'
+                            keys that we write to when we open a file
+                            for writing.
     :param supplier_id: The supplier
     :param supplier_namespace_id: The graph namespace ID for the supplier record
     """
@@ -128,6 +169,7 @@ def write_supplier_nodes(directory,
                             format(output_prefix))
     logger.info('Writing %s...', filename)
 
+    generated_files['nodes'].append(filename)
     with gzip.open(filename, 'wb') as gzip_file:
         gzip_file.write('name:ID({}),'
                         ':LABEL\n'.format(supplier_namespace_id))
@@ -139,6 +181,7 @@ def write_supplier_nodes(directory,
 
 def write_isomol_suppliermol_relationships(directory,
                                            output_prefix,
+                                           generated_files,
                                            isomol_smiles,
                                            isomol_namespace_id,
                                            supplier_namespace_id,
@@ -149,6 +192,9 @@ def write_isomol_suppliermol_relationships(directory,
 
     :param directory: The sub-directory to write to
     :param output_prefix: The output filename prefix
+    :param generated_files: A dictionary with 'nodes' and 'edges'
+                            keys that we write to when we open a file
+                            for writing.
     :param isomol_smiles: The map of standardised SMILES
                           to a list of Vendor compound IDs
     :param isomol_namespace_id: The graph namespace ID for the isomol record
@@ -169,6 +215,7 @@ def write_isomol_suppliermol_relationships(directory,
             os.path.join(directory,
                          '{}-isomol-assay-edges.csv.gz'.
                          format(output_prefix))
+        generated_files['edges'].append(molecule_assay_relationships_filename)
         gzip_iar_file = gzip.open(molecule_assay_relationships_filename, 'wt')
         gzip_iar_file.write(':START_ID({}),'
                             'value:FLOAT,'
@@ -177,6 +224,7 @@ def write_isomol_suppliermol_relationships(directory,
                                              assay_namespace_id))
 
     num_edges = 0
+    generated_files['edges'].append(filename)
     with gzip.open(filename, 'wb') as gzip_file:
         gzip_file.write(':START_ID({}),'
                         ':END_ID({}),'
@@ -204,6 +252,7 @@ def write_isomol_suppliermol_relationships(directory,
 def write_nodes(input_nodes,
                 output_dir,
                 output_prefix,
+                generated_files,
                 frag_namespace_id,
                 isomol_namespace_id,
                 suppliermol_namespace_id,
@@ -216,6 +265,10 @@ def write_nodes(input_nodes,
                 assay_compound_values=None):
     """Augments the original nodes file and writes the relationships
     for nodes in this file to the Vendor nodes.
+
+    :param generated_files: A dictionary with 'nodes' and 'edges'
+                            keys that we write to when we open a file
+                            for writing.
     """
 
     num_nodes = 0
@@ -231,12 +284,15 @@ def write_nodes(input_nodes,
         os.path.join(output_dir,
                      '{}-augmented-{}'.format(output_prefix,
                                               os.path.basename(filename)))
+    generated_files['nodes'].append(augmented_filename)
     gzip_ai_file = gzip.open(augmented_filename, 'wt')
+
     # Frag to SupplierMol relationships file
     augmented_noniso_relationships_filename = \
         os.path.join(output_dir,
                      '{}-molecule-suppliermol-edges.csv.gz'.
                      format(output_prefix))
+    generated_files['edges'].append(augmented_noniso_relationships_filename)
     gzip_smr_file = gzip.open(augmented_noniso_relationships_filename, 'wt')
     gzip_smr_file.write(':START_ID({}),'
                         ':END_ID({}),'
@@ -247,6 +303,7 @@ def write_nodes(input_nodes,
         os.path.join(output_dir,
                      '{}-isomol-molecule-edges.csv.gz'.
                      format(output_prefix))
+    generated_files['edges'].append(augmented_iso_relationships_filename)
     gzip_ifr_file = gzip.open(augmented_iso_relationships_filename, 'wt')
     gzip_ifr_file.write(':START_ID({}),'
                         ':END_ID({}),'
@@ -260,6 +317,7 @@ def write_nodes(input_nodes,
             os.path.join(output_dir,
                          '{}-molecule-assay-edges.csv.gz'.
                          format(output_prefix))
+        generated_files['edges'].append(molecule_assay_relationships_filename)
         gzip_mar_file = gzip.open(molecule_assay_relationships_filename, 'wt')
         gzip_mar_file.write(':START_ID({}),'
                             'value:FLOAT,'
@@ -402,3 +460,44 @@ def write_nodes(input_nodes,
             num_nodes_augmented, \
             num_compound_relationships, \
             num_compound_iso_relationships
+
+
+def write_load_script(output_dir, generated_files):
+    """Writes a neo4j-compliant load script for the files
+    we generated. A dictionary of file lists indexed by
+    'nodes' and 'edges' if provided.
+
+    :param output_dir: The output directory
+    :param generated_files: A dictionary of filename lists
+                            keyed by 'nodes' or 'edges'
+    """
+
+    # Only expecting 'nodes' and 'edges'.
+    # DO this to trap a typo where there may be
+    # something like 'nodess' that would otherwise be lost
+    assert 'nodes' in generated_files
+    assert 'edges' in generated_files
+    assert len(generated_files) == 2
+
+    # Generate a map of variables and values to
+    # that will be used to modify the script content
+    script_variables = {'database': 'graph.db'}
+    nodes = ''
+    for entry in generated_files['nodes']:
+        if nodes:
+            nodes += '        '
+        nodes += '--nodes "%s" \\\n' % entry
+    relationships = ''
+    for entry in generated_files['edges']:
+        relationships += '        '
+        relationships += '--relationships "%s" \\\n' % entry
+    # Remove the trailing whitespace and character (\)
+    relationships = relationships.rstrip()[:-1]
+    script_variables['nodes'] = nodes
+    script_variables['relationships'] = relationships
+    # Render the file content
+    load_script_content = LOAD_SCRIPT_CONTENT.format(**script_variables)
+    # And write...
+    script_filename = os.path.join(output_dir, 'load_neo4j.sh')
+    with open(os.path.join(script_filename, 'w') as script_file:
+        script_file.write(load_script_content.strip())

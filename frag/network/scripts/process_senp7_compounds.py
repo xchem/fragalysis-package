@@ -38,6 +38,7 @@ from process_utils import write_isomol_nodes
 from process_utils import write_isomol_suppliermol_relationships
 from process_utils import write_nodes
 from process_utils import write_assay_nodes
+from process_utils import write_load_script
 from process_utils import AssayNode
 
 # Configure basic logging
@@ -101,6 +102,14 @@ suppliermol_namespace = 'SM_SENP7'
 supplier_namespace = 'S'
 isomol_namespace = 'ISO-SENP7'
 assay_namespace = 'A_SENP7'
+
+# The list of files generated.
+# Used to generate the accompanying `load_neo4j.sh`.
+# We add to this every time we open a file for writing.
+#
+# There is an implicit 'edges.csv.gz'
+generated_files = {'nodes': [],
+                   'edges': ['edges.csv.gz']}
 
 # Various diagnostic counts
 num_vendor_iso_mols = 0
@@ -275,6 +284,7 @@ if __name__ == '__main__':
              '{}-suppliermol-nodes.csv.gz'.
              format(output_filename_prefix))
     logger.info('Writing %s...', suppliermol_filename)
+    generated_files['nodes'].append(suppliermol_filename)
     suppliermol_gzip_file = gzip.open(suppliermol_filename, 'wt')
     suppliermol_gzip_file.write('cmpd_id:ID({}),'
                                 'osmiles,'
@@ -285,6 +295,7 @@ if __name__ == '__main__':
              '{}-suppliermol-supplier-edges.csv.gz'.
              format(output_filename_prefix))
     logger.info('Writing %s...', suppliermol_edges_filename)
+    generated_files['edges'].append(suppliermol_edges_filename)
     suppliermol_edges_gzip_file = gzip.open(suppliermol_edges_filename, 'wt')
     suppliermol_edges_gzip_file.write(':START_ID({}),'
                                       'quantity,'
@@ -301,6 +312,7 @@ if __name__ == '__main__':
              '{}-molecule-assay-edges.csv.gz'.
              format(output_filename_prefix))
     logger.info('Writing %s...', mol_assay_edge_filename)
+    generated_files['edges'].append(mol_assay_edge_filename)
     mol_assay_edge_gzip_file = gzip.open(mol_assay_edge_filename, 'wt')
     mol_assay_edge_gzip_file.write(':START_ID({}),'
                                    'osmiles,'
@@ -323,6 +335,7 @@ if __name__ == '__main__':
     # Write the supplier node file...
     write_supplier_nodes(args.output,
                          output_filename_prefix,
+                         generated_files,
                          supplier_name,
                          supplier_namespace)
 
@@ -336,6 +349,7 @@ if __name__ == '__main__':
     assays = [AssayNode(assay_name, assay_description, assay_type)]
     write_assay_nodes(args.output,
                       output_filename_prefix,
+                      generated_files,
                       assays,
                       assay_namespace)
 
@@ -348,11 +362,13 @@ if __name__ == '__main__':
 
     write_isomol_nodes(args.output,
                        output_filename_prefix,
+                       generated_files,
                        isomol_smiles,
                        isomol_namespace,
                        supplier_name)
     write_isomol_suppliermol_relationships(args.output,
                                            output_filename_prefix,
+                                           generated_files,
                                            isomol_smiles,
                                            isomol_namespace,
                                            supplier_namespace,
@@ -376,6 +392,7 @@ if __name__ == '__main__':
     num_compound_iso_relationships = write_nodes(args.input_nodes,
                                                  args.output,
                                                  output_filename_prefix,
+                                                 generated_files,
                                                  frag_namespace,
                                                  isomol_namespace,
                                                  supplier_namespace,
@@ -386,6 +403,12 @@ if __name__ == '__main__':
                                                  assay_name,
                                                  assay_namespace,
                                                  assay_compound_values)
+
+    # Before we finish,
+    # write a convenient loader script
+    # for all the files we generated...
+    logger.info('Writing load script...')
+    write_load_script(args.output, generated_files)
 
     # Now complete we write a "done" file to the output.
     # Processing may be time-consuming
