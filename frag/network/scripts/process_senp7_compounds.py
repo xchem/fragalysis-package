@@ -298,11 +298,6 @@ if __name__ == '__main__':
     generated_files['edges'].append(suppliermol_edges_filename)
     suppliermol_edges_gzip_file = gzip.open(suppliermol_edges_filename, 'wt')
     suppliermol_edges_gzip_file.write(':START_ID({}),'
-                                      'quantity,'
-                                      'price_min,'
-                                      'price_max,'
-                                      'currency,'
-                                      'lead_time,'
                                       ':END_ID({}),'
                                       ':TYPE\n'.format(suppliermol_namespace,
                                                        supplier_namespace))
