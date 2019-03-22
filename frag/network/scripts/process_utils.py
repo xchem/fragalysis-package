@@ -55,7 +55,7 @@ if [ ! -d /neo4j/graph/databases/{database} ]; then
     echo "Running as $(id)"
     echo "($ME) $(date) Importing into '{database}'..."
 
-    cd $IMPORT_SCRIPT_DIR
+    cd $IMPORT_DIRECTORY
     /var/lib/neo4j/bin/neo4j-admin import \\
         --database {database} \\
         {nodes}{relationships}
