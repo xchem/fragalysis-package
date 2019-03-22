@@ -106,7 +106,7 @@ def prep(input_dir, output_dir):
     csv_file = gzip.open(csv_filename, 'wt')
     columns = [":START_ID(%s)" % frag_namespace,
                ":END_ID(%s)" % frag_namespace,
-               ":LABEL"]
+               "label"]
     csv_file.write(','.join(columns) + '\n')
 
     line_num = 0
