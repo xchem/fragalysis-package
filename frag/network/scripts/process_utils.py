@@ -499,5 +499,5 @@ def write_load_script(output_dir, generated_files):
     load_script_content = LOAD_SCRIPT_CONTENT.format(**script_variables)
     # And write...
     script_filename = os.path.join(output_dir, 'load_neo4j.sh')
-    with open(os.path.join(script_filename, 'w') as script_file:
+    with open(script_filename, 'w') as script_file:
         script_file.write(load_script_content.strip())
