@@ -106,13 +106,16 @@ def prep(input_dir, output_dir):
     csv_file = gzip.open(csv_filename, 'wt')
     columns = [":START_ID(%s)" % frag_namespace,
                ":END_ID(%s)" % frag_namespace,
-               "label"]
+               "label"
+               ":TYPE"]
     csv_file.write(','.join(columns) + '\n')
 
     line_num = 0
     with gzip.open(edges_txt_filename, 'rt') as txt_file:
         for line in txt_file:
             items = line.split()
+            # Insert a type column value (required0
+            items.append('FRAG')
             # Write the items out (omitting the first column 'EDGE')
             csv_file.write(','.join(items[1:]) + '\n')
 
