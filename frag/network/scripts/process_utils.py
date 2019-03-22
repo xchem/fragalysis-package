@@ -41,7 +41,6 @@ LOAD_SCRIPT_CONTENT = """
 #!/usr/bin/env bash
 
 ME=load-neo4j.sh
-IMPORT_DIRECTORY=${IMPORT_SCRIPT_DIR:-/data-loader}
 
 echo "($ME) $(date) Starting (from $IMPORT_DIRECTORY)..."
 
@@ -51,7 +50,7 @@ if [ ! -d /neo4j/graph/databases/{database} ]; then
     echo "Running as $(id)"
     echo "($ME) $(date) Importing into '{database}'..."
 
-    cd $IMPORT_DIRECTORY
+    cd $IMPORT_SCRIPT_DIR
     /var/lib/neo4j/bin/neo4j-admin import \\
         --database {database} \\
         {nodes}{relationships}
