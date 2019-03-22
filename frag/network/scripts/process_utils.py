@@ -37,6 +37,11 @@ AUGMENT_REPORT_RATE = 10000000
 # which takes a dictionary of nodes and edges
 # (relationships) and formats the
 # database, nodes and relationships blocks...
+#
+# NOTE: You **MUST** avoid the use of "{}" in the following text.
+#       Unless it relates to a dictionary variable that is used
+#       for expansion.
+#
 LOAD_SCRIPT_CONTENT = """
 #!/usr/bin/env bash
 
