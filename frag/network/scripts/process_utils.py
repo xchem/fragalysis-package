@@ -504,6 +504,8 @@ def write_load_script(output_dir, generated_files):
     script_variables['relationships'] = relationships
     # Render the file content
     load_script_content = LOAD_SCRIPT_CONTENT.format(**script_variables)
+    # Trip the script and insert a trailing line-feed
+    load_script_content = load_script_content.strip() + '\n'
     # And write...
     script_filename = os.path.join(output_dir, 'load_neo4j.sh')
     with open(script_filename, 'w') as script_file:
