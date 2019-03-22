@@ -32,7 +32,7 @@ AssayNode = namedtuple('AssayNode', 'name description type')
 # Augmenting report rate...
 AUGMENT_REPORT_RATE = 10000000
 
-# The 'load_neo4j.sh' script content.
+# The 'load-neo4j.sh' script content.
 # this is used in write_load_script()
 # which takes a dictionary of nodes and edges
 # (relationships) and formats the
@@ -40,24 +40,31 @@ AUGMENT_REPORT_RATE = 10000000
 LOAD_SCRIPT_CONTENT = """
 #!/usr/bin/env bash
 
+ME=load-neo4j.sh
+echo "($ME) $(date) Starting..."
+
 # If the destination database exists
 # then do nothing...
 if [ ! -d /neo4j/graph/databases/{database} ]; then
     echo "Running as $(id)"
-    echo "(load_neo4j.sh) $(date) Importing into '{database}'..."
+    echo "($ME) $(date) Importing into '{database}'..."
 
     cd /data-loader
     /var/lib/neo4j/bin/neo4j-admin import \\
         --database {database} \\
         {nodes}{relationships}
 
-    #echo "(load_neo4j.sh) Indexing..."
+    #echo "($ME) Indexing..."
     #cd /var/lib/neo4j
     #/data-loader/index_neo4j.sh
-    #echo "(load_neo4j.sh) Done."
+    #echo "($ME) Done."
 
-    echo "(load_neo4j.sh) $(date) Imported."
+    echo "($ME) $(date) Imported."
+else
+    echo "($ME) $(date) Database '{database}' already exists."
 fi
+
+echo "($ME) $(date) Finished."
 """
 
 def error(msg):
@@ -507,6 +514,6 @@ def write_load_script(output_dir, generated_files):
     # Trip the script and insert a trailing line-feed
     load_script_content = load_script_content.strip() + '\n'
     # And write...
-    script_filename = os.path.join(output_dir, 'load_neo4j.sh')
+    script_filename = os.path.join(output_dir, 'load-neo4j.sh')
     with open(script_filename, 'w') as script_file:
         script_file.write(load_script_content)

@@ -21,6 +21,7 @@ import argparse
 import logging
 import os
 import re
+import stat
 import sys
 
 import boto3
@@ -103,6 +104,15 @@ if resp and 'KeyCount' in resp:
                                             os.path.join(args.destination, filename))
                     num_files += 1
         logger.info('Done (%d)', num_files)
+
+        # Change permission of .py and .sh files...
+        downloaded_files = os.listdir(args.destination)
+        for downloaded_file in downloaded_files:
+            if downloaded_file.endswith('.sh') or downloaded_file.endswith('.py'):
+                permissions = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+                permissions |= stat.S_IRGRP | stat.S_IXGRP
+                permissions |= stat.S_IROTH | stat.S_IXOTH
+                os.chmod(os.path.join(args.destination, downloaded_file), permissions)
 
     else:
 
