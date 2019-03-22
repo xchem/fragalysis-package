@@ -307,20 +307,6 @@ if __name__ == '__main__':
                                       ':TYPE\n'.format(suppliermol_namespace,
                                                        supplier_namespace))
 
-    mol_assay_edge_filename = os.path. \
-        join(args.output,
-             '{}-molecule-assay-edges.csv.gz'.
-             format(output_filename_prefix))
-    logger.info('Writing %s...', mol_assay_edge_filename)
-    generated_files['edges'].append(mol_assay_edge_filename)
-    mol_assay_edge_gzip_file = gzip.open(mol_assay_edge_filename, 'wt')
-    mol_assay_edge_gzip_file.write(':START_ID({}),'
-                                   'osmiles,'
-                                   'value,'
-                                   ':END_ID({}),'
-                                   ':TYPE\n'.format(frag_namespace,
-                                                    assay_namespace))
-
     _ = extract_vendor_compounds(suppliermol_gzip_file,
                                  suppliermol_edges_gzip_file,
                                  supplier_name,
@@ -330,7 +316,6 @@ if __name__ == '__main__':
     # Close the opened files.
     suppliermol_gzip_file.close()
     suppliermol_edges_gzip_file.close()
-    mol_assay_edge_gzip_file.close()
 
     # Write the supplier node file...
     write_supplier_nodes(args.output,
