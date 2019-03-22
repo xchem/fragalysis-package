@@ -486,11 +486,18 @@ def write_load_script(output_dir, generated_files):
     for entry in generated_files['nodes']:
         if nodes:
             nodes += '        '
-        nodes += '--nodes "%s" \\\n' % entry
+        # We're only interested in the filename
+        # not the directory it's in...
+        _, filename = os.path.split(entry)
+        nodes += '--nodes "%s" \\\n' % filename
     relationships = ''
     for entry in generated_files['edges']:
         relationships += '        '
-        relationships += '--relationships "%s" \\\n' % entry
+        # We're only interested in the filename
+        # not the directory it's in...
+        _, filename = os.path.split(entry)
+        relationships += '--relationships "%s" \\\n' % filename
+
     # Remove the trailing whitespace and character (\)
     relationships = relationships.rstrip()[:-1]
     script_variables['nodes'] = nodes
