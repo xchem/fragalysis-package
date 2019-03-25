@@ -49,7 +49,7 @@ parser.add_argument('source', metavar='DIR', type=str,
                     help='The local directory (where the graph data exists)')
 parser.add_argument('path', metavar='PATH', type=str,
                     help='The path, relative to the "raw" directory'
-                         ' in your S3 bucket. e.g. "activity/senp7/build-1"')
+                         ' in your S3 bucket. e.g. "activity/senp7/v1/build-1"')
 
 args = parser.parse_args()
 
