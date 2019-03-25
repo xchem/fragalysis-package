@@ -5,12 +5,9 @@
 Processes standardised Enamine vendor files, not expected to contain
 pricing information.
 
-Two new files are generated and the original nodes file augmented with a
-"V_E" label.
+For the graph design refer to the Google-Drive graph model document at...
 
-Note:   This module does expect `colate_all` to have been used on the original
-        graph files to produce normalised supplier identities in the node file
-        this module uses.
+    https://drive.google.com/file/d/1g4jT3yhwQYqsKwMpE3fYAA7dgGBYhBiw
 
 The purpose of this module is to create "Vendor" Compound nodes
 and relationships to augment the DLS fragment database.

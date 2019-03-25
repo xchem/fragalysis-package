@@ -4,6 +4,10 @@
 
 Processes standardised senp7 vendor files.
 
+For the graph design refer to the Google-Drive graph model document at...
+
+    https://drive.google.com/file/d/1g4jT3yhwQYqsKwMpE3fYAA7dgGBYhBiw
+
 The files generated (in a named output directory) are:
 
 -   "senp7-compound-nodes.csv.gz"
@@ -323,7 +327,7 @@ if __name__ == '__main__':
     # Write assay node file...
     # There's just one assay here.
     # Our 'assay' record...
-    assay_name = 'Percent inhibition'
+    assay_name = 'Percent inhibition - SENP7'
     assay_description = 'Percent inhibition against SENP7'
     assay_type = '%INH'
 
