@@ -53,7 +53,12 @@ parser.add_argument('path', metavar='PATH', type=str,
 parser.add_argument('destination', metavar='DIR', type=str,
                     help='The local destination directory for the data,'
                          ' which must not exist and will be created')
-parser.add_argument("--force", dest="force", action="store_true")
+parser.add_argument("--force", action="store_true",
+                    help='Force retrieval of the files, even if the'
+                         ' destination directory exists')
+parser.add_argument("--for-combination", action="store_true",
+                    help='Only get the files required for combination'
+                         ' (i.e. the de-duplicated node and edge CSV files')
 
 args = parser.parse_args()
 
@@ -77,6 +82,8 @@ exclude_files = [r'nodes.*',
                  r'excluded[.].*',
                  r'.*[.]txt[.]gz',
                  r'done']
+combination_files = ['edges.csv.gz',
+                     'nodes.csv.gz']
 
 # And download everything that looks like a file...
 if resp and 'KeyCount' in resp:
@@ -92,10 +99,14 @@ if resp and 'KeyCount' in resp:
                 filename = content['Key'].split('/')[-1]
                 # Is the file excluded?
                 get_file = True
-                for regex in exclude_files:
-                    if re.compile(regex).match(filename):
+                if not args.for_combination:
+                    for regex in exclude_files:
+                        if re.compile(regex).match(filename):
+                            get_file = False
+                            break
+                else:
+                    if filename not in combination_files:
                         get_file = False
-                        break
                 # Get the file?
                 if get_file:
                     logger.info('%s > %s', filename, args.destination)
