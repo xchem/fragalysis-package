@@ -15,7 +15,7 @@ The files generated (in a named output directory) are:
     compound that was found in the earlier processing.
 
 The module augments the original nodes by adding the label
-"V_HTS" for all MolPort compounds that have been found
+"SENP7" for all MolPort compounds that have been found
 to the augmented copy of the original node file that it creates.
 
 If the original nodes file is "nodes.csv" the augmented copy
@@ -102,6 +102,7 @@ suppliermol_namespace = 'SM_SENP7'
 supplier_namespace = 'S'
 isomol_namespace = 'ISO-SENP7'
 assay_namespace = 'A_SENP7'
+node_label = 'V_SENP7'
 
 # The list of files generated.
 # Used to generate the accompanying `load_neo4j.sh`.
@@ -379,7 +380,7 @@ if __name__ == '__main__':
                                                  isomol_smiles,
                                                  non_isomol_isomol_smiles,
                                                  non_isomol_smiles,
-                                                 'V_HTS',
+                                                 node_label,
                                                  assay_name,
                                                  assay_namespace,
                                                  assay_compound_values)

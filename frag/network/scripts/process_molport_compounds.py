@@ -151,6 +151,7 @@ frag_namespace = 'F2'
 suppliermol_namespace = 'SM_MP'
 supplier_namespace = 'S'
 isomol_namespace = 'ISO'
+node_label = 'V_MP'
 
 # Regular expression to find the MolPort compound IDs
 # (in the original nodes file).
@@ -485,7 +486,7 @@ if __name__ == '__main__':
                                                  isomol_smiles,
                                                  non_isomol_isomol_smiles,
                                                  non_isomol_smiles,
-                                                 'V_MP')
+                                                 node_label)
 
     # Before we finish,
     # write a convenient loader script
