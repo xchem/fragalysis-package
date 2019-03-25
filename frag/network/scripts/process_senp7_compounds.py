@@ -106,7 +106,7 @@ suppliermol_namespace = 'SM_SENP7'
 supplier_namespace = 'S'
 isomol_namespace = 'ISO-SENP7'
 assay_namespace = 'A_SENP7'
-node_label = 'V_SENP7'
+vendor_code = 'V_SENP7'
 
 # The list of files generated.
 # Used to generate the accompanying `load_neo4j.sh`.
@@ -384,7 +384,7 @@ if __name__ == '__main__':
                                                  isomol_smiles,
                                                  non_isomol_isomol_smiles,
                                                  non_isomol_smiles,
-                                                 node_label,
+                                                 vendor_code,
                                                  assay_name,
                                                  assay_namespace,
                                                  assay_compound_values)

@@ -105,7 +105,7 @@ frag_namespace = 'F2'
 suppliermol_namespace = 'SM_R'
 supplier_namespace = 'S'
 isomol_namespace = 'ISO-R'
-node_label = 'V_REAL'
+vendor_code = 'V_REAL'
 
 # The list of files generated.
 # Used to generate the accompanying `load_neo4j.sh`.
@@ -380,7 +380,7 @@ if __name__ == '__main__':
                                                  isomol_smiles,
                                                  non_isomol_isomol_smiles,
                                                  non_isomol_smiles,
-                                                 node_label)
+                                                 vendor_code)
 
     # Before we finish,
     # write a convenient loader script
