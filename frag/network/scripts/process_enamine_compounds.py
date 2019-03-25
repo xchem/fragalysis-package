@@ -63,14 +63,16 @@ logger.setLevel(logging.INFO)
 
 # The minimum number of columns in the input data (a standardised file).
 # Essentially a map of expected column names indexed by column number.
-expected_min_num_cols = 4
+expected_min_num_cols = 5
 osmiles_col = 0
 iso_smiles_col = 1
 noniso_smiles_col = 2
-compound_col = 3
+hac_col = 3
+compound_col = 4
 expected_input_cols = {osmiles_col: 'OSMILES',
                        iso_smiles_col: 'ISO_SMILES',
                        noniso_smiles_col: 'NONISO_SMILES',
+                       hac_col: 'HAC',
                        compound_col: 'CMPD_ID'}
 
 # Map of Vendor compounds that are isomeric, and their standard representation.

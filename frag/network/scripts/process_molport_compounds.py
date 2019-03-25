@@ -94,8 +94,10 @@ iso_smiles_col = 1
 noniso_smiles_col = 2
 hac_col = 3
 compound_col = 4
-cost_col = {1: 4, 5: 5, 50: 6}
-blt_col = 7
+cost_col = {1: 5,
+            5: 6,
+            50: 7}
+blt_col = 8
 expected_input_cols = {osmiles_col: 'OSMILES',
                        iso_smiles_col: 'ISO_SMILES',
                        noniso_smiles_col: 'NONISO_SMILES',
