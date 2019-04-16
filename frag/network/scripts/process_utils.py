@@ -106,7 +106,7 @@ def write_assay_nodes(directory,
 
     num_nodes = 0
     generated_files['nodes'].append(filename)
-    with gzip.open(filename, 'wb') as gzip_file:
+    with gzip.open(filename, 'wt') as gzip_file:
         gzip_file.write('name:ID({}),'
                         'description:STRING,'
                         'type:STRING,'
@@ -145,7 +145,7 @@ def write_isomol_nodes(directory,
 
     num_nodes = 0
     generated_files['nodes'].append(filename)
-    with gzip.open(filename, 'wb') as gzip_file:
+    with gzip.open(filename, 'wt') as gzip_file:
         gzip_file.write('smiles:ID({}),'
                         'cmpd_ids:STRING[],'
                         ':LABEL\n'.format(isomol_namespace_id))
@@ -184,7 +184,7 @@ def write_supplier_nodes(directory,
     logger.info('Writing %s...', filename)
 
     generated_files['nodes'].append(filename)
-    with gzip.open(filename, 'wb') as gzip_file:
+    with gzip.open(filename, 'wt') as gzip_file:
         gzip_file.write('name:ID({}),'
                         ':LABEL\n'.format(supplier_namespace_id))
         # Write the solitary row...
@@ -239,7 +239,7 @@ def write_isomol_suppliermol_relationships(directory,
 
     num_edges = 0
     generated_files['edges'].append(filename)
-    with gzip.open(filename, 'wb') as gzip_file:
+    with gzip.open(filename, 'wt') as gzip_file:
         gzip_file.write(':START_ID({}),'
                         ':END_ID({}),'
                         ':TYPE\n'.format(isomol_namespace_id,
