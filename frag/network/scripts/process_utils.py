@@ -4,7 +4,7 @@
 """Utilities shared by the various "process" modules.
 
 Alan Christie
-January 2019
+May 2019
 """
 
 from collections import namedtuple
@@ -469,11 +469,11 @@ def write_nodes(input_nodes,
     if gzip_mar_file:
         gzip_mar_file.close()
 
-
-    return  num_nodes, \
-            num_nodes_augmented, \
-            num_compound_relationships, \
-            num_compound_iso_relationships
+    return augmented_filename, \
+        num_nodes, \
+        num_nodes_augmented, \
+        num_compound_relationships, \
+        num_compound_iso_relationships
 
 
 def write_load_script(output_dir, generated_files):
@@ -487,7 +487,7 @@ def write_load_script(output_dir, generated_files):
     """
 
     # Only expecting 'nodes' and 'edges'.
-    # DO this to trap a typo where there may be
+    # Do this to trap a typo where there may be
     # something like 'nodess' that would otherwise be lost
     assert 'nodes' in generated_files
     assert 'edges' in generated_files

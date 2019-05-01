@@ -58,7 +58,7 @@ If the original nodes file is "nodes.csv.gz" the augmented copy
     that are not in the Vendor data.
 
 Alan Christie
-January 2019
+May 2019
 """
 
 import argparse
@@ -377,6 +377,11 @@ if __name__ == '__main__':
                              ' augment with the collected vendor data')
     parser.add_argument('output',
                         help='The output directory')
+    parser.add_argument('-r', '--replace-input',
+                        dest="replace_input", action="store_true",
+                        help='When processing is complete replace the'
+                             ' input nodes file with the augmented output.'
+                             ' If used the load script is not generated.')
     parser.add_argument('-l', '--limit',
                         type=int, default=0,
                         help='Limit processing to the first N molecules,'
@@ -475,6 +480,7 @@ if __name__ == '__main__':
     #   - IsoMol and Fragment Network
     #   - Fragment Network and SupplierMol
 
+    augmented_file_path, \
     num_nodes, \
     num_nodes_augmented, \
     num_compound_relationships, \
@@ -490,11 +496,23 @@ if __name__ == '__main__':
                                                  non_isomol_smiles,
                                                  vendor_code)
 
-    # Before we finish,
-    # write a convenient loader script
-    # for all the files we generated...
-    logger.info('Writing load script...')
-    write_load_script(args.output, generated_files)
+    # Replace input file (normally used as part of a chain,
+    # i.e. during the combination playbook).
+    # Otherwise create the loader script here.
+    # If we replace the output file the loader script is something
+    # that has to be generated separately.
+    if args.replace_input:
+        logger.info('Replacing input (%s -> %s)...',
+                    augmented_file_path, args.input_nodes)
+        # Remove the original input file and repl;ace it with the output
+        os.remove(args.input_nodes)
+        os.rename(augmented_file_path, args.input_nodes)
+    else:
+        # Before we finish,
+        # write a convenient loader script
+        # for all the files we generated...
+        logger.info('Writing load script...')
+        write_load_script(args.output, generated_files)
 
     # Now complete we write a "done" file to the output.
     # Processing may be time-consuming
