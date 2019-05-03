@@ -31,7 +31,7 @@ def main():
     parser.add_argument('--min-hac',
                         type=int, default=0,
                         help='Limit processing to molecules with at least this'
-                             ' number of heady atoms')
+                             ' number of heavy atoms')
     parser.add_argument('--max-hac',
                         type=int, default=0,
                         help='Limit processing to molecules with no more than'

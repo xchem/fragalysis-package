@@ -131,7 +131,9 @@ def extract_vendor_compounds(suppliermol_gzip_file,
                              suppliermol_edges_gzip_file,
                              supplier_id,
                              gzip_filename,
-                             limit):
+                             limit,
+                             min_hac,
+                             max_hac):
     """Process the given file and extract vendor (and pricing) information.
     Vendor nodes are only created when there is at least one
     column of pricing information.
@@ -156,6 +158,8 @@ def extract_vendor_compounds(suppliermol_gzip_file,
     :param supplier_id: The ID of the supplier node
     :param gzip_filename: The compressed standard file to process
     :param limit: If non-zero, limit precessing to only the first N molecules
+    :param min_hac: Minimum HAC (0 for no minimum)
+    :param max_hac: Maximum HAC (0 for no maximum)
 
     :returns: The number of molecules processed
     """
@@ -202,9 +206,17 @@ def extract_vendor_compounds(suppliermol_gzip_file,
                 continue
 
             osmiles = fields[osmiles_col]
+            hac = int(fields[hac_col])
             iso = fields[iso_smiles_col]
             noniso = fields[noniso_smiles_col]
             compound_id = fields[compound_col]
+
+            # If min/max HAC have been provided
+            # use them to eliminate compounds.
+            if hac < min_hac:
+                continue
+            elif max_hac and hac > max_hac:
+                continue
 
             # Add the compound (expected to be unique)
             # to our set of 'all compounds'.
@@ -285,6 +297,14 @@ if __name__ == '__main__':
                         type=int, default=0,
                         help='Limit processing to the first N molecules,'
                              ' process all otherwise.')
+    parser.add_argument('--min-hac',
+                        type=int, default=0,
+                        help='Limit processing to molecules with at least this'
+                             ' number of heavy atoms')
+    parser.add_argument('--max-hac',
+                        type=int, default=0,
+                        help='Limit processing to molecules with no more than'
+                             ' this number of heavy atoms')
 
     args = parser.parse_args()
 
@@ -331,7 +351,9 @@ if __name__ == '__main__':
                                  suppliermol_edges_gzip_file,
                                  'Real',
                                  args.vendor_file,
-                                 args.limit)
+                                 args.limit,
+                                 args.min_hac,
+                                 args.max_hac)
 
     # Close the SupplierMol and the edges file.
     suppliermol_gzip_file.close()
