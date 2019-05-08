@@ -22,6 +22,7 @@ import sys
 from rdkit import RDLogger
 
 from frag.utils import standardise_utils
+from frag.std_utils import parser
 
 # Configure basic logging
 logger = logging.getLogger('senp7')
@@ -34,7 +35,7 @@ logger.addHandler(out_hdlr)
 logger.setLevel(logging.INFO)
 
 # The columns in our output file.
-_OUTPUT_COLUMNS = standardise_utils.STANDARD_COLUMNS + \
+_OUTPUT_COLUMNS = parser.STANDARD_COLUMNS + \
                   ['INHIB_5UM']
 
 # The minimum number of columns in the input files and

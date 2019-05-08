@@ -22,9 +22,10 @@ import sys
 from rdkit import RDLogger
 
 from frag.utils import standardise_utils
+from frag.std_utils import parser
 
 # The columns in our output file.
-_OUTPUT_COLUMNS = standardise_utils.STANDARD_COLUMNS + \
+_OUTPUT_COLUMNS = parser.STANDARD_COLUMNS + \
                   ['PRICERANGE_1MG',
                    'PRICERANGE_5MG',
                    'PRICERANGE_50MG',

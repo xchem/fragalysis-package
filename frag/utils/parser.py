@@ -1,7 +1,3 @@
-# Series of functions to parse input files
-from collections import namedtuple
-
-from frag.utils.standardise_utils import get_standard_items, verify_header
 from frag.alysis.models import Object, Owner
 from frag.utils.rdkit_utils import (
     _parse_ligand_sdf,
@@ -15,8 +11,6 @@ from frag.utils.rdkit_utils import (
     _parse_pdb,
 )
 from rdkit import Chem
-
-Standard = namedtuple('standard', 'smiles cmpd_id')
 
 def _get_c_of_mass_list(mols):
     c_of_mass_list = []
@@ -108,69 +102,3 @@ def parse_mols(input_file, input_format):
         return Chem.SmilesMolSupplier(input_file)
     else:
         return Chem.SDMolSupplier(input_file)
-
-
-def parse_standard_file(input_file,
-                        limit=0,
-                        skip=0,
-                        min_hac=0,
-                        max_hac=0,
-                        iso_flag=True):
-    """Parses an Informatics Matters 'standard' SMILES file.
-    The file is not expected to be compressed but is expected to contain
-    columns for osmiles, isomeric and non-isomeric representations along with
-    a compound identifier.
-
-    :param input_file: The name of the standard file (expected to be compressed)
-    :param limit: If non zero (+ve), limit content to no more than the
-                  provided value. If used in conjunction with min/max HAC
-                  then the limit will be applied to the
-                  number that satisfy the HAC range
-                  rather than just the first N molecules.
-    :param skip: If non zero (+ve), skip this number of molecules before
-                 considering any.
-    :param min_hac: Only molecules with at least the provided number
-                    of heavy atoms will be considered.
-    :param max_hac: if grater than zero then only molecules with no more
-                    than the provided number of heavy atoms will be considered.
-    :param iso_flag: True to use the standard isomeric representation,
-                     False to use the non-isomeric representation.
-
-    :returns: a set of 'Standard' namedtuples
-    """
-    standards = set()
-    with open(input_file, 'r') as standard_file:
-
-        # Read (and verify) the header...
-        hdr = standard_file.readline()
-        verify_header(hdr)
-
-        # Process the rest of the file...
-        num_skipped = 0
-        num_collected = 0
-        for line in standard_file:
-
-            std = get_standard_items(line)
-
-            # Do we need to skip molecules before processing?
-            if num_skipped < skip:
-                num_skipped += 1
-                continue
-
-            # HAC within range?
-            # If not, skip this line.
-            if std.hac < min_hac or max_hac > 0 and std.hac > max_hac:
-                continue
-
-            # Collect..
-            if iso_flag:
-                standards.add(Standard(std.iso, std.cmpd_id))
-            else:
-                standards.add(Standard(std.noniso, std.cmpd_id))
-
-            # Enough?
-            num_collected += 1
-            if limit and num_collected >= limit:
-                break
-
-    return standards

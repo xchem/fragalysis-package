@@ -22,6 +22,7 @@ import sys
 from rdkit import RDLogger
 
 from frag.utils import standardise_utils
+from frag.std_utils import parser
 
 # Configure basic logging
 logger = logging.getLogger('real')
@@ -35,7 +36,7 @@ logger.setLevel(logging.INFO)
 
 # The columns in our output file.
 # In this file we don't add any of our own.
-_OUTPUT_COLUMNS = standardise_utils.STANDARD_COLUMNS
+_OUTPUT_COLUMNS = parser.STANDARD_COLUMNS
 
 # The minimum number of columns in the input files and
 # and a map of expected column names indexed by (0-based) column number.

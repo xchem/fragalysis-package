@@ -25,22 +25,10 @@ from collections import namedtuple
 from rdkit import Chem
 from frag.utils.rdkit_utils import standardize
 
-# The columns *every* standard file is expected to contain.
-# Use UPPER_CASE.
-# All standard files must start with these columns.
-STANDARD_COLUMNS = ['OSMILES',
-                    'ISO_SMILES',
-                    'NONISO_SMILES',
-                    'HAC',
-                    'CMPD_ID']
-
 # The tuple returned by calls to 'standardise()'.
 # If the first field (std) is None then the standard cannot be used.
 # All items are rendered as strings.
 StandardInfo = namedtuple('StandardInfo', 'std iso noniso hac')
-# A named-tuple representation of the standard contents of
-# a file line, returned by the convenient function 'get_standard_items()'.
-StandardRow = namedtuple('StandardRow', 'osmiles iso noniso hac cmpd_id')
 
 # Out logger
 logger = None
@@ -133,55 +121,3 @@ def standardise(osmiles):
         std = None
 
     return StandardInfo(std, iso, noniso, str(hac))
-
-
-def verify_header(hdr_line):
-    """Given the header of a standard file, this method
-    raises an exception if it is not valid.
-
-    :param hdr_line: The standard file header
-    """
-
-    line_items = hdr_line.split('\t')
-    if len(line_items) < len(STANDARD_COLUMNS):
-        raise Exception('Header has too few fields')
-    for index in range(len(STANDARD_COLUMNS)):
-        if line_items[index].strip().upper() != STANDARD_COLUMNS[index]:
-            raise Exception('Expected column %s but found %s',
-                            STANDARD_COLUMNS[index], line_items[index])
-
-    # OK if we get here...
-
-
-def get_standard_items(line):
-    """Given a file line (that has been split), this module returns a
-    named tuple of the line's standard content. Numerical values are
-    converted accordingly.
-
-    :param line: A line from a standard file.
-
-    :returns: A named tuple or an exception if the content was in error
-    """
-
-    line_items = line.split('\t')
-
-    # Line expected to have all our standard items.
-    min_items = len(STANDARD_COLUMNS)
-    num_items = len(line_items)
-    if num_items < min_items:
-        raise Exception('Items list is too short. Expected %d got %d',
-                        min_items, num_items)
-
-    osmiles = line_items[0].strip()
-    iso = line_items[1].strip()
-    noniso = line_items[2].strip()
-    hac_str = line_items[3].strip()
-    cmpd_id = line_items[4].strip()
-
-    # HAC should be an integer...
-    try:
-        hac = int(hac_str)
-    except ValueError:
-        raise Exception('HAC (%s) is not an integer', hac_str)
-
-    return StandardRow(osmiles, iso, noniso, hac, cmpd_id)
