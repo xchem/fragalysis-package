@@ -112,6 +112,7 @@ def parse_mols(input_file, input_format):
 
 def parse_standard_file(input_file,
                         limit=0,
+                        skip=0,
                         min_hac=0,
                         max_hac=0,
                         iso_flag=True):
@@ -124,8 +125,10 @@ def parse_standard_file(input_file,
     :param limit: If non zero (+ve), limit content to no more than the
                   provided value. If used in conjunction with min/max HAC
                   then the limit will be applied to the
-                  number that satisfy the HAC range will be returned,
-                  rather than just the first N in the file.
+                  number that satisfy the HAC range
+                  rather than just the first N molecules.
+    :param skip: If non zero (+ve), skip this number of molecules before
+                 considering any.
     :param min_hac: Only molecules with at least the provided number
                     of heavy atoms will be considered.
     :param max_hac: if grater than zero then only molecules with no more
@@ -143,10 +146,16 @@ def parse_standard_file(input_file,
         verify_header(hdr)
 
         # Process the rest of the file...
+        num_skipped = 0
         num_collected = 0
         for line in standard_file:
 
             std = get_standard_items(line)
+
+            # Do we need to skip molecules before processing?
+            if num_skipped < skip:
+                num_skipped += 1
+                continue
 
             # HAC within range?
             # If not, skip this line.

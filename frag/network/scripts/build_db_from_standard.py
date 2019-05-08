@@ -28,6 +28,10 @@ def main():
                         type=int, default=0,
                         help='Limit processing to the first N molecules,'
                              ' process all otherwise')
+    parser.add_argument('-s', '--skip',
+                        type=int, default=0,
+                        help='Number of molecules to skip molecules'
+                             ' in the input file')
     parser.add_argument('--min-hac',
                         type=int, default=0,
                         help='Limit processing to molecules with at least this'
@@ -65,6 +69,7 @@ def main():
     attrs = []
     standard_representations = parse_standard_file(args.input,
                                                    args.limit,
+                                                   args.skip,
                                                    args.min_hac,
                                                    args.max_hac,
                                                    args.iso_flag)
