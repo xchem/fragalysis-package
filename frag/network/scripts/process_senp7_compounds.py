@@ -383,7 +383,7 @@ if __name__ == '__main__':
                                            generated_files,
                                            isomol_smiles,
                                            isomol_namespace,
-                                           supplier_namespace,
+                                           suppliermol_namespace,
                                            assay_name,
                                            assay_namespace,
                                            assay_compound_values)
@@ -408,7 +408,7 @@ if __name__ == '__main__':
                                                  generated_files,
                                                  frag_namespace,
                                                  isomol_namespace,
-                                                 supplier_namespace,
+                                                 suppliermol_namespace,
                                                  isomol_smiles,
                                                  non_isomol_isomol_smiles,
                                                  non_isomol_smiles,

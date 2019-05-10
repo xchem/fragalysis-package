@@ -198,7 +198,7 @@ def write_isomol_suppliermol_relationships(directory,
                                            generated_files,
                                            isomol_smiles,
                                            isomol_namespace_id,
-                                           supplier_namespace_id,
+                                           suppliermol_namespace_id,
                                            assay_name=None,
                                            assay_namespace_id=None,
                                            assay_compound_values=None):
@@ -212,7 +212,7 @@ def write_isomol_suppliermol_relationships(directory,
     :param isomol_smiles: The map of standardised SMILES
                           to a list of Vendor compound IDs
     :param isomol_namespace_id: The graph namespace ID for the isomol record
-    :param supplier_namespace_id: The graph namespace ID for the supplier record
+    :param suppliermol_namespace_id: The graph namespace ID for the SupplierMol record
     """
 
     filename = os.path.join(directory,
@@ -243,7 +243,7 @@ def write_isomol_suppliermol_relationships(directory,
         gzip_file.write(':START_ID({}),'
                         ':END_ID({}),'
                         ':TYPE\n'.format(isomol_namespace_id,
-                                         supplier_namespace_id))
+                                         suppliermol_namespace_id))
         for smiles in isomol_smiles:
             for compound_id in isomol_smiles[smiles]:
 
