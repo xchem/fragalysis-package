@@ -12,7 +12,7 @@ import sys
 
 from frag.network.models import NodeHolder, Attr
 from frag.utils.network_utils import build_network, write_data
-from frag.utils.parser import parse_standard_file
+from frag.std_utils.parser import parse_standard_file
 
 
 def main():
