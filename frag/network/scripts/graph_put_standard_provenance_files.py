@@ -35,7 +35,7 @@ logger.addHandler(out_hdlr)
 
 # Expected environment variables (that define the bucket)
 s3_bucket_env = 'FRAGALYSIS_S3_BUCKET'
-s3_standard_root = 'stndard'
+s3_standard_root = 'standard'
 s3_archive_bucket = os.environ.get(s3_bucket_env)
 if not s3_archive_bucket:
     logger.error('You must define %s', s3_bucket_env)
