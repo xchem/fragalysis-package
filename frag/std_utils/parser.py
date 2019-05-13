@@ -138,7 +138,8 @@ def filter_standard_file(input_file,
                          limit=0,
                          skip=0,
                          min_hac=0,
-                         max_hac=0):
+                         max_hac=0,
+                         output_file=None):
     """Parses an Informatics Matters 'standard' SMILES file.
     The input is filtered and written to stdout.
 
@@ -154,15 +155,23 @@ def filter_standard_file(input_file,
                     of heavy atoms will be considered.
     :param max_hac: if grater than zero then only molecules with no more
                     than the provided number of heavy atoms will be considered.
-
-    :returns: a set of 'Standard' namedtuples
+    :param output_file: If specified this is expected to be the name of an
+                        output file to write the results to (e.g. one that
+                        ends '.tag.gz')
     """
+    filtered_file = None
+    if output_file:
+        filtered_file = gzip.open(output_file, 'wt')
+
     with gzip.open(input_file, 'rt') as standard_file:
 
         # Read (and verify) the header...
         hdr = standard_file.readline()
         verify_header(hdr)
-        print(hdr.strip())
+        if filtered_file:
+            filtered_file.write(hdr)
+        else:
+            print(hdr.strip())
 
         # Process the rest of the file...
         num_skipped = 0
@@ -181,9 +190,15 @@ def filter_standard_file(input_file,
             if std.hac < min_hac or max_hac > 0 and std.hac > max_hac:
                 continue
 
-            print(line.strip())
+            if filtered_file:
+                filtered_file.write(line)
+            else:
+                print(line.strip())
 
             # Enough?
             num_collected += 1
             if limit and num_collected >= limit:
                 break
+
+    if filtered_file:
+        filtered_file.close()
