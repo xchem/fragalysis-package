@@ -364,7 +364,8 @@ if __name__ == '__main__':
                          output_filename_prefix,
                          generated_files,
                          supplier_name,
-                         supplier_namespace)
+                         supplier_namespace,
+                         vendor_code)
 
     # -------
     # Stage 2 - Write the IsoMol nodes

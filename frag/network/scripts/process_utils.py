@@ -166,7 +166,8 @@ def write_supplier_nodes(directory,
                          output_prefix,
                          generated_files,
                          supplier_id,
-                         supplier_namespace_id):
+                         supplier_namespace_id,
+                         supplier_label):
     """Writes the IsoMol nodes file, including a header.
 
     :param directory: The sub-directory to write to
@@ -176,6 +177,7 @@ def write_supplier_nodes(directory,
                             for writing.
     :param supplier_id: The supplier
     :param supplier_namespace_id: The graph namespace ID for the supplier record
+    :param supplier_label: The supplier label used on the supplier fragments
     """
 
     filename = os.path.join(directory,
@@ -186,9 +188,11 @@ def write_supplier_nodes(directory,
     generated_files['nodes'].append(filename)
     with gzip.open(filename, 'wt') as gzip_file:
         gzip_file.write('name:ID({}),'
+                        'label,'
                         ':LABEL\n'.format(supplier_namespace_id))
         # Write the solitary row...
-        gzip_file.write('"{}",Supplier\n'.format(supplier_id))
+        gzip_file.write('"{}","{}",Supplier\n'.format(supplier_id,
+                                                      supplier_label))
 
     logger.info(' 1')
 
