@@ -51,7 +51,7 @@ echo "($ME) $(date) Starting (from $IMPORT_DIRECTORY)..."
 
 # If the destination database exists
 # then do nothing...
-if [ ! -d /neo4j/graph/databases/$IMPORT_TO.db ]; then
+if [ ! -d /data/databases/$IMPORT_TO.db ]; then
     echo "Running as $(id)"
     echo "($ME) $(date) Importing into '$IMPORT_TO.db'..."
 
