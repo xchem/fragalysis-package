@@ -15,6 +15,7 @@ STANDARD_COLUMNS = ['OSMILES',
 # A named-tuple representation of the standard contents of
 # a file line, returned by the convenient function 'get_standard_items()'.
 StandardRow = namedtuple('StandardRow', 'osmiles iso noniso hac cmpd_id')
+Standard = namedtuple('standard', 'smiles cmpd_id')
 
 
 def verify_header(hdr_line):
