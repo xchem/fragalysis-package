@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
-"""standardise_enamine_compounds.py
+"""standardise_emolecules_compounds.py
 
-Processes Enamine (Real) vendor compound files, and generates a 'standard'
+Processes eMolecules vendor compound files, and generates a 'standard'
 tab-separated output.
 
-We create a 'real-standardised-compounds.tab' file that contains a 1st-line
+We create a 'standardised-compounds.tab' file that contains a 1st-line
 'header' formed from the _OUTPUT_COLUMNS list.
 
 Alan Christie
-February 2019
+May 2019
 """
 
 import argparse
@@ -25,7 +25,7 @@ from frag.utils import standardise_utils
 from frag.std_utils import parser
 
 # Configure basic logging
-logger = logging.getLogger('real')
+logger = logging.getLogger('emols')
 out_hdlr = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s %(levelname)s # %(message)s',
                               '%Y-%m-%dT%H:%M:%S')
@@ -49,15 +49,15 @@ _OUTPUT_COLUMNS = parser.STANDARD_COLUMNS
 expected_min_num_cols = 2
 smiles_col = 0
 compound_col = 1
-expected_input_cols = {compound_col: 'idnumber',
-                       smiles_col: 'smiles'}
+expected_input_cols = {compound_col: 'version_id',
+                       smiles_col: 'isosmiles'}
 
 # The output file.
 # Which will be gzipped.
 output_filename = 'standardised-compounds.tab'
 
 # The prefix we use in our fragment file
-real_prefix = 'REAL:'
+compound_prefix = 'EMOLS:'
 
 # All the vendor compound IDs
 vendor_compounds = set()
@@ -133,7 +133,13 @@ def standardise_vendor_compounds(output_file, file_name, limit):
                 logger.info(' ...at compound {:,}'.format(line_num))
 
             osmiles = fields[smiles_col]
-            compound_id = real_prefix + fields[compound_col]
+            compound_id = compound_prefix + fields[compound_col]
+
+            # Skip if SMILES contains '*'
+            # (and count it as a failure)
+            if '*' in osmiles:
+                num_vendor_molecule_failures += 1
+                continue
 
             # Add the compound (expected to be unique)
             # to our set of 'all compounds'.
@@ -171,13 +177,13 @@ def standardise_vendor_compounds(output_file, file_name, limit):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser('Vendor Compound Standardiser (Enamine)')
+    parser = argparse.ArgumentParser('Vendor Compound Standardiser (eMolecules)')
     parser.add_argument('vendor_dir',
-                        help='The Enamine vendor directory,'
+                        help='The eMolecules vendor directory,'
                              ' containing the ".gz" files to be processed.')
     parser.add_argument('vendor_prefix',
-                        help='The Enamine vendor file prefix,'
-                             ' i.e. "June2018". Only files with this prefix'
+                        help='The eMolecules vendor file prefix,'
+                             ' i.e. "version". Only files with this prefix'
                              ' in the vendor directory will be processed')
     parser.add_argument('output',
                         help='The output directory')
