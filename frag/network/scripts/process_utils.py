@@ -412,14 +412,27 @@ def write_nodes(input_nodes,
                                                frag_smiles))
 
                     # A relationship (or relationships)
-                    # from Frag to SupplierMol
+                    # from Frag to SupplierMol.
+                    #
+                    # Changes for eMolecules data ...
+                    # where there are separate
+                    # BB and SC databases (i.e. same molecule, same vendor,
+                    # different DB). With eMolecules the same compound can be
+                    # available from either the BB or SC set (each with its
+                    # own vendor code). Basically need to distinguish
+                    # between the compound but from different vedor DBs
+                    #
+                    # If the compound-id and vendor-code combination exists
+                    # we'v
                     if noniso_isomol_smiles in isomol_smiles:
                         for compound_id in isomol_smiles[noniso_isomol_smiles]:
-                            if compound_id not in frag_compounds:
+                            if compound_id not in frag_compounds or\
+                                vendor_code not in frag_labels:
                                 gzip_smr_file.write('"{}",{},HasVendor\n'.
                                                     format(frag_smiles,
                                                            compound_id))
-                                frag_compounds.append(compound_id)
+                                if compound_id not in frag_compounds:
+                                    frag_compounds.append(compound_id)
                     else:
                         logger.warning('Failed to find "%s" in isomol_smiles',
                                        noniso_isomol_smiles)
