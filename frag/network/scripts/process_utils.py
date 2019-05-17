@@ -51,7 +51,8 @@ echo "($ME) $(date) Starting (from $IMPORT_DIRECTORY)..."
 
 # If the destination database exists
 # then do nothing...
-if [ ! -d /data/databases/$IMPORT_TO.db ]; then
+if [ ! -d /data/databases/$IMPORT_TO.db ]
+then
     echo "Running as $(id)"
     echo "($ME) $(date) Importing into '$IMPORT_TO.db'..."
 
@@ -60,11 +61,6 @@ if [ ! -d /data/databases/$IMPORT_TO.db ]; then
         --database $IMPORT_TO.db \\
         --ignore-missing-nodes \\
         {nodes}{relationships}
-
-    #echo "($ME) Indexing..."
-    #cd /var/lib/neo4j
-    #$IMPORT_DIRECTORY/index_neo4j.sh
-    #echo "($ME) Done."
 
     echo "($ME) $(date) Imported."
 else
