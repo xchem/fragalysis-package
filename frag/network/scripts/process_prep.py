@@ -12,7 +12,7 @@ fields. The output nodes file is also pre-populated with compound ID and label
 fields in the nodes file.
 
 Alan Christie
-January 2019
+May 2019
 """
 
 import argparse
@@ -55,6 +55,7 @@ def prep(input_dir, output_dir):
     :param input_dir: The input directory (expected to contain nodes.txt
                       and edges.txt.gz)
     :param output_dir: The output directory (known to exist)
+    :returns: False on failure
     """
 
     nodes_txt_filename = os.path.join(input_dir, 'nodes.txt.gz')
@@ -65,6 +66,9 @@ def prep(input_dir, output_dir):
         error("Can't find edges file ({})".format(edges_txt_filename))
 
     # Convert the nodes file...
+    # This is white-space delimited file with five fields: -
+    #
+    #   NODE B1OCCO1.CBr 7 5 C1CCCC1.CBr
 
     logger.info('Processing %s...', nodes_txt_filename)
 
@@ -79,10 +83,36 @@ def prep(input_dir, output_dir):
                ":LABEL"]
     csv_file.write(','.join(columns) + '\n')
 
-    line_num = 0
+    line_num = 1
+    expected_field_count = 5
     with gzip.open(nodes_txt_filename, 'rt') as txt_file:
         for line in txt_file:
             items = line.split()
+
+            # Sanity check the line...
+            #
+            # This is important because un-trapped format errors
+            # here can lead to obscure problems downstream or
+            # when loading data into the graph database.
+            if len(items) != expected_field_count:
+                logger.error('Node line %s does not have %s fields": %s',
+                             line_num,
+                             expected_field_count,
+                             line.strip())
+                return False
+            # The first field must be the value 'NODE'
+            if items[0] != 'NODE':
+                logger.error('Node line %s does not start with "NODE": %s',
+                             line_num,
+                             line.strip())
+                return False
+            # There can only be one 'NODE' string in the line
+            if line.count('NODE') > 1:
+                logger.error('Node line %s has more than one "NODE" string: %s',
+                             line_num,
+                             line.strip())
+                return False
+
             # Insert (empty) compound IDs and the initial label.
             # These are augmented in vendor-specific processing modules.
             items.append('')
@@ -92,13 +122,16 @@ def prep(input_dir, output_dir):
 
             # Give user a gentle reminder to stdout
             # that all is progressing...
-            line_num += 1
             if line_num % prep_report_rate == 0:
                 logger.info(' ...at node {:,}'.format(line_num))
+            line_num += 1
 
     csv_file.close()
 
     # Convert the edges file...
+    # This is white-space delimited file with four fields: -
+    #
+    #   EDGE Br.C Br FG|C|C|FG|Br|Br
 
     logger.info('Processing %s...', edges_txt_filename)
 
@@ -110,11 +143,32 @@ def prep(input_dir, output_dir):
                ":TYPE"]
     csv_file.write(','.join(columns) + '\n')
 
-    line_num = 0
+    line_num = 1
+    expected_field_count = 4
     with gzip.open(edges_txt_filename, 'rt') as txt_file:
         for line in txt_file:
             items = line.split()
-            # Insert a type column value (required0
+
+            # Sanity check the line...
+            if len(items) != expected_field_count:
+                logger.error('Edge line %s does not have %s fields": %s',
+                             line_num,
+                             expected_field_count,
+                             line.strip())
+                return False
+            if items[0] != 'EDGE':
+                logger.error('Edge line %s does not start with "EDGE": %s',
+                             line_num,
+                             line.strip())
+                return False
+            # There can only be one 'EDGE' string in the line
+            if line.count('EDGE') > 1:
+                logger.error('Node line %s has more than one "EDGE" string: %s',
+                             line_num,
+                             line.strip())
+                return False
+
+            # Insert our type column value (required)
             items.append('FRAG')
             # Write the items out (omitting the first column 'EDGE')
             csv_file.write(','.join(items[1:]) + '\n')
@@ -127,6 +181,8 @@ def prep(input_dir, output_dir):
 
     csv_file.close()
 
+    # OK if we get here
+    return True
 
 if __name__ == '__main__':
 
@@ -154,7 +210,9 @@ if __name__ == '__main__':
     if not os.path.isdir(args.input):
         error('Input ({}) is not a directory'.format(args.input))
 
-    prep(args.input, args.output)
+    # Process but exit on error
+    if not prep(args.input, args.output):
+        sys.exit(1)
 
     # Now complete we write a "done" file to the output.
     # Processing may be time-consuming

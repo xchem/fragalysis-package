@@ -3,6 +3,12 @@
 
 """Utilities shared by the various "process" modules.
 
+Important Note  If the graph content changes in any way the
+--------------  graph_versions of all 'process' files must be changed.
+                So, if the format of the node or relationship files change
+                (e.g.  new columns, new labels, new or modified anything)
+                our version must change.
+
 Alan Christie
 May 2019
 """
@@ -163,7 +169,11 @@ def write_supplier_nodes(directory,
                          generated_files,
                          supplier_id,
                          supplier_namespace_id,
-                         supplier_label):
+                         supplier_label,
+                         graph_version,
+                         processing_version,
+                         process_id,
+                         build_number):
     """Writes the IsoMol nodes file, including a header.
 
     :param directory: The sub-directory to write to
@@ -174,6 +184,14 @@ def write_supplier_nodes(directory,
     :param supplier_id: The supplier
     :param supplier_namespace_id: The graph namespace ID for the supplier record
     :param supplier_label: The supplier label used on the supplier fragments
+    :param graph_version: The graph topology version.
+                          Changes whenever the graph topology changes.
+    :param processing_version: The network processing (fragalysis) version.
+                               Changes whenever the processing code changes.
+    :param process_id: The origin of the data.
+                       A path used in the S3 storage.
+    :param build_number: The anticipated build number.
+                         Used to place the resultant files on S3.
     """
 
     filename = os.path.join(directory,
@@ -184,11 +202,20 @@ def write_supplier_nodes(directory,
     generated_files['nodes'].append(filename)
     with gzip.open(filename, 'wt') as gzip_file:
         gzip_file.write('name:ID({}),'
+                        'graph_version,'
+                        'processing_version,'
+                        'process_id,'
+                        'build_number:int,'
                         'label,'
                         ':LABEL\n'.format(supplier_namespace_id))
         # Write the solitary row...
-        gzip_file.write('"{}","{}",Supplier\n'.format(supplier_id,
-                                                      supplier_label))
+        gzip_file.write('"{}",{},{},{},{},{},Supplier\n'.
+                        format(supplier_id,
+                               graph_version,
+                               processing_version,
+                               process_id,
+                               build_number,
+                               supplier_label))
 
     logger.info(' 1')
 

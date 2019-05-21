@@ -26,6 +26,12 @@ If the original nodes file is "nodes.csv" the augmented copy
 (in the named output directory) will be called
 "hts-augmented-nodes.csv.gz".
 
+Important Note  If the graph content changes in any way the
+--------------  our graph_version must be changed.
+                So, if the format of the node or relationship files change
+                (e.g.  new columns, new labels, new or modified anything)
+                our version must change.
+
 Alan Christie
 May 2019
 """
@@ -54,6 +60,14 @@ out_hdlr.setFormatter(formatter)
 out_hdlr.setLevel(logging.INFO)
 logger.addHandler(out_hdlr)
 logger.setLevel(logging.INFO)
+
+# Our graph version.
+#
+# Altered if any change occurs that changes the topology of the graph.
+# Its format is the date of the change ('YYYY-MM-DD') followed by
+# a dot-delimited number that's incremented for each change on that day.
+# i.e. '2019-05-21.2' is the second version on the 21st May 2019.
+graph_version = '2019-05-21.1'
 
 # The minimum number of columns in the input files and
 # and a map of expected column names indexed by (0-based) column number.
@@ -278,6 +292,18 @@ if __name__ == '__main__':
                         help='When processing is complete replace the'
                              ' input nodes file with the augmented output.'
                              ' If used the load script is not generated.')
+    parser.add_argument('--processing-version',
+                        type=str, default='undefined',
+                        help='The graph processing version (fragalysis version).'
+                             ' Used as a property in the Supplier node.')
+    parser.add_argument('--process-id',
+                        type=str, default='undefined',
+                        help='The process ID (the origin of the data).'
+                             ' Used as a property in the Supplier node.')
+    parser.add_argument('--build-number',
+                        type=int, default=0,
+                        help='The anticipated build number (0 if undefined).'
+                             ' Used as a property in the Supplier node.')
     parser.add_argument('-l', '--limit',
                         type=int, default=0,
                         help='Limit processing to the first N molecules,'
@@ -350,7 +376,11 @@ if __name__ == '__main__':
                          generated_files,
                          supplier_name,
                          supplier_namespace,
-                         vendor_code)
+                         vendor_code,
+                         graph_version,
+                         args.processing_version,
+                         args.process_id,
+                         args.build_number)
 
     # Write assay node file...
     # There's just one assay here.
