@@ -339,6 +339,16 @@ if __name__ == '__main__':
     if not os.path.isdir(args.output):
         error('output ({}) is not a directory'.format(args.output))
 
+    # Sanity-check key arguments
+    if args.build_number < 1:
+        error('build-number cannot be less then 1 ({})'.format(args.build_number))
+    if args.limit < 0:
+        error('limit cannot be -ve ({})'.format(args.limit))
+    if args.min_hac < 0:
+        error('min-hac cannot be -ve ({})'.format(args.min_hac))
+    if args.max_hac < 0:
+        error('max-hac cannot be -ve ({})'.format(args.max_hac))
+
     # -------
     # Stage 1 - Process our standardised Vendor File
     # -------
@@ -394,7 +404,10 @@ if __name__ == '__main__':
                          graph_version,
                          args.processing_version,
                          args.process_id,
-                         args.build_number)
+                         args.build_number,
+                         args.limit,
+                         args.min_hac,
+                         args.max_hac)
 
     # -------
     # Stage 2 - Write the IsoMol nodes

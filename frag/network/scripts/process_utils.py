@@ -174,7 +174,10 @@ def write_supplier_nodes(directory,
                          graph_version,
                          processing_version,
                          process_id,
-                         build_number):
+                         build_number,
+                         limit,
+                         min_hac,
+                         max_hac):
     """Writes the IsoMol nodes file, including a header.
 
     :param directory: The sub-directory to write to
@@ -189,11 +192,24 @@ def write_supplier_nodes(directory,
                           Changes whenever the graph topology changes.
     :param processing_version: The network processing (fragalysis) version.
                                Changes whenever the processing code changes.
+                               Written as a property to the supplier node.
     :param process_id: The origin of the data.
                        A path used in the S3 storage.
+                       Written as a property to the supplier node.
     :param build_number: The anticipated build number.
                          Used to place the resultant files on S3.
+                         Written as a property to the supplier node.
+    :param limit: The molecule processing limit (0 if no limit),
+                  Written as a property to the supplier node.
+    :param min_hac: The molecule minimum HAC (0 if no minimum).
+                    Written as a property to the supplier node.
+    :param max_hac: The molecule maximum HAC (0 if no maximum).
+                    Written as a property to the supplier node.
     """
+    assert build_number >= 1
+    assert limit >= 0
+    assert min_hac >= 0
+    assert max_hac >= 0
 
     filename = os.path.join(directory,
                             '{}-supplier-nodes.csv.gz'.
@@ -210,16 +226,22 @@ def write_supplier_nodes(directory,
                         'processing_version,'
                         'process_id,'
                         'build_number:int,'
+                        'limit:int,'
+                        'min_hac:int,'
+                        'max_hac:int,'
                         'build_datetime:datetime'
                         'label,'
                         ':LABEL\n'.format(supplier_namespace_id))
         # Write the solitary row...
-        gzip_file.write('"{}",{},{},{},{},{},{},Supplier\n'.
+        gzip_file.write('"{}",{},{},{},{},{},{},{},{},{},Supplier\n'.
                         format(supplier_id,
                                graph_version,
                                processing_version,
                                process_id,
                                build_number,
+                               limit,
+                               min_hac,
+                               max_hac,
                                build_datetime_utc_str,
                                supplier_label))
 
