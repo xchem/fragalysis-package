@@ -14,6 +14,7 @@ May 2019
 """
 
 from collections import namedtuple
+from datetime import datetime
 import gzip
 import logging
 import os
@@ -199,6 +200,9 @@ def write_supplier_nodes(directory,
                             format(output_prefix))
     logger.info('Writing %s...', filename)
 
+    # The build datetime
+    build_datetime_utc_str = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
     generated_files['nodes'].append(filename)
     with gzip.open(filename, 'wt') as gzip_file:
         gzip_file.write('name:ID({}),'
@@ -206,15 +210,17 @@ def write_supplier_nodes(directory,
                         'processing_version,'
                         'process_id,'
                         'build_number:int,'
+                        'build_datetime:datetime'
                         'label,'
                         ':LABEL\n'.format(supplier_namespace_id))
         # Write the solitary row...
-        gzip_file.write('"{}",{},{},{},{},{},Supplier\n'.
+        gzip_file.write('"{}",{},{},{},{},{},{},Supplier\n'.
                         format(supplier_id,
                                graph_version,
                                processing_version,
                                process_id,
                                build_number,
+                               build_datetime_utc_str,
                                supplier_label))
 
     logger.info(' 1')
