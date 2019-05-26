@@ -67,7 +67,7 @@ logger.setLevel(logging.INFO)
 # Its format is the date of the change ('YYYY-MM-DD') followed by
 # a dot-delimited number that's incremented for each change on that day.
 # i.e. '2019-05-21.2' is the second version on the 21st May 2019.
-graph_version = '2019-05-21.1'
+graph_version = '2019-05-26.1'
 
 # The minimum number of columns in the input files and
 # and a map of expected column names indexed by (0-based) column number.
