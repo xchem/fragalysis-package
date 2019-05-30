@@ -145,6 +145,8 @@ def prep(input_dir, output_dir):
 
     line_num = 1
     expected_field_count = 4
+    expected_label_delimiter_count = 5
+    label_delimiter = '|'
     with gzip.open(edges_txt_filename, 'rt') as txt_file:
         for line in txt_file:
             items = line.split()
@@ -163,7 +165,15 @@ def prep(input_dir, output_dir):
                 return False
             # There can only be one 'EDGE' string in the line
             if line.count('EDGE') > 1:
-                logger.error('Node line %s has more than one "EDGE" string: %s',
+                logger.error('Edge line %s has more than one "EDGE" string: %s',
+                             line_num,
+                             line.strip())
+                return False
+            # There have to be the right number of edge label delimiters ("|")
+            edge_label = items[3]
+            label_delimiter_count = edge_label.count(label_delimiter)
+            if label_delimiter_count != expected_label_delimiter_count:
+                logger.error('Edge line %s label has wrong delimiter count: %s',
                              line_num,
                              line.strip())
                 return False
