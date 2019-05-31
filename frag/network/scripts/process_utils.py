@@ -229,7 +229,7 @@ def write_supplier_nodes(directory,
                         'limit:int,'
                         'min_hac:int,'
                         'max_hac:int,'
-                        'build_datetime:datetime'
+                        'build_datetime:datetime,'
                         'label,'
                         ':LABEL\n'.format(supplier_namespace_id))
         # Write the solitary row...
