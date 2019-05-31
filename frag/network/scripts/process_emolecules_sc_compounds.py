@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""process_emolecules_bb_compounds.py
+"""process_emolecules_sc_compounds.py
 
 Processes standardised eMolecules vendor files, not expected to contain
 pricing information.
@@ -18,21 +18,21 @@ Some vendor compound nodes may not exist in the original data set.
 
 The files generated (in a named output directory) are:
 
--   "emolecules-bb-compound-nodes.csv.gz"
+-   "emolecules-sc-compound-nodes.csv.gz"
     containing all the nodes for the vendor compounds.
 
--   "emolecules-bb-molecule-compound_edges.csv.gz"
+-   "emolecules-sc-molecule-compound_edges.csv.gz"
     containing the relationships between the original node entries and
     the "Vendor" nodes. There is a relationship for every Enamine
     compound that was found in the earlier processing.
 
 The module augments the original nodes by adding the label
-"V_EMOLS_BB" for all compounds that have been found
+"V_EMOLS_SC" for all compounds that have been found
 to the augmented copy of the original node file that it creates.
 
 If the original nodes file is "nodes.csv" the augmented copy
 (in the named output directory) will be called
-"emolecules-bb-augmented-nodes.csv.gz".
+"emolecules-sc-augmented-nodes.csv.gz".
 
 Important Note  If the graph content changes in any way the
 --------------  our graph_version must be changed.
@@ -113,15 +113,15 @@ vendor_compounds = set()
 unknown_vendor_compounds = set()
 
 # The supplier symbolic name
-supplier_name = 'EMOLS_BB'
+supplier_name = 'EMOLS_SC'
 # Prefix for output files
-output_filename_prefix = 'emolecules-bb'
+output_filename_prefix = 'emolecules-sc'
 # The namespaces of the various indices
 frag_namespace = 'F2'
-suppliermol_namespace = 'SM_EMOLS_BB'
+suppliermol_namespace = 'SM_EMOLS_SC'
 supplier_namespace = 'S'
-isomol_namespace = 'ISO-EMOLS_BB'
-vendor_code = 'V_EMOLS_BB'
+isomol_namespace = 'ISO-EMOLS_SC'
+vendor_code = 'V_EMOLS_SC'
 
 # The list of files generated.
 # Used to generate the accompanying `load_neo4j.sh`.
