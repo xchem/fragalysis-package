@@ -514,14 +514,15 @@ def write_data_as_csv(output_dir, node_holder):
     """Write the node holder (nodes and edges). The output files are
     header-less CSV files. A final column for the node namespace and a
     label for the edge is added so that written nodes have 6 columns
-    and edges have 4.
+    (2 are added for an initially empty compound ID and a label of 'F2')
+    and edges have 4 (one added for a label of 'FRAG').
 
     :param output_dir: The output directory
     :param node_holder: Written as nodes.txt and edges.txt
     """
     out_f = open(os.path.join(output_dir, "nodes.csv"), "w")
     for node in node_holder.node_list:
-        out_f.write(node.as_csv() + ',F2\n')
+        out_f.write(node.as_csv() + ',,F2\n')
     out_f.close()
     out_f = open(os.path.join(output_dir, "edges.csv"), "w")
     for edge in node_holder.get_edges():
