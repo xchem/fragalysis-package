@@ -72,9 +72,7 @@ if 'KeyCount' in target and target['KeyCount']:
     sys.exit(1)
 
 # The list of files to load...
-required_build_files = ['nodes.txt.gz',
-                        'edges.txt.gz',
-                        'nodes.csv.gz',
+required_build_files = ['nodes.csv.gz',
                         'edges.csv.gz']
 # Optional files.
 # an excluded molecule list

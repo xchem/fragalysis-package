@@ -117,7 +117,6 @@ supplier_name = 'EMOLS_BB'
 # Prefix for output files
 output_filename_prefix = 'emolecules-bb'
 # The namespaces of the various indices
-frag_namespace = 'F2'
 suppliermol_namespace = 'SM_EMOLS_BB'
 supplier_namespace = 'S'
 isomol_namespace = 'ISO-EMOLS_BB'
@@ -127,9 +126,10 @@ vendor_code = 'V_EMOLS_BB'
 # Used to generate the accompanying `load_neo4j.sh`.
 # We add to this every time we open a file for writing.
 #
-# There is an implicit 'edges.csv.gz'
+# There is an implicit 'edges.csv.gz' and we add a header
+EDGES_HDR_FILENAME = 'edges-header.csv'
 generated_files = {'nodes': [],
-                   'edges': ['edges.csv.gz']}
+                   'edges': ['{},edges.csv.gz'.format(EDGES_HDR_FILENAME)]}
 
 # Various diagnostic counts
 num_nodes = 0
@@ -448,7 +448,6 @@ if __name__ == '__main__':
                                                  args.output,
                                                  output_filename_prefix,
                                                  generated_files,
-                                                 frag_namespace,
                                                  isomol_namespace,
                                                  suppliermol_namespace,
                                                  isomol_smiles,
@@ -473,6 +472,11 @@ if __name__ == '__main__':
         # for all the files we generated...
         logger.info('Writing load script...')
         write_load_script(args.output, generated_files)
+
+    # Finish by writing the expected edges header file...
+    edges_header_file = open(EDGES_HDR_FILENAME, 'wt')
+    edges_header_file.write(':START_ID(F2),:END_ID(F2),label,:TYPE\n')
+    edges_header_file.close()
 
     # Now complete we write a "done" file to the output.
     # Processing may be time-consuming

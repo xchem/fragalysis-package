@@ -39,6 +39,9 @@ AssayNode = namedtuple('AssayNode', 'name description type')
 # Augmenting report rate...
 AUGMENT_REPORT_RATE = 10000000
 
+# Fragment Namespace
+FRAG_NAMESPACE = 'F2'
+
 # The 'load-neo4j.sh' script content.
 # this is used in write_load_script()
 # which takes a dictionary of nodes and edges
@@ -322,7 +325,6 @@ def write_nodes(input_nodes,
                 output_dir,
                 output_prefix,
                 generated_files,
-                frag_namespace_id,
                 isomol_namespace_id,
                 suppliermol_namespace_id,
                 isomol_smiles,
@@ -353,7 +355,6 @@ def write_nodes(input_nodes,
         os.path.join(output_dir,
                      '{}-augmented-{}'.format(output_prefix,
                                               os.path.basename(filename)))
-    generated_files['nodes'].append(augmented_filename)
     gzip_ai_file = gzip.open(augmented_filename, 'wt')
 
     # Frag to SupplierMol relationships file
@@ -365,7 +366,7 @@ def write_nodes(input_nodes,
     gzip_smr_file = gzip.open(augmented_noniso_relationships_filename, 'wt')
     gzip_smr_file.write(':START_ID({}),'
                         ':END_ID({}),'
-                        ':TYPE\n'.format(frag_namespace_id, suppliermol_namespace_id))
+                        ':TYPE\n'.format(FRAG_NAMESPACE, suppliermol_namespace_id))
 
     # IsoMol to Frag relationships file
     augmented_iso_relationships_filename = \
@@ -376,7 +377,7 @@ def write_nodes(input_nodes,
     gzip_ifr_file = gzip.open(augmented_iso_relationships_filename, 'wt')
     gzip_ifr_file.write(':START_ID({}),'
                         ':END_ID({}),'
-                        ':TYPE\n'.format(isomol_namespace_id, frag_namespace_id))
+                        ':TYPE\n'.format(isomol_namespace_id, FRAG_NAMESPACE))
 
     gzip_mar_file = None
     if assay_name:
@@ -391,27 +392,36 @@ def write_nodes(input_nodes,
         gzip_mar_file.write(':START_ID({}),'
                             'value:FLOAT,'
                             ':END_ID({}),'
-                            ':TYPE\n'.format(frag_namespace_id,
+                            ':TYPE\n'.format(FRAG_NAMESPACE,
                                              assay_namespace_id))
 
     logger.info(' %s', augmented_filename)
     logger.info(' %s', augmented_noniso_relationships_filename)
     logger.info(' %s', augmented_iso_relationships_filename)
 
-    with gzip.open(filename, 'rt') as n_file:
+    # Augmented file header
+    augmented_node_hdr_filename = \
+        os.path.join(output_dir,
+                     '{}-augmented-node-header.csv'.format(output_prefix))
 
-        # Copy (and sanity-check) the nodes header...
-        expected_hdr = 'smiles:ID(%s),' \
-                       'hac:INT,' \
-                       'chac:INT,' \
-                       'osmiles,' \
-                       'cmpd_ids:STRING[],' \
-                       ':LABEL' % frag_namespace_id
-        hdr = n_file.readline().strip()
-        if hdr != expected_hdr:
-            error('Node file header is wrong, expected "{}" got "{}"'.
-                  format(expected_hdr, hdr))
-        gzip_ai_file.write(hdr + '\n')
+    # Add the node (and its header file) that we're about to generate
+    # to the generated files list...
+    generated_files['nodes'].append('{},{}'.format(augmented_node_hdr_filename,
+                                                   augmented_filename))
+
+    # Write the node header...
+    augmented_node_hdr_file = open(augmented_node_hdr_filename, 'wt')
+    hdr = 'smiles:ID(%s),' \
+          'hac:INT,' \
+          'chac:INT,' \
+          'osmiles,' \
+          'cmpd_ids:STRING[],' \
+          ':LABEL\n' % FRAG_NAMESPACE
+    augmented_node_hdr_file.write(hdr)
+    augmented_node_hdr_file.close()
+
+    # Write the augmented nodes
+    with gzip.open(filename, 'rt') as n_file:
 
         for line in n_file:
 
@@ -433,6 +443,8 @@ def write_nodes(input_nodes,
 
             # Get the line items
             items = line.split(',')
+            # We expect 6 items
+            assert len(items) == 6
             # The standardised SMILES string
             frag_smiles = items[0]
             # The growing list of compound relationships for this fragment.

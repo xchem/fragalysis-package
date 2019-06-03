@@ -11,7 +11,7 @@ import os
 import sys
 
 from frag.network.models import NodeHolder, Attr
-from frag.utils.network_utils import build_network, write_data
+from frag.utils.network_utils import build_network, write_data_as_csv
 from frag.std_utils.parser import parse_standard_file
 
 
@@ -86,7 +86,7 @@ def main():
                                 args.base_dir,
                                 args.verbosity)
     # Write the data out
-    write_data(args.base_dir, node_holder, None)
+    write_data_as_csv(args.base_dir, node_holder)
 
 
 if __name__ == "__main__":

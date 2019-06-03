@@ -115,7 +115,6 @@ supplier_name = 'SENP7'
 # Prefix for output files
 output_filename_prefix = 'senp7'
 # The namespaces of the various indices
-frag_namespace = 'F2'
 suppliermol_namespace = 'SM_SENP7'
 supplier_namespace = 'S'
 isomol_namespace = 'ISO-SENP7'
@@ -126,9 +125,10 @@ vendor_code = 'V_SENP7'
 # Used to generate the accompanying `load_neo4j.sh`.
 # We add to this every time we open a file for writing.
 #
-# There is an implicit 'edges.csv.gz'
+# There is an implicit 'edges.csv.gz' and we add a header
+EDGES_HDR_FILENAME = 'edges-header.csv'
 generated_files = {'nodes': [],
-                   'edges': ['edges.csv.gz']}
+                   'edges': ['{},edges.csv.gz'.format(EDGES_HDR_FILENAME)]}
 
 # Various diagnostic counts
 num_vendor_iso_mols = 0
@@ -450,7 +450,6 @@ if __name__ == '__main__':
                                                  args.output,
                                                  output_filename_prefix,
                                                  generated_files,
-                                                 frag_namespace,
                                                  isomol_namespace,
                                                  suppliermol_namespace,
                                                  isomol_smiles,
@@ -478,6 +477,11 @@ if __name__ == '__main__':
         # for all the files we generated...
         logger.info('Writing load script...')
         write_load_script(args.output, generated_files)
+
+    # Finish by writing the expected edges header file...
+    edges_header_file = open(EDGES_HDR_FILENAME, 'wt')
+    edges_header_file.write(':START_ID(F2),:END_ID(F2),label,:TYPE\n')
+    edges_header_file.close()
 
     # Now complete we write a "done" file to the output.
     # Processing may be time-consuming

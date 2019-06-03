@@ -88,6 +88,14 @@ class Node(object):
             ["NODE", self.SMILES, str(self.HAC), str(self.RAC), self.RING_SMILES]
         )
 
+    def as_csv(self):
+        """Like str() but as CSV and without the initial column,
+        i.e. something ready for augmentation.
+        """
+        return ",".join(
+            [self.SMILES, str(self.HAC), str(self.RAC), self.RING_SMILES]
+        )
+
 
 class Edge(object):
     """
@@ -115,9 +123,6 @@ class Edge(object):
         self.REBUILT_TYPE = get_type(rebuilt_smi)
         self.EXCLUDED_RING_SMILES = simplified_graph(excluded_smi, iso_flag=iso_flag)
         self.NODES = [node_one, node_two]
-        self.REPR = " ".join(
-            ["EDGE", self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
-        )
         self.HASH = hash(
             "||".join(
                 ["EDGE", self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
@@ -137,7 +142,17 @@ class Edge(object):
         )
 
     def __str__(self):
-        return self.REPR
+        return " ".join(
+            ["EDGE", self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
+        )
+
+    def as_csv(self):
+        """Like str() but as CSV and without the initial column,
+        i.e. something ready for augmentation.
+        """
+        return ",".join(
+            [self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
+        )
 
 
 class Attr(object):
