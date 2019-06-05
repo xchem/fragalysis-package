@@ -54,7 +54,7 @@ args = parser.parse_args()
 
 # Check source directory
 if not os.path.isdir(args.source):
-    logger.error('The source directory does not exist', args.source)
+    logger.error('The source directory does not exist (%s)', args.source)
     sys.exit(1)
 
 # The S3 raw path...

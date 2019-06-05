@@ -53,7 +53,7 @@ args = parser.parse_args()
 
 # Check source directory
 if not os.path.isdir(args.source):
-    logger.error('The source directory does not exist', args.source)
+    logger.error('The source directory does not exist (%s)', args.source)
     sys.exit(1)
 
 s3_client = boto3.client('s3')

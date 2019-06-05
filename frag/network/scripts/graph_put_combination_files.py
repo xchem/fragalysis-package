@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf-8
 
-"""A utility to write graph files to AWS S3.
-
-Graph files consist of everything (except provenance files) in the names
-directory. The file are the results os running the 'process' scripts.
-The files are deposited into the build directory
+"""A utility to write a combination files to AWS S3.
 
 To use this utility you will need to ensure that your AWS credentials
 are available via expected environment variables. Please refer to
@@ -14,7 +10,7 @@ the AWS boto3 documentation, which describes this: -
     https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html
 
 Alan Christie
-February 2019
+June 2019
 """
 
 import argparse
@@ -38,18 +34,18 @@ logger.addHandler(out_hdlr)
 
 # Expected environment variables (that define the bucket)
 s3_bucket_env = 'FRAGALYSIS_S3_BUCKET'
-s3_build_root = 'build'
+s3_raw_root = 'combination'
 s3_archive_bucket = os.environ.get(s3_bucket_env)
 if not s3_archive_bucket:
     logger.error('You must define %s', s3_bucket_env)
     sys.exit(1)
 
-parser = argparse.ArgumentParser('Graph Build Graph File Putter')
+parser = argparse.ArgumentParser('Graph Combination File Putter')
 parser.add_argument('source', metavar='DIR', type=str,
-                    help='The local directory (where the graph data exists)')
-parser.add_argument('path', metavar='PATH', type=str,
-                    help='The path, relative to the "raw" directory'
-                         ' in your S3 bucket. e.g. "activity/senp7/v1/build-1"')
+                    help='The local directory'
+                         ' (where the combination data exists)')
+parser.add_argument('combination', metavar='COMBINATION', type=int,
+                    help='The combination number')
 
 args = parser.parse_args()
 
@@ -58,25 +54,25 @@ if not os.path.isdir(args.source):
     logger.error('The source directory does not exist (%s)', args.source)
     sys.exit(1)
 
-# The S3 build path...
-dst = s3_build_root + '/' + args.path + '/'
+# The S3 combination path...
+dst = s3_raw_root + '/' + args.combination + '/'
 s3_client = boto3.client('s3')
 
-# We write everything in the source directory that's a file...
-num_files_saved = 0
-items = os.listdir(args.source)
-for item in items:
-    # Skip any .prov files.
-    if item.endswith('.prov'):
-        continue
-    src = os.path.join(args.source, item)
-    if os.path.isfile(src):
-        dst = s3_build_root + '/' + args.path + '/' + item
-        logger.info('Putting %s -> %s...', item, args.path)
-        s3_client.upload_file(src, s3_archive_bucket, dst)
-        num_files_saved += 1
+# We must not write to an existing path (key).
+# It is up to the user to make sure the destination does not exist,
+# it's too easy to over-write files in S3.
+target = s3_client.list_objects_v2(Bucket=s3_archive_bucket,
+                                   Prefix=dst)
+if 'KeyCount' in target and target['KeyCount']:
+    logger.error('The combination already exists in S3.'
+                 ' You cannot "put" to existing locations.')
+    sys.exit(1)
 
-# It's an error not to have saved any files
-if num_files_saved == 0:
-    logger.error('No files were saved, is the directory empty?')
-    sys.exit(2)
+# Upload the list of files...
+potential_files = os.listdir(args.source)
+for potential_file in potential_files:
+    src = os.path.join(args.source, potential_file)
+    if os.path.isfile(src):
+        dst = s3_raw_root + '/' + args.combination + '/' + potential_file
+        logger.info('Putting %s -> %s...', potential_file, args.combination)
+        s3_client.upload_file(src, s3_archive_bucket, dst)
