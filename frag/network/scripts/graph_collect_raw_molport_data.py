@@ -153,18 +153,17 @@ def collect():
     # Now retrieve the files...
     for filename in latest_release_files:
         logger.info('Getting %s...', filename)
-        ftp.retrbinary('RETR %s' % filename, open(filename, 'wb').write)
+        dest_path = os.path.join(collect_dir, filename)
+        ftp.retrbinary('RETR %s' % filename, open(dest_path, 'wb').write)
 
     ftp.quit()
 
     # Upload the list of files...
 #    s3_client = boto3.client('s3')
-    potential_files = os.listdir(collect_dir)
-    for potential_file in potential_files:
-        src = os.path.join(args.source, potential_file)
-        if os.path.isfile(src):
-            dst = S3_STORAGE_PATH + '/' + latest_release_str + '/' + potential_file
-            logger.info('Putting %s -> %s...', potential_file, latest_release_str)
+    for filename in latest_release_files:
+        src = os.path.join(collect_dir, filename)
+        dst = S3_STORAGE_PATH + '/' + latest_release_str + '/' + filename
+        logger.info('Putting %s -> %s...', filename, latest_release_str)
 #            s3_client.upload_file(src, s3_archive_bucket, dst)
 
 
@@ -182,6 +181,7 @@ def check_held():
                                      Prefix=src)
     for content in resp['Contents']:
         if content['Key'].endswith('/'):
+            logger.info('? %s', content['Key'])
             potential_collection = content['Key'].split('/')[-2]
             logger.info('Inspecting %s', potential_collection)
             if SET_RE.match(potential_collection):
