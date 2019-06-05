@@ -180,8 +180,8 @@ def check_held():
     resp = s3_client.list_objects_v2(Bucket=s3_archive_bucket,
                                      Prefix=src)
     for content in resp['Contents']:
+        logger.info('? %s', content)
         if content['Key'].endswith('/'):
-            logger.info('? %s', content['Key'])
             potential_collection = content['Key'].split('/')[-2]
             logger.info('Inspecting %s', potential_collection)
             if SET_RE.match(potential_collection):
