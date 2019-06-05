@@ -194,6 +194,7 @@ parser.add_argument('collection', metavar='DIR', type=str,
                     help='The local collection directory for any'
                          ' collected data, which must not exist and'
                          ' will be created')
+parser.add_argument("--force", dest="force", action="store_true")
 
 args = parser.parse_args()
 collect_dir = args.collection
