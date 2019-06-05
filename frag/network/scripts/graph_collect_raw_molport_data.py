@@ -180,10 +180,9 @@ def check_held():
     resp = s3_client.list_objects_v2(Bucket=s3_archive_bucket,
                                      Prefix=src)
     for content in resp['Contents']:
-        logger.info('? %s', content)
-        if content['Key'].endswith('/'):
-            potential_collection = content['Key'].split('/')[-2]
-            logger.info('Inspecting %s', potential_collection)
+        content_parts = content['Key'].split('/')
+        if content_parts >= 4:
+            potential_collection = content_parts[3]
             if SET_RE.match(potential_collection):
                 held_id = to_release_id(potential_collection)
                 if held_id > latest_held_id:
