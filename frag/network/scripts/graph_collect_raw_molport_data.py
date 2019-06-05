@@ -144,7 +144,10 @@ def collect():
 
     ftp = FTP(FTP_HOME)
     ftp.login(collect_username, collect_password)
-    ftp.cwd(os.path.join(FTP_ROOT, 'All Stock Compounds', 'SMILES'))
+    ftp.cwd(os.path.join(FTP_ROOT,
+                         latest_release_str,
+                         'All Stock Compounds',
+                         'SMILES'))
     ftp.retrlines('LIST', ftp_pull_callback)
 
     # Now retrieve the files...
@@ -180,6 +183,7 @@ def check_held():
     for content in resp['Contents']:
         if content['Key'].endswith('/'):
             potential_collection = content['Key'].split('/')[-2]
+            logger.info('Inspecting %s', potential_collection)
             if SET_RE.match(potential_collection):
                 held_id = to_release_id(potential_collection)
                 if held_id > latest_held_id:
