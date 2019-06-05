@@ -65,7 +65,7 @@ SET_RE = re.compile(r'^\d\d\d\d-\d\d$')
 # The FTP site
 FTP_HOME = 'molport.com'
 FTP_ROOT = 'molport_database'
-S3_STORAGE_PATH = 'raw/vendor/molport'
+S3_STORAGE_PATH = 'vendor/molport'
 
 latest_release_str = None
 latest_release_id = 0
@@ -133,7 +133,6 @@ def check_latest():
     ftp.retrlines('LIST', ftp_sniff_callback)
     ftp.quit()
 
-    logger.info('Latest release is %s', latest_release_str)
 
 def collect():
     """Collects all the files for the release identified by the
@@ -152,19 +151,17 @@ def collect():
 
     # Now retrieve the files...
     for filename in latest_release_files:
-        logger.info('Getting %s...', filename)
         dest_path = os.path.join(collect_dir, filename)
         ftp.retrbinary('RETR %s' % filename, open(dest_path, 'wb').write)
 
     ftp.quit()
 
     # Upload the list of files...
-#    s3_client = boto3.client('s3')
+    s3_client = boto3.client('s3')
     for filename in latest_release_files:
         src = os.path.join(collect_dir, filename)
-        dst = S3_STORAGE_PATH + '/' + latest_release_str + '/' + filename
-        logger.info('Putting %s -> %s...', filename, latest_release_str)
-#            s3_client.upload_file(src, s3_archive_bucket, dst)
+        dst = s3_data_root + '/' + S3_STORAGE_PATH + '/' + latest_release_str + '/' + filename
+        s3_client.upload_file(src, s3_archive_bucket, dst)
 
 
 def check_held():
@@ -173,7 +170,7 @@ def check_held():
     global latest_held_id
     global latest_held_str
 
-    src = S3_STORAGE_PATH + '/'
+    src = s3_data_root + '/' + S3_STORAGE_PATH + '/'
     # Get the contents of the selected directory
     # and look for potential releases...
     s3_client = boto3.client('s3')
@@ -181,15 +178,13 @@ def check_held():
                                      Prefix=src)
     for content in resp['Contents']:
         content_parts = content['Key'].split('/')
-        if content_parts >= 4:
+        if len(content_parts) >= 4:
             potential_collection = content_parts[3]
             if SET_RE.match(potential_collection):
                 held_id = to_release_id(potential_collection)
                 if held_id > latest_held_id:
                     latest_held_id = held_id
                     latest_held_str = potential_collection
-
-    logger.info('Latest held is %s', latest_held_str)
 
 
 parser = argparse.ArgumentParser('Graph MolPort File Collector')
@@ -217,19 +212,19 @@ check_held()
 # So if we have data for June and new data exists for July and August
 # we want August's data.
 
-#check_latest()
+check_latest()
 
 # If there's new data: -
 #
 # - Download it to the collection directory
 # - Upload to the S3 path
 
-#if latest_release_id > latest_held_id:
+if latest_release_id > latest_held_id:
 
     # There's new data.
     # Download and store on S3
-#    collect()
+    collect()
 
     # Finally, print the new path,
     # this is the 'path' argument with the new raw directory appended
-#    print(S3_STORAGE_PATH + '/' + latest_release_str)
+    print(S3_STORAGE_PATH + '/' + latest_release_str)
