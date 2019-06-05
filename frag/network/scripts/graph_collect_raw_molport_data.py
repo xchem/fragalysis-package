@@ -218,19 +218,19 @@ check_held()
 # So if we have data for June and new data exists for July and August
 # we want August's data.
 
-check_latest()
+#check_latest()
 
 # If there's new data: -
 #
 # - Download it to the collection directory
 # - Upload to the S3 path
 
-if latest_release_id > latest_held_id:
+#if latest_release_id > latest_held_id:
 
     # There's new data.
     # Download and store on S3
-    collect()
+#    collect()
 
     # Finally, print the new path,
     # this is the 'path' argument with the new raw directory appended
-    print(S3_STORAGE_PATH + '/' + latest_release_str)
+#    print(S3_STORAGE_PATH + '/' + latest_release_str)
