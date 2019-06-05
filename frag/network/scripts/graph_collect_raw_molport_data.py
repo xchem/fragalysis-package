@@ -53,8 +53,8 @@ if not s3_archive_bucket:
     logger.error('You must define %s', s3_bucket_env)
     sys.exit(1)
 
-collect_username = os.envrion.get('FRAGALYSIS_COLLECT_USERNAME')
-collect_password = os.envrion.get('FRAGALYSIS_COLLECT_PASSWORD')
+collect_username = os.environ.get('FRAGALYSIS_COLLECT_USERNAME')
+collect_password = os.environ.get('FRAGALYSIS_COLLECT_PASSWORD')
 if not collect_username or not collect_password:
     logger.error('You must define a username and password')
     sys.exit(1)
