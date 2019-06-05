@@ -69,6 +69,7 @@ S3_STORAGE_PATH = 'raw/vendor/molport'
 
 latest_release_str = None
 latest_release_id = 0
+latest_release_files = []
 latest_held_id = 0
 collect_dir = None
 
@@ -117,8 +118,7 @@ def ftp_pull_callback(context):
     # Convert to a numeric identity,
     # high values are later releases.
     filename = parts[-1]
-    dest_path = os.path.join(collect_dir, filename)
-    ftp.retrbinary('RETR %s' % filename , open(dest_path, 'wb').write)
+    latest_release_files.append(filename)
 
 
 def check_latest():
@@ -144,6 +144,11 @@ def collect():
     ftp.login(collect_username, collect_password)
     ftp.cwd(os.path.join(FTP_ROOT, 'All Stock Compounds', 'SMILES'))
     ftp.retrlines('LIST', ftp_pull_callback)
+
+    # Now retrieve the files...
+    for filename in latest_release_files:
+        ftp.retrbinary('RETR %s' % filename, open(filename, 'wb').write)
+
     ftp.quit()
 
     # Upload the list of files...
