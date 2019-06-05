@@ -70,6 +70,7 @@ S3_STORAGE_PATH = 'raw/vendor/molport'
 latest_release_str = None
 latest_release_id = 0
 latest_release_files = []
+latest_held_str = None
 latest_held_id = 0
 collect_dir = None
 
@@ -132,6 +133,7 @@ def check_latest():
     ftp.retrlines('LIST', ftp_sniff_callback)
     ftp.quit()
 
+    logger.info('Latest release is %s', latest_release_str)
 
 def collect():
     """Collects all the files for the release identified by the
@@ -147,6 +149,7 @@ def collect():
 
     # Now retrieve the files...
     for filename in latest_release_files:
+        logger.info('Getting %s...', filename)
         ftp.retrbinary('RETR %s' % filename, open(filename, 'wb').write)
 
     ftp.quit()
@@ -166,6 +169,7 @@ def check_held():
     """Gets the latest held data, setting latest_held_id.
     """
     global latest_held_id
+    global latest_held_str
 
     src = S3_STORAGE_PATH + '/'
     # Get the contents of the selected directory
@@ -180,20 +184,16 @@ def check_held():
                 held_id = to_release_id(potential_collection)
                 if held_id > latest_held_id:
                     latest_held_id = held_id
+                    latest_held_str = potential_collection
+
+    logger.info('Latest held is %s', latest_held_str)
 
 
 parser = argparse.ArgumentParser('Graph MolPort File Collector')
-parser.add_argument('path', metavar='PATH', type=str,
-                    help='The path, relative to the "raw" directory'
-                         ' in your S3 bucket. e.g. "activity/senp7/v1"')
 parser.add_argument('collection', metavar='DIR', type=str,
                     help='The local collection directory for any'
                          ' collected data, which must not exist and'
                          ' will be created')
-parser.add_argument('vendor', metavar='VENDOR', type=str,
-                    choices=['molport'],
-                    help='The vendor identity (selects the download logic)')
-parser.add_argument("--force", dest="force", action="store_true")
 
 args = parser.parse_args()
 collect_dir = args.collection
