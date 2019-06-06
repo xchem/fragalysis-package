@@ -402,7 +402,7 @@ def write_nodes(input_nodes,
     # Augmented file header
     augmented_node_hdr_filename = \
         os.path.join(output_dir,
-                     '{}-augmented-node-header.csv'.format(output_prefix))
+                     '{}-augmented-nodes-header.csv'.format(output_prefix))
 
     # Add the node (and its header file) that we're about to generate
     # to the generated files list...
