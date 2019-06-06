@@ -3,10 +3,13 @@
 
 """A utility to collect raw (vendor) data files from the vendor sites
 and upload them to a new raw location on AWS S3. The output of this
-program is a string representing the path to any new data omn S3. If there is
-no new data the program output is blank. There will be output if
-there's an error, so output must only be interpreted as a path if the
-exit code of the program is 0.
+program is a string representing the path to any new data on S3,
+which will be something like 'vendor/molport/2019-06'.
+
+If there is no new data the program output is blank.
+
+There will be output if there's an error, so output must only be interpreted
+as a path if the exit code of the program is 0.
 
 This module assumes that the data resides in an S3 bucket with a directory
 structure that complies with the **Fragalysis S3 Data Archive** definition.
@@ -83,7 +86,11 @@ def to_release_id(release):
 
 
 def ftp_sniff_callback(context):
-    """An FTP callback method.
+    """An FTP callback method used by check_latest().
+    Used to find the latest release on the customer site.
+    If a release is found, the most recent is sets int the global
+    variables latest_release_str (i.e. the string '2019-06') and
+    latest_release_id (i.e. the number 201906)
     """
     global latest_release_id
     global latest_release_str
@@ -103,8 +110,11 @@ def ftp_sniff_callback(context):
         latest_release_str = parts[8]
 
 
-def ftp_pull_callback(context):
-    """An FTP callback method.
+def ftp_record_callback(context):
+    """An FTP callback method used by get_latest().
+    Used to put the release files (the SMILES files)
+    into a global list (latest_release_files) which is then
+    processed from the get_latest() method.
     """
     global latest_release_id
     global latest_release_str
@@ -134,7 +144,7 @@ def check_latest():
     ftp.quit()
 
 
-def collect():
+def get_latest():
     """Collects all the files for the release identified by the
     'latest_release_str' string's value.
     """
@@ -143,29 +153,36 @@ def collect():
 
     ftp = FTP(FTP_HOME)
     ftp.login(collect_username, collect_password)
+
+    # The release files we want are in the FTP ROOT
+    # at '<release>/All Stock Compounds/SMILES'.
     ftp.cwd(os.path.join(FTP_ROOT,
                          latest_release_str,
                          'All Stock Compounds',
                          'SMILES'))
-    ftp.retrlines('LIST', ftp_pull_callback)
+    ftp.retrlines('LIST', ftp_record_callback)
 
-    # Now retrieve the files...
+    # Now we've listed the directory,
+    # using the current FTP instance,
+    # retrieve the files...
     for filename in latest_release_files:
         dest_path = os.path.join(collect_dir, filename)
         ftp.retrbinary('RETR %s' % filename, open(dest_path, 'wb').write)
 
     ftp.quit()
 
-    # Upload the list of files...
+    # Upload the list of files (removing the source as we go)...
     s3_client = boto3.client('s3')
     for filename in latest_release_files:
         src = os.path.join(collect_dir, filename)
         dst = s3_data_root + '/' + S3_STORAGE_PATH + '/' + latest_release_str + '/' + filename
         s3_client.upload_file(src, s3_archive_bucket, dst)
+        os.remove(src)
 
 
 def check_held():
-    """Gets the latest held data, setting latest_held_id.
+    """Gets the latest data held on S3, setting latest_held_id
+    and latest_held_str.
     """
     global latest_held_id
     global latest_held_str
@@ -218,13 +235,15 @@ check_latest()
 #
 # - Download it to the collection directory
 # - Upload to the S3 path
+# - Print the location of the new data.
 
 if latest_release_id > latest_held_id:
 
     # There's new data.
     # Download and store on S3
-    collect()
+    get_latest()
 
     # Finally, print the new path,
-    # this is the 'path' argument with the new raw directory appended
+    # this is the 'path' argument with the new raw directory appended,
+    # and will be something like 'vendor/molport/2019-06'
     print(S3_STORAGE_PATH + '/' + latest_release_str)
