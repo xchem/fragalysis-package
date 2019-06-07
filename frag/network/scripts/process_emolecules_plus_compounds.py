@@ -113,7 +113,7 @@ vendor_compounds = set()
 unknown_vendor_compounds = set()
 
 # The supplier symbolic name
-supplier_name = 'EMOLS_PLUS'
+supplier_name = 'eMolecules-Plus'
 # Prefix for output files
 output_filename_prefix = 'emolecules-plus'
 # The namespaces of the various indices
@@ -385,7 +385,7 @@ if __name__ == '__main__':
 
     _ = extract_vendor_compounds(suppliermol_gzip_file,
                                  suppliermol_edges_gzip_file,
-                                 'eMolecules-BB',
+                                 supplier_name,
                                  args.vendor_file,
                                  args.limit,
                                  args.min_hac,

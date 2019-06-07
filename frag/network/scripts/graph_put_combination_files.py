@@ -55,7 +55,8 @@ if not os.path.isdir(args.source):
     sys.exit(1)
 
 # The S3 combination path...
-dst = s3_raw_root + '/' + args.combination + '/'
+combination_str = str(args.combination)
+dst = s3_raw_root + '/' + combination_str + '/'
 s3_client = boto3.client('s3')
 
 # We must not write to an existing path (key).
@@ -73,6 +74,6 @@ potential_files = os.listdir(args.source)
 for potential_file in potential_files:
     src = os.path.join(args.source, potential_file)
     if os.path.isfile(src):
-        dst = s3_raw_root + '/' + args.combination + '/' + potential_file
+        dst = s3_raw_root + '/' + combination_str + '/' + potential_file
         logger.info('Putting %s -> %s...', potential_file, args.combination)
         s3_client.upload_file(src, s3_archive_bucket, dst)
