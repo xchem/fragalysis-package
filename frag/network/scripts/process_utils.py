@@ -399,26 +399,30 @@ def write_nodes(input_nodes,
     logger.info(' %s', augmented_noniso_relationships_filename)
     logger.info(' %s', augmented_iso_relationships_filename)
 
-    # Augmented file header
-    augmented_node_hdr_filename = \
-        os.path.join(output_dir,
-                     '{}-augmented-nodes-header.csv'.format(output_prefix))
+    # Augmented file header.
+    #
+    # When run in a combination chain
+    # any previous file is replaced.
+    # For now we assume that the column definitions
+    # for the nodes file will not change.
+    node_hdr_filename = \
+        os.path.join(output_dir, 'nodes-header.csv'.format(output_prefix))
 
     # Add the node (and its header file) that we're about to generate
     # to the generated files list...
-    generated_files['nodes'].append('{},{}'.format(augmented_node_hdr_filename,
+    generated_files['nodes'].append('{},{}'.format(node_hdr_filename,
                                                    augmented_filename))
 
     # Write the node header...
-    augmented_node_hdr_file = open(augmented_node_hdr_filename, 'wt')
+    node_hdr_file = open(node_hdr_filename, 'wt')
     hdr = 'smiles:ID(%s),' \
           'hac:INT,' \
           'chac:INT,' \
           'osmiles,' \
           'cmpd_ids:STRING[],' \
           ':LABEL\n' % FRAG_NAMESPACE
-    augmented_node_hdr_file.write(hdr)
-    augmented_node_hdr_file.close()
+    node_hdr_file.write(hdr)
+    node_hdr_file.close()
 
     # Write the augmented nodes
     with gzip.open(filename, 'rt') as n_file:

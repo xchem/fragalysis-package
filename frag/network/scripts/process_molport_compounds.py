@@ -314,7 +314,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
             iso = fields[iso_smiles_col]
             noniso = fields[noniso_smiles_col]
             compound_id = fields[compound_col]
-            blt = int(fields[blt_col].strip())
+            blt = int(fields[blt_col].rstrip())
 
             # If min/max HAC have been provided
             # use them to eliminate compounds.
@@ -579,7 +579,7 @@ if __name__ == '__main__':
         write_load_script(args.output, generated_files)
 
     # Finish by writing the expected edges header file...
-    edges_header_file = open(EDGES_HDR_FILENAME, 'wt')
+    edges_header_file = open(os.path.join(args.output,EDGES_HDR_FILENAME), 'wt')
     edges_header_file.write(':START_ID(F2),:END_ID(F2),label,:TYPE\n')
     edges_header_file.close()
 

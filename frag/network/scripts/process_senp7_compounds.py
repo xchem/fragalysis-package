@@ -205,7 +205,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
             compound_id = fields[compound_col]
             activity = 0.0
             try:
-                activity = float(fields[activity_col])
+                activity = float(fields[activity_col].rstrip())
             except ValueError:
                 num_activity_value_failures += 1
 
@@ -479,7 +479,7 @@ if __name__ == '__main__':
         write_load_script(args.output, generated_files)
 
     # Finish by writing the expected edges header file...
-    edges_header_file = open(EDGES_HDR_FILENAME, 'wt')
+    edges_header_file = open(os.path.join(args.output,EDGES_HDR_FILENAME), 'wt')
     edges_header_file.write(':START_ID(F2),:END_ID(F2),label,:TYPE\n')
     edges_header_file.close()
 
