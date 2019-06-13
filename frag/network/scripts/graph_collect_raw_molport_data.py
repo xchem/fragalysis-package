@@ -6,9 +6,9 @@ and upload them to a new raw location on AWS S3. The output of this
 program is a string representing the path to any new data on S3,
 which will be something like 'vendor/molport/2019-06'.
 
-If there is no new data the program output is blank.
+If there is no new data the program exit status is non-zero.
 
-There will be output if there's an error, so output must only be interpreted
+There may be output if there's an error, so output must only be interpreted
 as a path if the exit code of the program is 0.
 
 This module assumes that the data resides in an S3 bucket with a directory
@@ -231,19 +231,24 @@ check_held()
 
 check_latest()
 
-# If there's new data: -
+# If there's no new data: -
 #
-# - Download it to the collection directory
+#   exit with a non-zero code
+#
+# Otherwise: -
+#
+# - Download the new data to the collection directory
 # - Upload to the S3 path
 # - Print the location of the new data.
 
-if latest_release_id > latest_held_id:
+if latest_release_id <= latest_held_id:
+    sys.exit(2)
 
-    # There's new data.
-    # Download and store on S3
-    get_latest()
+# There's new data.
+# Download and store on S3
+get_latest()
 
-    # Finally, print the new path,
-    # this is the 'path' argument with the new raw directory appended,
-    # and will be something like 'vendor/molport/2019-06'
-    print(S3_STORAGE_PATH + '/' + latest_release_str)
+# Finally, print the new path,
+# this is the 'path' argument with the new raw directory appended,
+# and will be something like 'vendor/molport/2019-06'
+print(S3_STORAGE_PATH + '/' + latest_release_str)
