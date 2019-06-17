@@ -1,44 +1,37 @@
 #!/usr/bin/env python
 
-"""process_enamine_compounds.py
+"""process_senp7_compounds.py
 
-Processes standardised Enamine vendor files, not expected to contain
-pricing information.
+Processes standardised senp7 vendor files.
 
 For the graph design refer to the Google-Drive graph model document at...
 
     https://drive.google.com/file/d/1g4jT3yhwQYqsKwMpE3fYAA7dgGBYhBiw
 
-The purpose of this module is to create "Vendor" Compound nodes
-and relationships to augment the DLS fragment database.
-Every fragment line that has an Enamine identifier in the original data set
-is labelled and a relationship created between it and the Vendor's compound(s).
-
-Some vendor compound nodes may not exist in the original data set.
-
 The files generated (in a named output directory) are:
 
--   "enamine-compound-nodes.csv.gz"
+-   "senp7-compound-nodes.csv.gz"
     containing all the nodes for the vendor compounds.
 
--   "enamine-molecule-compound_edges.csv.gz"
+-   "senp7-molecule-compound_edges.csv.gz"
     containing the relationships between the original node entries and
-    the "Vendor" nodes. There is a relationship for every Enamine
+    the "Vendor" nodes. There is a relationship for every senp7
     compound that was found in the earlier processing.
 
 The module augments the original nodes by adding the label
-"V_E" for all MolPort compounds that have been found
+"SENP7" for all MolPort compounds that have been found
 to the augmented copy of the original node file that it creates.
 
 If the original nodes file is "nodes.csv" the augmented copy
 (in the named output directory) will be called
-"enamine-augmented-nodes.csv.gz".
+"hts-augmented-nodes.csv.gz".
 
 Important Note  If the graph content changes in any way the
 --------------  our graph_version must be changed.
                 So, if the format of the node or relationship files change
                 (e.g.  new columns, new labels, new or modified anything)
                 our version must change.
+
 Alan Christie
 May 2019
 """
@@ -54,10 +47,12 @@ from process_utils import write_supplier_nodes
 from process_utils import write_isomol_nodes
 from process_utils import write_isomol_suppliermol_relationships
 from process_utils import write_nodes
+from process_utils import write_assay_nodes
 from process_utils import write_load_script
+from process_utils import AssayNode
 
 # Configure basic logging
-logger = logging.getLogger('real')
+logger = logging.getLogger('hts')
 out_hdlr = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s %(levelname)s # %(message)s',
                               '%Y-%m-%dT%H:%M:%S')
@@ -74,19 +69,21 @@ logger.setLevel(logging.INFO)
 # i.e. '2019-05-21.2' is the second version on the 21st May 2019.
 graph_version = '2019-05-26.1'
 
-# The minimum number of columns in the input data (a standardised file).
-# Essentially a map of expected column names indexed by column number.
-expected_min_num_cols = 5
+# The minimum number of columns in the input files and
+# and a map of expected column names indexed by (0-based) column number.
+expected_min_num_cols = 6
 osmiles_col = 0
 iso_smiles_col = 1
 noniso_smiles_col = 2
 hac_col = 3
 compound_col = 4
+activity_col = 5
 expected_input_cols = {osmiles_col: 'OSMILES',
                        iso_smiles_col: 'ISO_SMILES',
                        noniso_smiles_col: 'NONISO_SMILES',
                        hac_col: 'HAC',
-                       compound_col: 'CMPD_ID'}
+                       compound_col: 'CMPD_ID',
+                       activity_col: 'INHIB_5UM'}
 
 # Map of Vendor compounds that are isomeric, and their standard representation.
 # The index is a Vendor compound ID and the value is the standardised form.
@@ -110,16 +107,19 @@ vendor_compounds = set()
 # The set of all vendor compounds found in the fragment line
 # where a Vendor compound was not found.
 unknown_vendor_compounds = set()
+# Compound ID to Assay activity map.
+assay_compound_values = {}
 
 # The supplier symbolic name
-supplier_name = 'REAL'
+supplier_name = 'SENP7'
 # Prefix for output files
-output_filename_prefix = 'real'
+output_filename_prefix = 'senp7'
 # The namespaces of the various indices
-suppliermol_namespace = 'SM_R'
+suppliermol_namespace = 'SM_SENP7'
 supplier_namespace = 'S'
-isomol_namespace = 'ISO-R'
-vendor_code = 'V_REAL'
+isomol_namespace = 'ISO-SENP7'
+assay_namespace = 'A_SENP7'
+vendor_code = 'V_SENP7'
 
 # The list of files generated.
 # Used to generate the accompanying `load_neo4j.sh`.
@@ -131,13 +131,10 @@ generated_files = {'nodes': [],
                    'edges': ['{},edges.csv.gz'.format(EDGES_HDR_FILENAME)]}
 
 # Various diagnostic counts
-num_nodes = 0
-num_nodes_augmented = 0
-num_compound_relationships = 0
-num_compound_iso_relationships = 0
 num_vendor_iso_mols = 0
 num_vendor_mols = 0
 num_vendor_molecule_failures = 0
+num_activity_value_failures = 0
 
 
 def extract_vendor_compounds(suppliermol_gzip_file,
@@ -147,24 +144,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
                              limit,
                              min_hac,
                              max_hac):
-    """Process the given file and extract vendor (and pricing) information.
-    Vendor nodes are only created when there is at least one
-    column of pricing information.
-
-    This method extracts vendor information and writes the following files: -
-
-    -   "enamine-suppliermol-nodes.csv.gz"
-    -   "enamine-suppliermol-supplier-edges.csv.gz"
-
-    The following files are expected to be written elsewhere: -
-
-    -   "enamine-supplier-nodes.csv.gz"
-
-    The "ID" in the SupplierMol nodes file is the Compound ID and the
-    "ID" of the (single) Supplier node is the supplier Name.
-
-    As we load the Vendor compounds we 'standardise' the SMILES and
-    determine whether they represent an isomer or not.
+    """Process the given file and extract vendor information.
 
     :param suppliermol_gzip_file: The SupplierMol node file
     :param suppliermol_edges_gzip_file: The SupplierMol to Supplier edges file
@@ -176,16 +156,17 @@ def extract_vendor_compounds(suppliermol_gzip_file,
 
     :returns: The number of molecules processed
     """
-
     global compound_isomer_map
     global isomol_smiles
     global non_isomol_smiles
     global non_isomol_isomol_smiles
+    global assay_compound_values
     global num_vendor_iso_mols
     global num_vendor_mols
     global num_vendor_molecule_failures
+    global num_activity_value_failures
 
-    logger.info('Processing %s...', gzip_filename)
+    logger.info('Processing {}...'.format(gzip_filename))
 
     num_lines = 0
     num_processed = 0
@@ -196,7 +177,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
         # names are what we expect.
 
         hdr = gzip_file.readline()
-        field_names = hdr.split('\t')
+        field_names = hdr.split()
         # Expected minimum number of columns...
         if len(field_names) < expected_min_num_cols:
             error('expected at least {} columns found {}'.
@@ -209,20 +190,24 @@ def extract_vendor_compounds(suppliermol_gzip_file,
                              col_num,
                              field_names[col_num]))
 
-        # Columns look right...
+        # OK - looks like the column names are right.
+        # let's load the data...
 
         for line in gzip_file:
 
             num_lines += 1
-            fields = line.split('\t')
-            if len(fields) <= 1:
-                continue
+            fields = line.split()
 
             osmiles = fields[osmiles_col]
             hac = int(fields[hac_col])
             iso = fields[iso_smiles_col]
             noniso = fields[noniso_smiles_col]
-            compound_id = fields[compound_col].rstrip()
+            compound_id = fields[compound_col]
+            activity = 0.0
+            try:
+                activity = float(fields[activity_col].rstrip())
+            except ValueError:
+                num_activity_value_failures += 1
 
             # If min/max HAC have been provided
             # use them to eliminate compounds.
@@ -231,11 +216,13 @@ def extract_vendor_compounds(suppliermol_gzip_file,
             elif max_hac and hac > max_hac:
                 continue
 
-            # Add the compound (expected to be unique)
-            # to our set of 'all compounds'.
+            # The compound ID must be unique
             if compound_id in vendor_compounds:
-                error('Duplicate compound ID ({})'.format(compound_id))
+                error('Duplicate compound "{}"'.format(compound_id))
             vendor_compounds.add(compound_id)
+
+            # Add activity to compound-id map...
+            assay_compound_values[compound_id] = activity
 
             # Is it isomeric?
             num_vendor_mols += 1
@@ -280,8 +267,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
             # And add a suitable 'Availability' relationship with the Supplier
             suppliermol_edges_gzip_file. \
                 write('{},{},Availability\n'.
-                      format(compound_id,
-                             supplier_id))
+                      format(compound_id, supplier_id))
 
             # Enough?
             num_processed += 1
@@ -293,7 +279,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser('Vendor Compound Processor (Enamine)')
+    parser = argparse.ArgumentParser('Vendor Compound Processor (HTS/SENP7)')
     parser.add_argument('vendor_file',
                         help='The vendor standardised file (gzipped).')
     parser.add_argument('input_nodes',
@@ -357,8 +343,8 @@ if __name__ == '__main__':
     #
     # The output files are: -
     # - One for the SupplierMol nodes
-    # - And one for the relationships to the (expected) supplier node.
-    # - And one for the imomeric molecules.
+    # - And one for the relationships to the (expected) supplier node
+    # - And one for the molecule to assay relationships
     suppliermol_filename = os.path. \
         join(args.output,
              '{}-suppliermol-nodes.csv.gz'.
@@ -384,13 +370,13 @@ if __name__ == '__main__':
 
     _ = extract_vendor_compounds(suppliermol_gzip_file,
                                  suppliermol_edges_gzip_file,
-                                 'Real',
+                                 supplier_name,
                                  args.vendor_file,
                                  args.limit,
                                  args.min_hac,
                                  args.max_hac)
 
-    # Close the SupplierMol and the edges file.
+    # Close the opened files.
     suppliermol_gzip_file.close()
     suppliermol_edges_gzip_file.close()
 
@@ -408,6 +394,20 @@ if __name__ == '__main__':
                          args.limit,
                          args.min_hac,
                          args.max_hac)
+
+    # Write assay node file...
+    # There's just one assay here.
+    # Our 'assay' record...
+    assay_name = 'Percent inhibition - SENP7'
+    assay_description = 'Percent inhibition against SENP7'
+    assay_type = '%INH'
+
+    assays = [AssayNode(assay_name, assay_description, assay_type)]
+    write_assay_nodes(args.output,
+                      output_filename_prefix,
+                      generated_files,
+                      assays,
+                      assay_namespace)
 
     # -------
     # Stage 2 - Write the IsoMol nodes
@@ -427,7 +427,10 @@ if __name__ == '__main__':
                                            generated_files,
                                            isomol_smiles,
                                            isomol_namespace,
-                                           suppliermol_namespace)
+                                           suppliermol_namespace,
+                                           assay_name,
+                                           assay_namespace,
+                                           assay_compound_values)
 
     # -------
     # Stage 3 - Augment
@@ -452,7 +455,10 @@ if __name__ == '__main__':
                                                  isomol_smiles,
                                                  non_isomol_isomol_smiles,
                                                  non_isomol_smiles,
-                                                 vendor_code)
+                                                 vendor_code,
+                                                 assay_name,
+                                                 assay_namespace,
+                                                 assay_compound_values)
 
     # Replace input file (normally used as part of a chain,
     # i.e. during the combination playbook).
@@ -489,6 +495,7 @@ if __name__ == '__main__':
     # Summary
     logger.info('{:,}/{:,} vendor molecules/iso'.format(num_vendor_mols, num_vendor_iso_mols))
     logger.info('{:,} vendor molecule failures'.format(num_vendor_molecule_failures))
+    logger.info('{:,} vendor activity value failures'.format(num_activity_value_failures))
     logger.info('{:,}/{:,} nodes/augmented'.format(num_nodes, num_nodes_augmented))
     logger.info('{:,}/{:,} node compound relationships/iso'.format(num_compound_relationships, num_compound_iso_relationships))
 

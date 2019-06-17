@@ -1,4 +1,12 @@
-ipython==5.4.1
+ipython == 5.4.1
+
+awscli == 1.16.105
+boto3 == 1.9.106
+botocore == 1.12.106
+PyYAML == 3.13
+pytz == 2018.9
+munch == 2.3.2
+
 tqdm
 neo4j-driver
 numpy

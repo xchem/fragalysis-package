@@ -1,4 +1,3 @@
-# Series of functions to parse input files
 from frag.alysis.models import Object, Owner
 from frag.utils.rdkit_utils import (
     _parse_ligand_sdf,
@@ -12,7 +11,6 @@ from frag.utils.rdkit_utils import (
     _parse_pdb,
 )
 from rdkit import Chem
-
 
 def _get_c_of_mass_list(mols):
     c_of_mass_list = []

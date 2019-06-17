@@ -1,3 +1,8 @@
+---
+
+# IMAGE_TAG=0.0.22 docker-compose build
+# IMAGE_TAG=0.0.22 docker-compose push
+
 version: '3'
 services:
   fragalysis:

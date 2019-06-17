@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-"""process_enamine_compounds.py
+"""process_emolecules_bb_compounds.py
 
-Processes standardised Enamine vendor files, not expected to contain
+Processes standardised eMolecules vendor files, not expected to contain
 pricing information.
 
 For the graph design refer to the Google-Drive graph model document at...
@@ -11,34 +11,35 @@ For the graph design refer to the Google-Drive graph model document at...
 
 The purpose of this module is to create "Vendor" Compound nodes
 and relationships to augment the DLS fragment database.
-Every fragment line that has an Enamine identifier in the original data set
+Every fragment line that has an eMolecules identifier in the original data set
 is labelled and a relationship created between it and the Vendor's compound(s).
 
 Some vendor compound nodes may not exist in the original data set.
 
 The files generated (in a named output directory) are:
 
--   "enamine-compound-nodes.csv.gz"
+-   "emolecules-bb-compound-nodes.csv.gz"
     containing all the nodes for the vendor compounds.
 
--   "enamine-molecule-compound_edges.csv.gz"
+-   "emolecules-bb-molecule-compound_edges.csv.gz"
     containing the relationships between the original node entries and
     the "Vendor" nodes. There is a relationship for every Enamine
     compound that was found in the earlier processing.
 
 The module augments the original nodes by adding the label
-"V_E" for all MolPort compounds that have been found
+"V_EMOLS_BB" for all compounds that have been found
 to the augmented copy of the original node file that it creates.
 
 If the original nodes file is "nodes.csv" the augmented copy
 (in the named output directory) will be called
-"enamine-augmented-nodes.csv.gz".
+"emolecules-bb-augmented-nodes.csv.gz".
 
 Important Note  If the graph content changes in any way the
 --------------  our graph_version must be changed.
                 So, if the format of the node or relationship files change
                 (e.g.  new columns, new labels, new or modified anything)
                 our version must change.
+
 Alan Christie
 May 2019
 """
@@ -57,7 +58,7 @@ from process_utils import write_nodes
 from process_utils import write_load_script
 
 # Configure basic logging
-logger = logging.getLogger('real')
+logger = logging.getLogger('emols')
 out_hdlr = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s %(levelname)s # %(message)s',
                               '%Y-%m-%dT%H:%M:%S')
@@ -112,14 +113,14 @@ vendor_compounds = set()
 unknown_vendor_compounds = set()
 
 # The supplier symbolic name
-supplier_name = 'REAL'
+supplier_name = 'eMolecules-BB'
 # Prefix for output files
-output_filename_prefix = 'real'
+output_filename_prefix = 'emolecules-bb'
 # The namespaces of the various indices
-suppliermol_namespace = 'SM_R'
+suppliermol_namespace = 'SM_EMOLS_BB'
 supplier_namespace = 'S'
-isomol_namespace = 'ISO-R'
-vendor_code = 'V_REAL'
+isomol_namespace = 'ISO-EMOLS_BB'
+vendor_code = 'V_EMOLS_BB'
 
 # The list of files generated.
 # Used to generate the accompanying `load_neo4j.sh`.
@@ -293,7 +294,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser('Vendor Compound Processor (Enamine)')
+    parser = argparse.ArgumentParser('Vendor Compound Processor (eMolecules)')
     parser.add_argument('vendor_file',
                         help='The vendor standardised file (gzipped).')
     parser.add_argument('input_nodes',
@@ -384,7 +385,7 @@ if __name__ == '__main__':
 
     _ = extract_vendor_compounds(suppliermol_gzip_file,
                                  suppliermol_edges_gzip_file,
-                                 'Real',
+                                 supplier_name,
                                  args.vendor_file,
                                  args.limit,
                                  args.min_hac,

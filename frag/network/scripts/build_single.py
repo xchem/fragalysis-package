@@ -54,7 +54,9 @@ def main():
     attrs.append(attr)
     # Build the network
     node_holder = NodeHolder(iso_flag=args.iso_flag)
-    node_holder = build_network(attrs, node_holder, None, args.verbosity)
+    max_frags = 0
+    node_holder = build_network(attrs, node_holder,
+                                max_frags, smiles, args.verbosity)
     # Write the data out
     for node in node_holder.node_list:
         print(str(node))
