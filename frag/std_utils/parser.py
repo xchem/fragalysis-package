@@ -177,7 +177,7 @@ def filter_standard_file(input_file,
         filtered_file = gzip.open(filter_file, 'wt')
 
     rejected_file = None
-    if rejected_file:
+    if reject_file:
         rejected_file = gzip.open(reject_file, 'wt')
 
     with gzip.open(input_file, 'rt') as standard_file:
