@@ -75,9 +75,11 @@ if 'KeyCount' in target and target['KeyCount']:
 required_build_files = ['nodes.csv.gz',
                         'edges.csv.gz']
 # Optional files.
-# an excluded molecule list
-# and files from nextflow (report, timeline, trace)
-optional_build_files = ['excluded.csv.gz',
+# Molecules rejected at the filter stage,
+# molecules excluded during fragmentation
+# and other files from nextflow (report, timeline, trace)
+optional_build_files = ['rejected-compounds.tab.gz',
+                        'excluded.csv.gz',
                         'report.html',
                         'timeline.html',
                         'trace.txt']
