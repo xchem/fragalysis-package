@@ -24,6 +24,10 @@ def main():
     parser.add_argument('--output',
                         help="The filtered output file, normally ending in"
                              " 'tab.gz' and written as a compressed file")
+    parser.add_argument('--reject',
+                        help="The rejected output file containing molecules"
+                             "considered but not selected, normally ending in"
+                             " 'tab.gz' and written as a compressed file")
     parser.add_argument('-l', '--limit',
                         type=int, default=0,
                         help='Limit processing to the first N molecules,'
@@ -56,7 +60,8 @@ def main():
                          args.skip,
                          args.min_hac,
                          args.max_hac,
-                         args.output)
+                         args.output,
+                         args.reject)
 
 
 if __name__ == "__main__":

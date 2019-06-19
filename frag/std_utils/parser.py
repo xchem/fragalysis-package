@@ -135,14 +135,19 @@ def parse_standard_file(input_file,
 
     return standards
 
+
 def filter_standard_file(input_file,
                          limit=0,
                          skip=0,
                          min_hac=0,
                          max_hac=0,
-                         output_file=None):
+                         filter_file=None,
+                         reject_file=None):
     """Parses an Informatics Matters 'standard' SMILES file.
-    The input is filtered and written to stdout.
+    The input is filtered and written to stdout. If files are presented
+    the results are written to the respective files, with the accepted
+    (filtered) results going to the filter file and the rejected
+    results to the reject file.
 
     :param input_file: The name of the standard file (expected to be compressed)
     :param limit: If non zero (+ve), limit content to no more than the
@@ -156,13 +161,24 @@ def filter_standard_file(input_file,
                     of heavy atoms will be considered.
     :param max_hac: if grater than zero then only molecules with no more
                     than the provided number of heavy atoms will be considered.
-    :param output_file: If specified this is expected to be the name of an
-                        output file to write the results to (e.g. one that
-                        ends '.tag.gz')
+    :param filter_file: If specified this is expected to be the name of an
+                        output file to write the filtered (acceptable) results
+                        to (e.g. one that ends '.tag.gz')
+    :param reject_file: If specified this is expected to be the name of an
+                        output file to write the rejected results to
+                        (e.g. one that ends '.tag.gz'). If skip and limit are
+                        also used the reject file only contains molecules
+                        that were considered but rejected by the min/max HAC
+                        setting. i.e. any skipped or otherwise unread lines
+                        are not in the reject file.
     """
     filtered_file = None
-    if output_file:
-        filtered_file = gzip.open(output_file, 'wt')
+    if filter_file:
+        filtered_file = gzip.open(filter_file, 'wt')
+
+    rejected_file = None
+    if rejected_file:
+        rejected_file = gzip.open(reject_file, 'wt')
 
     with gzip.open(input_file, 'rt') as standard_file:
 
@@ -173,6 +189,9 @@ def filter_standard_file(input_file,
             filtered_file.write(hdr)
         else:
             print(hdr.strip())
+
+        if rejected_file:
+            rejected_file.write(hdr)
 
         # Process the rest of the file...
         num_skipped = 0
@@ -189,6 +208,9 @@ def filter_standard_file(input_file,
             # HAC within range?
             # If not, skip this line.
             if std.hac < min_hac or max_hac > 0 and std.hac > max_hac:
+                # Put the 'rejected' line in a reject file?
+                if rejected_file:
+                    rejected_file.write(line)
                 continue
 
             if filtered_file:
@@ -203,3 +225,5 @@ def filter_standard_file(input_file,
 
     if filtered_file:
         filtered_file.close()
+    if rejected_file:
+        rejected_file.close()
