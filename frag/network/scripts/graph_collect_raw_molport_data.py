@@ -4,7 +4,8 @@
 """A utility to collect raw (vendor) data files from the vendor sites
 and upload them to a new raw location on AWS S3. The output of this
 program is a string representing the path to any new data on S3,
-which will be something like 'vendor/molport/2019-06'.
+which will be something like 'vendor/molport/2019-06'. The string is also
+written to the file 'collected-release-id.txt' in the collection directory.
 
 If there is no new data the program exit status is non-zero.
 
@@ -251,4 +252,11 @@ get_latest()
 # Finally, print the new path,
 # this is the 'path' argument with the new raw directory appended,
 # and will be something like 'vendor/molport/2019-06'
-print(S3_STORAGE_PATH + '/' + latest_release_str)
+collected_release_id = S3_STORAGE_PATH + '/' + latest_release_str
+print(collected_release_id)
+
+# And write the collected release ID to file
+# (to simplify inter-playbook execution)
+id_file = open(os.path.join(collect_dir, 'collected-release-id.txt'), 'wt')
+id_file.write(collected_release_id)
+id_file.close()
