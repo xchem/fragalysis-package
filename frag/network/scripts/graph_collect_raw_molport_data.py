@@ -243,6 +243,9 @@ check_latest()
 # - Print the location of the new data.
 
 if latest_release_id <= latest_held_id:
+    print('Nothing newer than held release found')
+    print('Latest held is %s (%s)' % (latest_held_str, latest_held_id))
+    print('Latest release is %s (%s)' % (latest_release_str, latest_release_id))
     sys.exit(2)
 
 # There's new data.
