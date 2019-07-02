@@ -33,6 +33,7 @@ from ftplib import FTP
 import logging
 import os
 import re
+import shutil
 import sys
 
 import boto3
@@ -96,7 +97,7 @@ def ftp_sniff_callback(context):
     global latest_release_id
     global latest_release_str
 
-    # A MolPort file looks something
+    # A MolPort file looks something
     # like this as a directory listing: -
     #
     # drwxr-xr-x   6 root     root         4096 Aug  6  2018 2018-07
@@ -219,6 +220,13 @@ collect_dir = args.collection
 if not args.force and os.path.isdir(collect_dir):
     logger.error('Collection exists')
     sys.exit(1)
+
+# Wipe any existing collection directory
+if os.path.isdir(collect_dir):
+    shutil.rmtree(collect_dir)
+# Create the destination directory
+if not os.path.isdir(collect_dir):
+    os.makedirs(collect_dir)
 
 # Find the most recent collected data.
 
