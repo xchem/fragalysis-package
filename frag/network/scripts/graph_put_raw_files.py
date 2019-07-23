@@ -33,7 +33,7 @@ logger.setLevel(logging.INFO)
 logger.addHandler(out_hdlr)
 
 # Expected environment variables (that define the bucket)
-s3_bucket_env = 'FRAGALYSIS_S3_BUCKET'
+s3_bucket_env = 'AWS_S3_BUCKET'
 s3_raw_root = 'raw'
 s3_archive_bucket = os.environ.get(s3_bucket_env)
 if not s3_archive_bucket:
