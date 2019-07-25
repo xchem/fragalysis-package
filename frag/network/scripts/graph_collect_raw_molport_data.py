@@ -22,10 +22,10 @@ the AWS boto3 documentation, which describes this: -
     https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html
 
 The collection username is expected to be available in the
-MOLPORT_COLLECT_USERNAME and MOLPORT_COLLECT_PASSWORD variables.
+COLLECT_MOLPORT_USERNAME and COLLECT_MOLPORT_PASSWORD variables.
 
 Alan Christie
-June 2019
+July 2019
 """
 
 import argparse
@@ -58,8 +58,8 @@ if not s3_archive_bucket:
     logger.error('You must define %s', s3_bucket_env)
     sys.exit(1)
 
-collect_username = os.environ.get('MOLPORT_COLLECT_USERNAME')
-collect_password = os.environ.get('MOLPORT_COLLECT_PASSWORD')
+collect_username = os.environ.get('COLLECT_MOLPORT_USERNAME')
+collect_password = os.environ.get('COLLECT_MOLPORT_PASSWORD')
 if not collect_username or not collect_password:
     logger.error('You must define a username and password')
     sys.exit(1)
