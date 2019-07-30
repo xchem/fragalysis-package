@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-"""process_excluded_to_standard.py
+"""standardise_excluded.py
 
 Given an excluded file (from a prior build) this module
 fabricates a standard file. It simply replicates the
-SMILES and sets HAC to 0 and compound id to something unique for th row.
+SMILES and sets HAC to 0 and compound id to something unique for the row.
 
-We create a 'standardised-compounds.tab' file that contains a 1st-line
+We create a 'standardised-compounds.tab.gz' file that contains a 1st-line
 'header' formed from the _OUTPUT_COLUMNS list.
 
 Alan Christie
