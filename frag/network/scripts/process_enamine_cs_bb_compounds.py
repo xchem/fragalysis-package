@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-"""process_enamine_compounds.py
+"""process_enamine_cs_bb_compounds.py
 
-Processes standardised Enamine vendor files, not expected to contain
-pricing information.
+Processes standardised Enamine vendor files (ChemSPace),
+not expected to contain pricing information.
 
 For the graph design refer to the Google-Drive graph model document at...
 
@@ -18,21 +18,21 @@ Some vendor compound nodes may not exist in the original data set.
 
 The files generated (in a named output directory) are:
 
--   "real-compound-nodes.csv.gz"
+-   "chemspace-bb-compound-nodes.csv.gz"
     containing all the nodes for the vendor compounds.
 
--   "real-molecule-compound_edges.csv.gz"
+-   "chemspace-bb-molecule-compound_edges.csv.gz"
     containing the relationships between the original node entries and
     the "Vendor" nodes. There is a relationship for every Enamine
     compound that was found in the earlier processing.
 
 The module augments the original nodes by adding the label
-"V_E" for all Enamine compounds that have been found
+"V_E_CS_BB" for all Enamine compounds that have been found
 to the augmented copy of the original node file that it creates.
 
 If the original nodes file is "nodes.csv" the augmented copy
 (in the named output directory) will be called
-"real-augmented-nodes.csv.gz".
+"chemspace-bb-augmented-nodes.csv.gz".
 
 Important Note  If the graph content changes in any way the
 --------------  our graph_version must be changed.
@@ -40,7 +40,7 @@ Important Note  If the graph content changes in any way the
                 (e.g.  new columns, new labels, new or modified anything)
                 our version must change.
 Alan Christie
-May 2019
+July 2019
 """
 
 import argparse
@@ -57,7 +57,7 @@ from process_utils import write_nodes
 from process_utils import write_load_script
 
 # Configure basic logging
-logger = logging.getLogger('real')
+logger = logging.getLogger('chemspace-bb')
 out_hdlr = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s %(levelname)s # %(message)s',
                               '%Y-%m-%dT%H:%M:%S')
@@ -72,7 +72,7 @@ logger.setLevel(logging.INFO)
 # Its format is the date of the change ('YYYY-MM-DD') followed by
 # a dot-delimited number that's incremented for each change on that day.
 # i.e. '2019-05-21.2' is the second version on the 21st May 2019.
-graph_version = '2019-05-26.1'
+graph_version = '2019-07-30.1'
 
 # The minimum number of columns in the input data (a standardised file).
 # Essentially a map of expected column names indexed by column number.
@@ -112,14 +112,14 @@ vendor_compounds = set()
 unknown_vendor_compounds = set()
 
 # The supplier symbolic name
-supplier_name = 'REAL'
+supplier_name = 'CHEMSPACE-BB'
 # Prefix for output files
-output_filename_prefix = 'real'
+output_filename_prefix = 'chemspace-bb'
 # The namespaces of the various indices
-suppliermol_namespace = 'SM_R'
+suppliermol_namespace = 'SM_E_CS_BB'
 supplier_namespace = 'S'
-isomol_namespace = 'ISO-R'
-vendor_code = 'V_REAL'
+isomol_namespace = 'ISO-E-CS-BB'
+vendor_code = 'V_CHEMSPACE_BB'
 
 # The list of files generated.
 # Used to generate the accompanying `load_neo4j.sh`.
@@ -153,12 +153,12 @@ def extract_vendor_compounds(suppliermol_gzip_file,
 
     This method extracts vendor information and writes the following files: -
 
-    -   "enamine-suppliermol-nodes.csv.gz"
-    -   "enamine-suppliermol-supplier-edges.csv.gz"
+    -   "chemspace-bb-suppliermol-nodes.csv.gz"
+    -   "chemspace-bb-suppliermol-supplier-edges.csv.gz"
 
     The following files are expected to be written elsewhere: -
 
-    -   "enamine-supplier-nodes.csv.gz"
+    -   "chemspace-bb-supplier-nodes.csv.gz"
 
     The "ID" in the SupplierMol nodes file is the Compound ID and the
     "ID" of the (single) Supplier node is the supplier Name.
@@ -293,7 +293,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser('Vendor Compound Processor (Enamine)')
+    parser = argparse.ArgumentParser('Vendor Compound Processor (Enamine/CS-BB)')
     parser.add_argument('vendor_file',
                         help='The vendor standardised file (gzipped).')
     parser.add_argument('input_nodes',

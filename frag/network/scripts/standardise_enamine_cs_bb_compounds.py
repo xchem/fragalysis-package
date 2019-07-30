@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
-"""standardise_enamine_compounds.py
+"""standardise_enamine_cs_bb_compounds.py
 
-Processes Enamine (Real) vendor compound files, and generates a 'standard'
+Processes Enamine (ChemSpace) vendor compound files, and generates a 'standard'
 tab-separated output.
 
-We create a 'real-standardised-compounds.tab' file that contains a 1st-line
+We create a 'standardised-compounds.tab.gz' file that contains a 1st-line
 'header' formed from the _OUTPUT_COLUMNS list.
 
 Alan Christie
-February 2019
+July 2019
 """
 
 import argparse
@@ -25,7 +25,7 @@ from frag.utils import standardise_utils
 from frag.std_utils import parser
 
 # Configure basic logging
-logger = logging.getLogger('real')
+logger = logging.getLogger('chemspace')
 out_hdlr = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s %(levelname)s # %(message)s',
                               '%Y-%m-%dT%H:%M:%S')
@@ -44,12 +44,12 @@ _OUTPUT_COLUMNS = parser.STANDARD_COLUMNS
 # The 'standardised' files contain at least 2 columns...
 #
 # smiles    0
-# idnumber  1
+# id        1
 
 expected_min_num_cols = 2
 smiles_col = 0
 compound_col = 1
-expected_input_cols = {compound_col: 'idnumber',
+expected_input_cols = {compound_col: 'id',
                        smiles_col: 'smiles'}
 
 # The output file.
@@ -57,7 +57,7 @@ expected_input_cols = {compound_col: 'idnumber',
 output_filename = 'standardised-compounds.tab'
 
 # The prefix we use in our fragment file
-real_prefix = 'REAL:'
+prefix = 'CHEMSPACE-BB:'
 
 # All the vendor compound IDs
 vendor_compounds = set()
@@ -133,7 +133,7 @@ def standardise_vendor_compounds(output_file, file_name, limit):
                 logger.info(' ...at compound {:,}'.format(line_num))
 
             osmiles = fields[smiles_col]
-            compound_id = real_prefix + fields[compound_col]
+            compound_id = prefix + fields[compound_col]
 
             # Add the compound (expected to be unique)
             # to our set of 'all compounds'.
@@ -171,13 +171,13 @@ def standardise_vendor_compounds(output_file, file_name, limit):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser('Vendor Compound Standardiser (Enamine)')
+    parser = argparse.ArgumentParser('Vendor Compound Standardiser (Enamine/CS-BB)')
     parser.add_argument('vendor_dir',
                         help='The Enamine vendor directory,'
                              ' containing the ".gz" files to be processed.')
     parser.add_argument('vendor_prefix',
                         help='The Enamine vendor file prefix,'
-                             ' i.e. "June2018". Only files with this prefix'
+                             ' i.e. "Jul2019". Only files with this prefix'
                              ' in the vendor directory will be processed')
     parser.add_argument('output',
                         help='The output directory')
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     # Before we open the output file
     # get a lit of all the input files (the prefix may be the same)
     # so we don't want our file in the list of files to be processed)
-    real_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir,
+    data_files = glob.glob('{}/{}*.gz'.format(args.vendor_dir,
                                               args.vendor_prefix))
 
     # Open the file we'll write the standardised data set to.
@@ -230,9 +230,9 @@ if __name__ == '__main__':
         output_gzip_file.write('\t'.join(_OUTPUT_COLUMNS) + '\n')
 
         # Process all the Vendor files...
-        for real_file in real_files:
+        for data_file in data_files:
             num_processed += standardise_vendor_compounds(output_gzip_file,
-                                                          real_file,
+                                                          data_file,
                                                           args.limit)
             if args.limit and num_processed >= args.limit:
                 break
