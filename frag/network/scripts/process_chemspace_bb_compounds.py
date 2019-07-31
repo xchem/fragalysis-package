@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-"""process_enamine_cs_bb_compounds.py
+"""process_chemspace_bb_compounds.py
 
-Processes standardised Enamine vendor files (ChemSPace),
+Processes standardised ChemSpace vendor files,
 not expected to contain pricing information.
 
 For the graph design refer to the Google-Drive graph model document at...
@@ -293,7 +293,7 @@ def extract_vendor_compounds(suppliermol_gzip_file,
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser('Vendor Compound Processor (Enamine/CS-BB)')
+    parser = argparse.ArgumentParser('Vendor Compound Processor (ChemSpace)')
     parser.add_argument('vendor_file',
                         help='The vendor standardised file (gzipped).')
     parser.add_argument('input_nodes',

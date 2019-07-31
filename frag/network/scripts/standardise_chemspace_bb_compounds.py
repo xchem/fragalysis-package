@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-"""standardise_enamine_cs_bb_compounds.py
+"""standardise_chemspace_bb_compounds.py
 
-Processes Enamine (ChemSpace) vendor compound files, and generates a 'standard'
+Processes ChemSpace vendor compound files, and generates a 'standard'
 tab-separated output.
 
 We create a 'standardised-compounds.tab.gz' file that contains a 1st-line
@@ -106,7 +106,7 @@ def standardise_vendor_compounds(output_file, file_name, limit):
         # names are what we expect.
 
         hdr = gzip_file.readline()
-        field_names = hdr.split()
+        field_names = hdr.split('\t')
         # Expected minimum number of columns...
         if len(field_names) < expected_min_num_cols:
             error('expected at least {} columns found {}'.
@@ -125,15 +125,15 @@ def standardise_vendor_compounds(output_file, file_name, limit):
         for line in gzip_file:
 
             line_num += 1
-            fields = line.split()
+            fields = line.split('\t')
             if len(fields) <= 1:
                 continue
 
             if line_num % report_rate == 0:
                 logger.info(' ...at compound {:,}'.format(line_num))
 
-            osmiles = fields[smiles_col]
-            compound_id = prefix + fields[compound_col]
+            osmiles = fields[smiles_col].strip()
+            compound_id = prefix + fields[compound_col].strip()
 
             # Add the compound (expected to be unique)
             # to our set of 'all compounds'.
@@ -173,10 +173,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('Vendor Compound Standardiser (Enamine/CS-BB)')
     parser.add_argument('vendor_dir',
-                        help='The Enamine vendor directory,'
-                             ' containing the ".gz" files to be processed.')
+                        help='The ChemSpace vendor directory,'
+                             ' containing tab-delimited the ".gz" files to be processed.')
     parser.add_argument('vendor_prefix',
-                        help='The Enamine vendor file prefix,'
+                        help='The ChemSpace vendor file prefix,'
                              ' i.e. "Jul2019". Only files with this prefix'
                              ' in the vendor directory will be processed')
     parser.add_argument('output',
