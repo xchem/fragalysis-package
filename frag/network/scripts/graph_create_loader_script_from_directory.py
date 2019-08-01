@@ -61,7 +61,7 @@ generated_files = {'nodes': [],
 possible_files = os.listdir(args.path)
 for possible_file in possible_files:
     if possible_file.endswith('.gz') and \
-            os.path.isfile(os.pth.join(args.path, possible_file)):
+            os.path.isfile(os.path.join(args.path, possible_file)):
         if 'edges' in possible_file:
             actual_file = possible_file
             if actual_file == 'edges.csv.gz':
