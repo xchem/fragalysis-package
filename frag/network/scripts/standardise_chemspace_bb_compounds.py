@@ -150,7 +150,7 @@ def standardise_vendor_compounds(output_file, file_name, limit):
             if compound_id in vendor_compounds:
                 # Get the number of duplicates (default of 1)
                 # using the vendor's original ID as a key
-                duplicate_count = vendor_duplicates.setdefault(vendor_id, default=1)
+                duplicate_count = vendor_duplicates.setdefault(vendor_id, 1)
                 compound_id += '{}{}'.format(duplicate_suffix, duplicate_count)
                 # Increment for any further duplicates
                 vendor_duplicates[vendor_id] = duplicate_count + 1
