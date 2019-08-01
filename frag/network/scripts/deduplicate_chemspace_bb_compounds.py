@@ -171,8 +171,8 @@ if __name__ == '__main__':
                                                           data_file)
 
     # Summary
-    logger.info('{:,} compounds with duplicates'.format(len(vendor_duplicates)))
     for vendor_duplicate in vendor_duplicates:
         logger.info('Duplicate compound: {} x{}'.
                     format(vendor_duplicate,
                            vendor_duplicates[vendor_duplicate]))
+    logger.info('{:,} compounds with duplicates'.format(len(vendor_duplicates)))
