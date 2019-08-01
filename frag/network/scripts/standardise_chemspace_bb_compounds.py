@@ -3,13 +3,16 @@
 """standardise_chemspace_bb_compounds.py
 
 Processes ChemSpace vendor compound files, and generates a 'standard'
-tab-separated output.
+tab-separated output. This module supports duplicate compounds. Duplicate
+compound IDs will have the suffix 'duplicate' added. For duplicates of
+the compound 'C01' the first compound will be 'C01' and the first duplicate
+'C01-duplicate-1'.
 
 We create a 'standardised-compounds.tab.gz' file that contains a 1st-line
 'header' formed from the _OUTPUT_COLUMNS list.
 
 Alan Christie
-July 2019
+August 2019
 """
 
 import argparse
@@ -61,6 +64,10 @@ prefix = 'CHEMSPACE-BB:'
 
 # All the vendor compound IDs
 vendor_compounds = set()
+# A map of duplicate compounds and the number of duplicates.
+# The index uses the vendor's original ID value, not our prefixed value.
+duplicate_suffix = '-duplicate-'
+vendor_duplicates = {}
 
 # Various diagnostic counts
 num_vendor_mols = 0
@@ -92,6 +99,8 @@ def standardise_vendor_compounds(output_file, file_name, limit):
     :returns: The number of items processed
     """
     global vendor_compounds
+    global vendor_duplicates
+    global duplicate_suffix
     global num_vendor_mols
     global num_vendor_molecule_failures
 
@@ -133,13 +142,20 @@ def standardise_vendor_compounds(output_file, file_name, limit):
                 logger.info(' ...at compound {:,}'.format(line_num))
 
             osmiles = fields[smiles_col].strip()
-            compound_id = prefix + fields[compound_col].strip()
+            vendor_id = fields[compound_col].strip()
+            compound_id = prefix + vendor_id
 
             # Add the compound (expected to be unique)
             # to our set of 'all compounds'.
             if compound_id in vendor_compounds:
-                error('Duplicate compound ID ({})'.format(compound_id))
-            vendor_compounds.add(compound_id)
+                # Get the number of duplicates (default of 1)
+                # using the vendor's original ID as a key
+                duplicate_count = vendor_duplicates.setdefault(vendor_id, default=1)
+                compound_id += '{}{}'.format(duplicate_suffix, duplicate_count)
+                # Increment for any further duplicates
+                vendor_duplicates[vendor_id] = duplicate_count + 1
+            else:
+                vendor_compounds.add(compound_id)
 
             # Standardise and update global maps...
             # And try and handle and report any catastrophic errors
@@ -240,3 +256,6 @@ if __name__ == '__main__':
     # Summary
     logger.info('{:,} vendor molecules'.format(num_vendor_mols))
     logger.info('{:,} vendor molecule failures'.format(num_vendor_molecule_failures))
+    logger.info('{:,} duplicate compounds'.format(len(vendor_duplicates)))
+    for vendor_duplicate in vendor_duplicates:
+        logger.info('Duplicate compound: {} x{}'.format(vendor_duplicate, vendor_duplicates[vendor_duplicate]))
