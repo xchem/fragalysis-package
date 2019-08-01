@@ -176,3 +176,4 @@ if __name__ == '__main__':
                     format(vendor_duplicate,
                            vendor_duplicates[vendor_duplicate]))
     logger.info('{:,} compounds with duplicates'.format(len(vendor_duplicates)))
+    logger.info('{:,} compounds'.format(len(vendor_compounds)))
