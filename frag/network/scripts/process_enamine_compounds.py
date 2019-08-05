@@ -72,7 +72,7 @@ logger.setLevel(logging.INFO)
 # Its format is the date of the change ('YYYY-MM-DD') followed by
 # a dot-delimited number that's incremented for each change on that day.
 # i.e. '2019-05-21.2' is the second version on the 21st May 2019.
-graph_version = '2019-05-26.1'
+graph_version = '2019-08-05.1'
 
 # The minimum number of columns in the input data (a standardised file).
 # Essentially a map of expected column names indexed by column number.
@@ -384,7 +384,7 @@ if __name__ == '__main__':
 
     _ = extract_vendor_compounds(suppliermol_gzip_file,
                                  suppliermol_edges_gzip_file,
-                                 'Real',
+                                 supplier_name,
                                  args.vendor_file,
                                  args.limit,
                                  args.min_hac,

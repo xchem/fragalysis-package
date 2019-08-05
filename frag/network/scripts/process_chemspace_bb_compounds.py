@@ -72,7 +72,7 @@ logger.setLevel(logging.INFO)
 # Its format is the date of the change ('YYYY-MM-DD') followed by
 # a dot-delimited number that's incremented for each change on that day.
 # i.e. '2019-05-21.2' is the second version on the 21st May 2019.
-graph_version = '2019-07-30.1'
+graph_version = '2019-08-05.1'
 
 # The minimum number of columns in the input data (a standardised file).
 # Essentially a map of expected column names indexed by column number.
@@ -112,14 +112,14 @@ vendor_compounds = set()
 unknown_vendor_compounds = set()
 
 # The supplier symbolic name
-supplier_name = 'CHEMSPACE-BB'
+supplier_name = 'ChemSpace-BB'
 # Prefix for output files
 output_filename_prefix = 'chemspace-bb'
 # The namespaces of the various indices
 suppliermol_namespace = 'SM_E_CS_BB'
 supplier_namespace = 'S'
 isomol_namespace = 'ISO-E-CS-BB'
-vendor_code = 'V_CHEMSPACE_BB'
+vendor_code = 'V_CS_BB'
 
 # The list of files generated.
 # Used to generate the accompanying `load_neo4j.sh`.
@@ -384,7 +384,7 @@ if __name__ == '__main__':
 
     _ = extract_vendor_compounds(suppliermol_gzip_file,
                                  suppliermol_edges_gzip_file,
-                                 'Real',
+                                 supplier_name,
                                  args.vendor_file,
                                  args.limit,
                                  args.min_hac,
