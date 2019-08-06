@@ -6,6 +6,8 @@ botocore == 1.12.106
 PyYAML == 3.13
 pytz == 2018.9
 munch == 2.3.2
+redis == 3.3.5
+pymemcache == 2.2.1
 
 tqdm
 neo4j-driver
