@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-"""A utility to split (shatter) non-compressed CSV files in N-CSV files where
-lines with the same hash will be placed in the same file. The purpose
-is to allow distributed deduplication as duplicate lines are guaranteed to
-co-exists in the same (smaller) files.
+"""A utility to split (shatter) non-compressed (or compressed) CSV files across
+'N' output CSV files where lines read from the input files with the same hash
+will be placed in the same output file.
+
+The purpose is to allow distributed deduplication as duplicate lines are
+guaranteed to co-exists in the same (smaller) output files and 'sort'
+can be run in a distributed fashion and the results simply concatenated.
 
 Alan Christie
 August 2019
@@ -12,11 +15,12 @@ August 2019
 
 import argparse
 import glob
+import gzip
 import os
 
 
 def shatter(input_dir, input_suffix, num_files, output_basename,
-            recursive=False):
+            recursive=False, delete_input=False):
     """Given a list of filenames this utility places lines with the same
     hash into the same file.
 
@@ -25,6 +29,7 @@ def shatter(input_dir, input_suffix, num_files, output_basename,
     :param num_files: The number of files to shatter to
     :param output_basename: The basename of the output file (i.e. 'nodes')
     :param recursive: True to search recursively
+    :param delete_input: Deletes input files as they're scattered
     """
     assert os.path.exists(input_dir)
     assert os.path.isdir(input_dir)
@@ -45,13 +50,21 @@ def shatter(input_dir, input_suffix, num_files, output_basename,
     else:
         input_files = glob.glob('%s/*%s' % (input_dir, input_suffix))
 
-    # For each file, scatter the lines amongst the output files
-    # based on the hash of each line...
+    # For each file, scatter the lines amongst the uncompressed output files
+    # based on the hash of each line (coping with .gz files if required)
     for input_file in input_files:
-        with open(input_file, 'rt') as i_file:
-            for line in i_file:
-                file_index = hash(line) % num_files
-                output_files[file_index].write(line)
+        if input_file.endswith('.gz'):
+            with gzip.open(input_file, 'rt') as i_file:
+                for line in i_file:
+                    file_index = hash(line) % num_files
+                    output_files[file_index].write(line)
+        else:
+            with open(input_file, 'rt') as i_file:
+                for line in i_file:
+                    file_index = hash(line) % num_files
+                    output_files[file_index].write(line)
+        if delete_input:
+            os.remove(input_file)
 
     # Close all the output files
     for output_file in output_files:
@@ -72,9 +85,11 @@ if __name__ == '__main__':
                         help='The number of files to shatter to')
     parser.add_argument('outputBasename', type=str,
                         help='The basename for the output files')
-    parser.add_argument("--recursive", action="store_true")
+    parser.add_argument("--delete-input", action='store_true',
+                        help='Delete input files as they are scattered')
+    parser.add_argument("--recursive", action='store_true',
+                        help='Search for files recursively')
 
     args = parser.parse_args()
-    print(args)
     shatter(args.inputDir, args.suffix, args.numFiles, args.outputBasename,
-            args.recursive)
+            args.recursive, args.delete_input)
