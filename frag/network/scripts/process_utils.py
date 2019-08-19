@@ -43,7 +43,7 @@ AUGMENT_REPORT_RATE = 10000000
 FRAG_NAMESPACE = 'F2'
 
 # The 'load-neo4j.sh' script content.
-# this is used in write_load_script()
+# This is used in write_load_script()
 # which takes a dictionary of nodes and edges
 # (relationships) and formats the
 # database, nodes and relationships blocks...
@@ -58,13 +58,14 @@ LOAD_SCRIPT_CONTENT = """
 ME=load-neo4j.sh
 
 echo "($ME) $(date) Starting (from $IMPORT_DIRECTORY)..."
+echo "($ME) $(date) Database root is $NEO4J_dbms_directories_data"
 
 # If the destination database exists
 # then do nothing...
-if [ ! -d /data/databases/$IMPORT_TO.db ]
+if [ ! -d $NEO4J_dbms_directories_data/databases/$IMPORT_TO.db ]
 then
     echo "Running as $(id)"
-    echo "($ME) $(date) Importing into '$IMPORT_TO.db'..."
+    echo "($ME) $(date) Importing into '$NEO4J_dbms_directories_data/databases/$IMPORT_TO.db'..."
 
     cd $IMPORT_DIRECTORY
     /var/lib/neo4j/bin/neo4j-admin import \\
