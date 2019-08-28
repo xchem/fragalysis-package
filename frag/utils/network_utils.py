@@ -470,7 +470,7 @@ def add_node(tx, smiles, hac, chac, osmiles):
 
 def add_edge(tx, smiles, smiles_two, edge_meta):
     tx.run(
-        "MATCH (n1:F2 { smiles: $smiles}), (n2:F2 { smiles: $smiles_two}) MERGE (n1)-[:F2EDGE{label:$edge_meta}]->(n2)",
+        "MATCH (n1:F2 { smiles: $smiles}), (n2:F2 { smiles: $smiles_two}) MERGE (n1)-[:FRAG{label:$edge_meta}]->(n2)",
         smiles=smiles,
         smiles_two=smiles_two,
         edge_meta=edge_meta,
@@ -479,7 +479,7 @@ def add_edge(tx, smiles, smiles_two, edge_meta):
 
 def add_attr(tx, smiles, attr):
     tx.run(
-        "MATCH (n:F2 { smiles: $smiles} ) set n:MOL, n:EM, n.EM=$attr",
+        "MATCH (n:F2 { smiles: $smiles} ) set n:MOL, n:Mol, n.Mol=$attr",
         smiles=smiles,
         attr=attr,
     )

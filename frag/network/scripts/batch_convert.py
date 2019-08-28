@@ -25,7 +25,7 @@ def do_for_dir(input_dir,num):
                     cmpd_id = attr_ids[attr_smis.index(line_spl[1])]
                     out_l.append(cmpd_id)
                     # This is where we can add tags - like CHEAP - EXPENSIVE
-                    out_l.append("EM;MOL;F2")
+                    out_l.append("Mol;MOL;F2")
                 else:
                     out_l.append("")
                     out_l.append("F2")
@@ -54,4 +54,4 @@ for i in range(19):
     node_list.append("nodes_"+str(i+1)+".csv")
     edge_list.append("edges_"+str(i+1)+".csv")
 print(" ".join(["/var/lib/neo4j/bin/neo4j-admin import","--database", "new.db", "--nodes",'"'+",".join(node_list)+'"',
-                "--relationships:F2EDGE",'"'+",".join(edge_list)+'"']))
+                "--relationships:FRAG",'"'+",".join(edge_list)+'"']))
