@@ -58,6 +58,7 @@ LOAD_SCRIPT_CONTENT = """
 ME=load-neo4j.sh
 
 echo "($ME) $(date) Starting (from $IMPORT_DIRECTORY)..."
+echo "($ME) $(date) Importing to database $IMPORT_TO"
 echo "($ME) $(date) Database root is $NEO4J_dbms_directories_data"
 
 # If the destination database exists
@@ -80,6 +81,7 @@ fi
 
 echo "($ME) $(date) Finished."
 """
+
 
 def error(msg):
     """Prints an error message and exits.
@@ -352,10 +354,9 @@ def write_nodes(input_nodes,
     logger.info('Augmenting %s as...', filename)
 
     # Augmented file
-    augmented_filename = \
-        os.path.join(output_dir,
-                     '{}-augmented-{}'.format(output_prefix,
-                                              os.path.basename(filename)))
+    augmented_file = '{}-augmented-{}'.format(output_prefix,
+                                              os.path.basename(filename))
+    augmented_filename = os.path.join(output_dir, augmented_file)
     gzip_ai_file = gzip.open(augmented_filename, 'wt')
 
     # Frag to SupplierMol relationships file
@@ -411,8 +412,10 @@ def write_nodes(input_nodes,
 
     # Add the node (and its header file) that we're about to generate
     # to the generated files list...
-    generated_files['nodes'].append('{},{}'.format(node_hdr_filename,
-                                                   augmented_filename))
+    # We *must not* use file paths here because 'write_load_script'
+    # does an os.path.split() on the entries and more than one path
+    # (comma-separated) would confuse it resulting in a bad load script.
+    generated_files['nodes'].append('nodes-header.csv,{}'.format(augmented_file))
 
     # Write the node header...
     node_hdr_file = open(node_hdr_filename, 'wt')
