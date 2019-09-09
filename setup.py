@@ -11,20 +11,20 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, "README.rst"), encoding="utf-8") as f:
     long_description = f.read()
 
-print((find_packages(exclude=["contrib", "docs", "tests"])))
+
 setup(
     name="fragalysis",
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version="0.0.41",
+    version="0.1.0",
     description="Library for fragment based analysis",
     long_description=long_description,
     # The project's main homepage.
     url="https://github.com/xchem/fragalysis.git",
     # Author details
-    author="Anthony Bradley",
-    author_email="anthony.bradley@diamond.ac.uk",
+    author="Rachael Skyner",
+    author_email="rachael.skyner@diamond.ac.uk",
     # Choose your license
     license="Apache 2.0",
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
