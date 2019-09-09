@@ -16,7 +16,7 @@ if __name__ == "__main__":
     attr_dict = {}
     for attr in attrs:
         line_spl = attr.split()
-        attr_dict[line_spl[1]] = {"cmpd_id": line_spl[3], "annotation": "EM;MOL;F2"}
+        attr_dict[line_spl[1]] = {"cmpd_id": line_spl[3], "annotation": "Mol;MOL;F2"}
     nodes = open(args.input_nodes).readlines()
     out_f = open("nodes.csv", "w")
     out_f.write("smiles:ID(F2),hac:INT,chac:INT,osmiles,cmpd_id,:LABEL\n")

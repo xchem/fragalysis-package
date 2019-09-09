@@ -35,7 +35,7 @@ class Compound(BaseMolecule):
     """
     A molecule - a real purchasable molecule
     """
-    fragments = RelationshipTo("Fragment", "F2EDGE")
+    fragments = RelationshipTo("Fragment", "FRAG")
     conformers = RelationshipTo("Conformer", "CONFEDGE")
     parent_molecules = RelationshipTo("Compound", "PARENTEDGE")
 
@@ -44,7 +44,7 @@ class Fragment(BaseMolecule):
     """
     A fragment - not a real molecule
     """
-    molecules = RelationshipFrom(Compound, "F2EDGE", model=F2Edge)
+    molecules = RelationshipFrom(Compound, "FRAG", model=F2Edge)
 
 
 class Conformer(StructuredNode):

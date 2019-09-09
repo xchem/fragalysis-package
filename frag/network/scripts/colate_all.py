@@ -51,7 +51,7 @@ def do_for_dir(input_dir):
                         cmpd_id = attr_cmp_id
                         out_l.append(cmpd_id)
                         # This is where we can add tags - like CHEAP - EXPENSIVE
-                        out_l.append("EM;MOL;F2")
+                        out_l.append("Mol;MOL;F2")
                     else:
                         out_l.append("")
                         out_l.append("F2")
@@ -106,7 +106,7 @@ def main():
                 "new.db",
                 "--nodes",
                 '"' + ",".join(node_list) + '"',
-                "--relationships:F2EDGE",
+                "--relationships:FRAG",
                 '"' + ",".join(edge_list) + '"',
             ]
         )

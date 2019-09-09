@@ -28,7 +28,7 @@ class ReturnObject(object):
 
 def find_double_edge(tx, input_str):
     return tx.run(
-        "MATCH (sta:F2 {smiles:$smiles})-[nm:F2EDGE]-(mid:F2)-[ne:F2EDGE]-(end:EM) where"
+        "MATCH (sta:F2 {smiles:$smiles})-[nm:FRAG]-(mid:F2)-[ne:FRAG]-(end:Mol) where"
         " abs(sta.hac-end.hac) <= 3 and abs(sta.chac-end.chac) <= 1"
         " and sta.smiles <> end.smiles "
         "RETURN sta, nm, mid, ne, end "
@@ -46,7 +46,7 @@ def find_triple_edge_growth(
     mid_heavy_atom_diff_max=3,
 ):
     return tx.run(
-        "MATCH (sta:F2 {smiles:$smiles})-[nm:F2EDGE]-(mid_one:F2)-[ne:F2EDGE]-(mid:EM)-[nm2:F2EDGE]-(mid_two:F2)-[ne2:F2EDGE]-(end:EM) where"
+        "MATCH (sta:F2 {smiles:$smiles})-[nm:FRAG]-(mid_one:F2)-[ne:FRAG]-(mid:Mol)-[nm2:FRAG]-(mid_two:F2)-[ne2:FRAG]-(end:Mol) where"
         " end.hac-sta.hac > $hacmin and end.hac-sta.hac <= $hacmax"
         " and mid.hac-sta.hac > $chacmin and mid.hac-sta.hac <= $chacmax"
         " and sta.smiles <> mid.smiles and sta.smiles <> end.smiles "
@@ -69,7 +69,7 @@ def find_triple_edge_growth(
 
 def add_follow_ups(tx, input_str):
     return tx.run(
-        "MATCH (sta:F2 {smiles:$smiles})-[nm:F2EDGE]-(mid:F2)-[ne:F2EDGE]-(end:EM) where"
+        "MATCH (sta:F2 {smiles:$smiles})-[nm:FRAG]-(mid:F2)-[ne:FRAG]-(end:Mol) where"
         " abs(sta.hac-end.hac) <= 3 and abs(sta.chac-end.chac) <= 1"
         " and sta.smiles <> end.smiles "
         " MERGE (end)-[:FOLLOW_UP]->(sta)",
@@ -79,7 +79,7 @@ def add_follow_ups(tx, input_str):
 
 def find_proximal(tx, input_str):
     return tx.run(
-        "match p = (n:F2{smiles:$smiles})-[nm]-(m:EM)"
+        "match p = (n:F2{smiles:$smiles})-[nm]-(m:Mol)"
         "where abs(n.hac-m.hac) <= 3 and abs(n.chac-m.chac) <= 1 "
         "return n, nm, m "
         "order by split(nm.label, '|')[4];",
