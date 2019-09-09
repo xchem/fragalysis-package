@@ -13,7 +13,17 @@ class NodeHolder(object):
         self.iso_flag = iso_flag
 
     def create_or_retrieve_node(self, child_smi):
-        new_node = Node(Chem.MolFromSmiles(child_smi), self.iso_flag)
+        """
+        :param child_smi: The SMILES representation
+        :return: The new node and a flag (True if new)
+                 If a node could not be created (for example if
+                 MolFromSmiles() fails then None is returned as the
+                 node instance.
+        """
+        mol = Chem.MolFromSmiles(child_smi)
+        if not mol:
+            return None, False
+        new_node = Node(mol, self.iso_flag)
         if new_node not in self.node_list:
             self.node_list.add(new_node)
             return new_node, True
@@ -37,6 +47,12 @@ class NodeHolder(object):
         :return:
         """
         return set(self.edge_list)
+
+    def size(self):
+        """Returns the size of the object as node and edge count.
+        """
+        return len(self.node_list), len(self.edge_list)
+
 
 
 class Node(object):
@@ -72,6 +88,14 @@ class Node(object):
             ["NODE", self.SMILES, str(self.HAC), str(self.RAC), self.RING_SMILES]
         )
 
+    def as_csv(self):
+        """Like str() but as CSV and without the initial column,
+        i.e. something ready for augmentation.
+        """
+        return ",".join(
+            [self.SMILES, str(self.HAC), str(self.RAC), self.RING_SMILES]
+        )
+
 
 class Edge(object):
     """
@@ -99,9 +123,6 @@ class Edge(object):
         self.REBUILT_TYPE = get_type(rebuilt_smi)
         self.EXCLUDED_RING_SMILES = simplified_graph(excluded_smi, iso_flag=iso_flag)
         self.NODES = [node_one, node_two]
-        self.REPR = " ".join(
-            ["EDGE", self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
-        )
         self.HASH = hash(
             "||".join(
                 ["EDGE", self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
@@ -121,7 +142,17 @@ class Edge(object):
         )
 
     def __str__(self):
-        return self.REPR
+        return " ".join(
+            ["EDGE", self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
+        )
+
+    def as_csv(self):
+        """Like str() but as CSV and without the initial column,
+        i.e. something ready for augmentation.
+        """
+        return ",".join(
+            [self.NODES[0].SMILES, self.NODES[1].SMILES, self.get_label()]
+        )
 
 
 class Attr(object):

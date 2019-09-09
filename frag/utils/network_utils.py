@@ -6,6 +6,7 @@ except ImportError:
     from rdkit.Chem import MCS
 from rdkit.Chem import AllChem, Draw
 from tqdm import tqdm
+import timeit
 import os
 
 SMARTS_PATTERN = "[*;R]-;!@[*]"
@@ -13,6 +14,19 @@ SMARTS_PATTERN = "[*;R]-;!@[*]"
 """ contribution from Hans de Winter """
 from rdkit import Chem
 from rdkit.Chem import AllChem
+
+# Instrumentation to expose the 'retrieve', 'create' and 'total' durations,
+# and the number of nodes and edges for each molecule processed
+# by build_network().
+#
+# Data is flushed and synchronised to disc after each molecule
+# (so that data is kept even if the process dies). So anticipate a
+# drop in throughput if you enable this feature.
+#
+# Alan Christie, Sep 2018
+ENABLE_BUILD_NETWORK_LOG = os.environ.get('ENABLE_BUILD_NETWORK_LOG')
+BUILD_NETWORK_LOG = 'build-network.log'
+CHILD_DEPTH = 0
 
 
 def _InitialiseNeutralisationReactions():
@@ -369,12 +383,12 @@ def get_ring_ring_splits(input_mol, labels=False, do_comb_index=False):
                     for x in Chem.MolToSmiles(nm, isomericSmiles=True).split(".")
                 ]
             out_mols.append(mols)
-        return out_mols
+
+    return out_mols
 
 
-def add_child_and_edge(
-    new_list, input_node, excluded_smi, node_holder, ring_ring=False
-):
+def add_child_and_edge(new_list, input_node, excluded_smi, node_holder,
+                       ring_ring=False):
     """
     :param input_pair:
     :return:
@@ -386,11 +400,16 @@ def add_child_and_edge(
     if child_smi is None:
         return
     # Now generate the edges with input and this node
-    new_node, is_new = node_holder.create_or_retrieve_node(child_smi)
-    node_holder.create_or_retrieve_edge(excluded_smi, rebuilt_smi, input_node, new_node)
-    # Now generate the children for this too
-    if is_new:
-        create_children(new_node, node_holder)
+    # (catering for node failure)
+    node, is_new = node_holder.create_or_retrieve_node(child_smi)
+    if node:
+        node_holder.create_or_retrieve_edge(excluded_smi,
+                                            rebuilt_smi,
+                                            input_node,
+                                            node)
+        # Now generate the children for this too
+        if is_new:
+            create_children(node, node_holder)
 
 
 def canon_input(smi, isomericSmiles=True):
@@ -402,24 +421,48 @@ def canon_input(smi, isomericSmiles=True):
         return iso_smiles
 
 
-def create_children(input_node, node_holder):
+def create_children(input_node, node_holder, max_frag=0, smiles=None, log_file=None):
     """
     Create a series of edges from an input molecule. Iteratively
     :param input_node:
-    :return:
+    :param max_frag: Max initial fragments (or no limit if 0)
+    :param smiles: A SMILES string, for log/diagnostics only.
+                   Written to the log if specified
+    :param log_file: A file if information is to be logged, otherwise None
+    :return: A tuple, the number of direct children and (atm 0)
     """
+    fragments = get_fragments(input_node.RDMol)
+
+    # Ditch processing if too few fragments
+    # or (if a maximum is defined) too many.
+    #
+    # All exclusions are written to a log file (if provided)
+    # using 'X' as a prefix followed by letters that indicate the
+    # excluded reason (MF=MaxFrag) and then a period
+    # followed by a number (in this case the fragment count)
+    num_fragments = len(fragments)
+    if num_fragments < 2:
+        return num_fragments, 0
+    elif max_frag > 0 and num_fragments > max_frag:
+        if log_file:
+            log_file.write('XMF.%s,%s\n' % (num_fragments, smiles))
+        return num_fragments, 0
+
+    # OK if we get here.
+    # If we have a log file write the fragment count.
+    if log_file:
+        log_file.write('F.%s,%s\n' % (num_fragments, smiles))
+
     # Get all ring-ring splits
     ring_ring_splits = get_ring_ring_splits(input_node.RDMol)
-    if ring_ring_splits:
-        for ring_ring_split in ring_ring_splits:
-            add_child_and_edge(
-                ring_ring_split, input_node, "[Xe]", node_holder, ring_ring=True
-            )
-    fragments = get_fragments(input_node.RDMol)
-    if len(fragments) < 2:
-        return
+
+    num_ring_ring_splits = len(ring_ring_splits)
+    num_total = num_ring_ring_splits + num_fragments
+    if num_total < 2:
+        return num_ring_ring_splits, num_fragments
+
     # Now remove one item on each iteration
-    for i in range(len(fragments)):
+    for i in range(num_fragments):
         new_list = []
         for j, item in enumerate(fragments):
             if i == j:
@@ -428,6 +471,13 @@ def create_children(input_node, node_holder):
             new_list.append(item)
         add_child_and_edge(new_list, input_node, excluded_smi, node_holder)
 
+    if ring_ring_splits:
+        for ring_ring_split in ring_ring_splits:
+            add_child_and_edge(
+                ring_ring_split, input_node, "[Xe]", node_holder, ring_ring=True
+            )
+
+    return num_ring_ring_splits, 0
 
 def neutralise_3d_mol(input_mol):
     neutral_mol = NeutraliseCharges(Chem.MolFromMolBlock(input_mol), as_mol=True)[0]
@@ -435,26 +485,99 @@ def neutralise_3d_mol(input_mol):
 
 
 def write_data(output_dir, node_holder, attrs):
+    """Write the node holder (nodes and edges) and, if attrs is not None
+    the attributes.
+
+    :param output_dir: The output directory
+    :param node_holder: Written as nodes.txt and edges.txt
+    :param attrs: Written as attributes.txt if not None
+    """
     out_f = open(os.path.join(output_dir, "nodes.txt"), "w")
     for node in node_holder.node_list:
         out_f.write(str(node))
         out_f.write("\n")
+    out_f.close()
     out_f = open(os.path.join(output_dir, "edges.txt"), "w")
     for edge in node_holder.get_edges():
         out_f.write(str(edge))
         out_f.write("\n")
-    out_f = open(os.path.join(output_dir, "attributes.txt"), "w")
-    for attr in attrs:
-        out_f.write(str(attr))
-        out_f.write("\n")
+    out_f.close()
+    if attrs:
+        out_f = open(os.path.join(output_dir, "attributes.txt"), "w")
+        for attr in attrs:
+            out_f.write(str(attr))
+            out_f.write("\n")
+        out_f.close()
 
 
-def build_network(attrs, node_holder):
+def write_data_as_csv(output_dir, node_holder):
+    """Write the node holder (nodes and edges). The output files are
+    header-less CSV files. A final column for the node namespace and a
+    label for the edge is added so that written nodes have 6 columns
+    (2 are added for an initially empty compound ID and a label of 'F2')
+    and edges have 4 (one added for a label of 'FRAG').
+
+    :param output_dir: The output directory
+    :param node_holder: Written as nodes.txt and edges.txt
+    """
+    out_f = open(os.path.join(output_dir, "nodes.csv"), "w")
+    for node in node_holder.node_list:
+        out_f.write(node.as_csv() + ',,F2\n')
+    out_f.close()
+    out_f = open(os.path.join(output_dir, "edges.csv"), "w")
+    for edge in node_holder.get_edges():
+        out_f.write(edge.as_csv() + ',FRAG\n')
+    out_f.close()
+
+
+def build_network(attrs, node_holder,
+                  max_frags=0, base_dir='.', verbosity=0):
+
+    log_file = None
+    if ENABLE_BUILD_NETWORK_LOG:
+        log_file_name = os.path.join(base_dir, BUILD_NETWORK_LOG)
+        log_file = open(log_file_name, 'w')
+
     # Create the nodes and test with output
-    for attr in tqdm(attrs):
-        node, is_node = node_holder.create_or_retrieve_node(attr.SMILES)
-        if is_node:
-            create_children(node, node_holder)
+    tqdm_disable = True if verbosity else False
+    for attr in tqdm(attrs, disable=tqdm_disable):
+
+        start_time = timeit.default_timer()
+        node, is_new = node_holder.create_or_retrieve_node(attr.SMILES)
+        retrieve_end_time = timeit.default_timer()
+        create_end_time = None
+        direct_frags = 0
+        if node and is_new:
+            direct_ring_ring_splits, direct_frags =\
+                create_children(node, node_holder,
+                                max_frags, attr.SMILES,
+                                log_file)
+            create_end_time = timeit.default_timer()
+
+        if verbosity:
+            total_dur = create_end_time - start_time
+            print('{} {} {}'.format(attr.SMILES, total_dur,
+                                    direct_ring_ring_splits + direct_frags))
+
+        if log_file:
+            nh_nodes, nh_edges = node_holder.size()
+            node_created = True if node else False
+            if is_new:
+                retrieve_dur = retrieve_end_time - start_time
+                create_dur = create_end_time - retrieve_end_time
+                total_dur = create_end_time - start_time
+                log_file.write('1,%s,%s,%s,%s,%s,%s,%s,%s\n' % (attr.SMILES, node_created, retrieve_dur, create_dur, total_dur, nh_nodes, nh_edges, direct_frags))
+                log_file.flush()
+                os.fsync(log_file)
+            else:
+                retrieve_dur = retrieve_end_time - start_time
+                log_file.write('0,%s,%s,%s,%s,%s,%s,%s\n' % (attr.SMILES, node_created, retrieve_dur, 0, retrieve_dur, nh_nodes, nh_edges))
+                log_file.flush()
+                os.fsync(log_file)
+
+    if log_file:
+        log_file.close()
+
     return node_holder
 
 

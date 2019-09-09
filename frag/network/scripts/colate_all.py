@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 from datetime import datetime
 import argparse
@@ -7,7 +9,7 @@ import argparse
 # On a 2.7GHz i7 we should see around 13Million node lines/min
 # and about 9Million edge lines/min.
 # Set to 0 for quiet operation.
-LINE_REMINDER = 0
+LINE_REMINDER = 13000000
 
 
 def do_for_dir(input_dir):
@@ -16,13 +18,43 @@ def do_for_dir(input_dir):
         "nodes.txt": [None, "smiles:ID(F2)", "hac:INT", "chac:INT", "osmiles"],
         "edges.txt": [None, ":START_ID(F2)", ":END_ID(F2)", "label"],
     }
-    # build a map of SMILES to chemical ID
+    # build a map of SMILES to chemical IDs
     # from the attributes file...
+    num_supplier_identities_found = 0
+    f_name = "attributes.txt"
+    if LINE_REMINDER:
+        print('%s Processing %s/%s...' % (datetime.now(), input_dir, f_name))
     attrs = {}
-    with open("attributes.txt") as attr_f:
+    with open(f_name) as attr_f:
         for line in attr_f:
+
             line_parts = line.split()
-            attrs[line_parts[1]] = line_parts[3]
+            # Look for supplier names (in line_parts[3]).
+            #  'REAL:'
+            #  'MOLPORT:'
+            # Ignore others
+            supplier = None
+            if (line_parts[3].startswith('REAL:') or
+                line_parts[3].startswith('MOLPORT:') or
+                line_parts[3].startswith('HTS:')):
+                supplier = line_parts[3]
+
+            if supplier:
+                num_supplier_identities_found += 1
+                # Each attribute is a potential list of suppliers
+                # for a given molecule (line_parts[1]).
+                # We separate suppliers using ';'.
+                if line_parts[1] in attrs:
+                    attrs[line_parts[1]] += ';' + supplier
+                else:
+                    attrs[line_parts[1]] = supplier
+    if LINE_REMINDER:
+        if not num_supplier_identities_found:
+            print('%s WARNING: Found no supplier identities (!)' %
+                  (datetime.now(), num_supplier_identities_found))
+        else:
+            print('%s Found %d supplier identities' %
+                  (datetime.now(), num_supplier_identities_found))
 
     for f_name in prop_dict:
 
@@ -51,7 +83,7 @@ def do_for_dir(input_dir):
                         cmpd_id = attr_cmp_id
                         out_l.append(cmpd_id)
                         # This is where we can add tags - like CHEAP - EXPENSIVE
-                        out_l.append("EM;MOL;F2")
+                        out_l.append("MOL;F2")
                     else:
                         out_l.append("")
                         out_l.append("F2")
@@ -69,7 +101,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Convert text files output from build_db into CSV files for neo4j."
     )
-    parser.add_argument("--input_dir")
+    parser.add_argument("--input_dir", required=True)
     args = parser.parse_args()
 
     node_list = ["nodes-header.csv"]
