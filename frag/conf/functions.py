@@ -97,11 +97,11 @@ def gen_conf_from_vector(input_mol_block, elaborated_smiles):
     get_best_align(input_mol_block, elaborated_smiles)
 
 
-def generate_confs_for_vector(input_vector, input_smiles, input_mol_block):
+def generate_confs_for_vector(input_smiles, input_mol_block):
     confs = []
     for elaborated_smiles in input_smiles:
         confs.append(
-            gen_conf_from_vector(input_mol_block, input_vector, elaborated_smiles)
+            gen_conf_from_vector(input_mol_block, elaborated_smiles)
         )
     return confs
 
