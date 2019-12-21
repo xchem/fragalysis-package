@@ -1,5 +1,89 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
+import argparse, os, gzip
+import glob
+import numpy as np
+import rdkit
+from rdkit import Chem
+from rdkit.Chem import AllChem, rdShapeHelpers
+from rdkit.Chem.FeatMaps import FeatMaps
+from rdkit import RDConfig
+from rdkit.Chem import Draw
+from joblib import Parallel, delayed
+import multiprocessing
+import operator
+
+fdef = AllChem.BuildFeatureFactory(os.path.join(RDConfig.RDDataDir, 'BaseFeatures.fdef'))
+
+fmParams = {}
+for k in fdef.GetFeatureFamilies():
+    fparams = FeatMaps.FeatMapParams()
+    fmParams[k] = fparams
+
+keep = ('Donor', 'Acceptor', 'NegIonizable', 'PosIonizable', 'ZnBinder',
+        'Aromatic', 'Hydrophobe', 'LumpedHydrophobe')
+
+
+def get_FeatureMapScore(small_m, large_m, score_mode=FeatMaps.FeatMapScoreMode.All):
+    featLists = []
+    for m in [small_m, large_m]:
+        rawFeats = fdef.GetFeaturesForMol(m)
+        # filter that list down to only include the ones we're intereted in
+        featLists.append([f for f in rawFeats if f.GetFamily() in keep])
+    fms = [FeatMaps.FeatMap(feats=x, weights=[1] * len(x), params=fmParams) for x in featLists]
+    fms[0].scoreMode = score_mode
+    fm_score = fms[0].ScoreFeats(featLists[1]) / min(fms[0].GetNumFeatures(), len(featLists[1]))
+    return fm_score
+
+
+def score(reflig, prb_mols, ids, score_mode=FeatMaps.FeatMapScoreMode.All, p=False):
+    ref = Chem.AddHs(reflig)
+    idx = 0
+
+    results_sucos = {}
+    results_tani = {}
+
+    smi_mol = Chem.MolToSmiles(prb_mols)
+
+    for i in ids:
+
+        prb = Chem.AddHs(Chem.MolFromMolBlock(Chem.MolToMolBlock(elab_mol, confId=i)))
+
+        fm_score = get_FeatureMapScore(ref, prb, score_mode)
+        fm_score = np.clip(fm_score, 0, 1)
+
+        protrude_dist = rdShapeHelpers.ShapeProtrudeDist(ref, prb,
+                                                         allowReordering=False)
+        protrude_dist = np.clip(protrude_dist, 0, 1)
+
+        SuCOS_score = 0.5 * fm_score + 0.5 * (1 - protrude_dist)
+        tanimoto_score = Chem.rdShapeHelpers.ShapeTanimotoDist(ref, prb)
+
+        results_sucos[str(idx)] = SuCOS_score
+        results_tani[str(idx)] = tanimoto_score
+
+        if p:
+            print("********************************")
+            print("index: " + str(idx))
+            print("SuCOS score:\t%f" % SuCOS_score)
+            print("Tani score:\t%f" % tanimoto_score)
+            print("********************************")
+
+        idx += 1
+
+    return results_sucos
+
+
+def get_best_align(hit_mblock, elab_smiles):
+    hit_mol = Chem.MolFromMolBlock(hit_mblock)
+    elab_mol = Chem.MolFromSmiles(elab_smiles)
+    ids = AllChem.EmbedMultipleConfs(elab_mol, numConfs=100, params=AllChem.ETKDG())
+    for cid in ids: AllChem.MMFFOptimizeMolecule(elab_mol, confId=cid)
+    results_sucos = score(hit_mol, elab_mol, ids)
+    best_i = list(results_sucos.values()).index(max(results_sucos.values()))
+    elab_molblock = Chem.MolToMolBlock(elab_mol, confId=best_i)
+
+    return elab_molblock
 
 
 def get_core_mol(three_d_mol, core_mol):
@@ -8,17 +92,9 @@ def get_core_mol(three_d_mol, core_mol):
         return AllChem.DeleteSubstructs(repl_sidechains, Chem.MolFromSmiles("*"))
 
 
-def gen_conf_from_vector(input_mol_block, vector, elaborated_smiles):
+def gen_conf_from_vector(input_mol_block, elaborated_smiles):
     # Get the mol
-    output_mol = Chem.MolFromSmiles(elaborated_smiles)
-    three_d_mol = Chem.MolFromMolBlock(input_mol_block)
-    # Get the shared core
-    core = get_core_mol(
-        three_d_mol,
-        Chem.RemoveHs(Chem.MolFromSmiles(vector.split("_")[0].replace("Xe", "H"))),
-    )
-    if core:
-        return Chem.MolToMolBlock(AllChem.ConstrainedEmbed(output_mol, core))
+    get_best_align(input_mol_block, elaborated_smiles)
 
 
 def generate_confs_for_vector(input_vector, input_smiles, input_mol_block):
