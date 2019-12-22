@@ -1,17 +1,10 @@
-from rdkit import Chem
-from rdkit.Chem import AllChem
-import argparse, os, gzip
-import glob
+import os
 import numpy as np
-import rdkit
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdShapeHelpers
 from rdkit.Chem.FeatMaps import FeatMaps
 from rdkit import RDConfig
-from rdkit.Chem import Draw
-from joblib import Parallel, delayed
-import multiprocessing
-import operator
+
 
 fdef = AllChem.BuildFeatureFactory(os.path.join(RDConfig.RDDataDir, 'BaseFeatures.fdef'))
 
