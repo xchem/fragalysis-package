@@ -40,7 +40,7 @@ def score(reflig, prb_mols, ids, score_mode=FeatMaps.FeatMapScoreMode.All, p=Fal
 
     for i in ids:
 
-        prb = Chem.AddHs(Chem.MolFromMolBlock(Chem.MolToMolBlock(elab_mol, confId=i)))
+        prb = Chem.AddHs(Chem.MolFromMolBlock(Chem.MolToMolBlock(prb_mols, confId=i)))
 
         fm_score = get_FeatureMapScore(ref, prb, score_mode)
         fm_score = np.clip(fm_score, 0, 1)
@@ -71,7 +71,11 @@ def get_best_align(hit_mblock, elab_smiles):
     hit_mol = Chem.MolFromMolBlock(hit_mblock)
     elab_mol = Chem.MolFromSmiles(elab_smiles)
     ids = AllChem.EmbedMultipleConfs(elab_mol, numConfs=100, params=AllChem.ETKDG())
-    for cid in ids: AllChem.MMFFOptimizeMolecule(elab_mol, confId=cid)
+
+    for cid in ids:
+        o3d = Chem.rdMolAlign.GetO3A(prbMol=elab_mol, refMol=hit_mol, prbCid=cid)
+        o3d.Align()
+
     results_sucos = score(hit_mol, elab_mol, ids)
     best_i = list(results_sucos.values()).index(max(results_sucos.values()))
     elab_molblock = Chem.MolToMolBlock(elab_mol, confId=best_i)
@@ -103,7 +107,7 @@ def generate_confs_for_vectors(input_vectors, input_mol_block):
     confs = {}
     for vector in input_vectors:
         confs[vector] = generate_confs_for_vector(
-            vector, input_vectors[vector], input_mol_block
+            input_vectors[vector], input_mol_block
         )
     return confs
 
