@@ -174,9 +174,9 @@ def organise(records, num_picks):
     return out_d
 
 
-def get_picks(smiles, num_picks, graph_url="neo4j"):
+def get_picks(smiles, num_picks, graph_url="neo4j", graph_auth="neo4j/neo4j"):
     smiles = canon_input(smiles)
-    driver = get_driver(graph_url)
+    driver = get_driver(graph_url, graph_auth)
     with driver.session() as session:
         records = []
         for record in session.read_transaction(find_proximal, smiles):
@@ -196,9 +196,12 @@ def get_picks(smiles, num_picks, graph_url="neo4j"):
             print("Nothing found for input: " + smiles)
 
 
-def get_full_graph(smiles, graph_url="neo4j", isomericSmiles=True):
+def get_full_graph(smiles,
+                   graph_url="neo4j",
+                   graph_auth="neo4j/neo4j",
+                   isomericSmiles=True):
     smiles = canon_input(smiles, isomericSmiles)
-    driver = get_driver(graph_url)
+    driver = get_driver(graph_url, graph_auth)
     with driver.session() as session:
         records = []
         for record in session.read_transaction(find_proximal, smiles):
@@ -218,8 +221,8 @@ def get_full_graph(smiles, graph_url="neo4j", isomericSmiles=True):
             print("Nothing found for input: " + smiles)
 
 
-def custom_query(query, graph_url="neo4j"):
-    driver = get_driver(graph_url)
+def custom_query(query, graph_url="neo4j", graph_auth="neo4j/neo4j"):
+    driver = get_driver(graph_url, graph_auth)
     records = []
     with driver.session() as session:
         for record in session.read_transaction(find_custom, query):
