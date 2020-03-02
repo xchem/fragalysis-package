@@ -301,15 +301,21 @@ def get_type(smiles):
     return "FG"
 
 
-def get_driver(url="neo4j"):
+def get_driver(url="neo4j", password=None):
     """
-    Get the driver to the network connection
-    :return: the driver for the graphdabase
+    Get the driver to the network connection using the bolt service
+    at the URI provided. If a password is provided then authentication
+    is assumed for the user 'neo4j'.
+    :return: the driver for the graph database
     """
     # No auth on the database
     from neo4j.v1 import GraphDatabase
 
-    driver = GraphDatabase.driver("bolt://" + url + ":7687")
+    if password:
+        driver = GraphDatabase.driver("bolt://" + url + ":7687",
+                                      auth=('neo4j', password))
+    else:
+        driver = GraphDatabase.driver("bolt://" + url + ":7687")
     return driver
 
 
