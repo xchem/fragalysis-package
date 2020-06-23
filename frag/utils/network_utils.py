@@ -405,9 +405,10 @@ def add_child_and_edge(
 
 def canon_input(smi, isomericSmiles=True):
     # Decharge in this step too
-    iso_smiles = NeutraliseCharges(Chem.MolFromSmiles(smi))[0]
+    iso_smiles = NeutraliseCharges(Chem.MolFromSmiles(str(smi)))[0]
     if not isomericSmiles:
-        return Chem.MolToSmiles(Chem.MolFromSmiles(iso_smiles), isomericSmiles=False)
+        # need to add isomericSmiles=False back in...
+        return Chem.MolToSmiles(Chem.MolFromSmiles(iso_smiles)) #, isomericSmiles=False)
     else:
         return iso_smiles
 
