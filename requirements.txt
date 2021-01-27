@@ -1,7 +1,7 @@
 ipython==5.4.1
-tqdm
-neo4j-driver
-numpy
-nose
-coveralls
-requests
+tqdm==4.48.2
+neo4j-driver==1.7.6
+numpy==1.19.2
+nose==1.3.7
+coveralls==2.1.1
+requests==2.24.0

@@ -4,14 +4,17 @@ from frag.utils.network_utils import write_results, get_driver, canon_input
 
 class ReturnObject(object):
 
-    def __init__(self, start_smi, end_smi, label, edge_count, change_frag, iso_label):
+    def __init__(self, start_smi, end_smi, label, edge_count, change_frag, iso_label, compound_ids):
         """
         Build this object.
         :param start_smi:
         :param end_smi:
         :param label:
+        :param iso_label:
         :param frag_type:
         :param edge_count:
+        :param change_frag:
+        :param compound_ids: - list of compound_ids for the end_smi.
         """
         self.start_smi = start_smi
         self.end_smi = end_smi
@@ -20,6 +23,7 @@ class ReturnObject(object):
         self.frag_type = None
         self.edge_count = edge_count
         self.change_frag = change_frag
+        self.compound_ids = compound_ids
 
     def __str__(self):
         out_list = [self.label, str(self.edge_count), self.frag_type]
@@ -102,6 +106,11 @@ def get_type(r_group_form, sub_one, sub_two):
 
 
 def define_double_edge_type(record):
+    """
+    Create return object from the graph query results returned for double edge jump molecules
+    :param: query record
+    :return: ReturnObject
+    """
     mol_one = record["sta"]
     label = str(record["ne"]["label"].split("|")[4])
     iso_label = str(record["ne"]["label"].split("|")[5])
@@ -111,7 +120,7 @@ def define_double_edge_type(record):
     diff_one = mol_one["hac"] - mol_two["hac"]
     diff_two = mol_two["hac"] - mol_three["hac"]
     ret_obj = ReturnObject(
-        mol_one["smiles"], mol_three["smiles"], label, 2, change_frag, iso_label
+        mol_one["smiles"], mol_three["smiles"], label, 2, change_frag, iso_label, mol_three["cmpd_ids"]
     )
     if "." in label:
         ret_obj.frag_type = "LINKER"
@@ -126,9 +135,9 @@ def define_double_edge_type(record):
 
 def define_proximal_type(record):
     """
-    Define the type returned for proximal systems
-    :param record:
-    :return:
+    Create return object from the graph query results returned for (naerby) proximal molecules
+    :param: query record
+    :return: ReturnObject
     """
     mol_one = record["n"]
     label = str(record["nm"]["label"].split("|")[4])
@@ -136,7 +145,7 @@ def define_proximal_type(record):
     change_frag = str(record["nm"]["label"].split("|")[2])
     mol_two = record["m"]
     ret_obj = ReturnObject(
-        mol_one["smiles"], mol_two["smiles"], label, 1, change_frag, iso_label
+        mol_one["smiles"], mol_two["smiles"], label, 1, change_frag, iso_label, mol_two["cmpd_ids"]
     )
     if "." in label:
         ret_obj.frag_type = "LINKER"
@@ -150,11 +159,16 @@ def define_proximal_type(record):
 
 
 def organise(records, num_picks):
+    """
+    Create Output dictionary from the list of ReturnObject records
+    :param: ReturnObject records
+    :return: Output dictionary
+    """
     out_d = {}
     smi_set = set()
     for rec in records:
         rec_key = str(rec)
-        addition = {"change": rec.change_frag, "end": rec.end_smi}
+        addition = {"change": rec.change_frag, "end": rec.end_smi, "compound_ids":rec.compound_ids}
         if rec_key in out_d:
             out_d[rec_key]["addition"].append(addition)
         else:
@@ -200,6 +214,14 @@ def get_full_graph(smiles,
                    graph_url="neo4j",
                    graph_auth="neo4j/neo4j",
                    isomericSmiles=True):
+    """
+    For the given smiles and graph credentials, query the Neo4j database
+    :param: smiles
+    :param: graph_url - note that for local Neo4j graphs, this can be set to 'localhost'
+    :param: graph_auth - username/password.
+    :param: isomericSmiles True/False
+    :return: Output dictionary - This is returned "as-is" from the Fragalysis-Backend api/graph query.
+    """
     smiles = canon_input(smiles, isomericSmiles)
     driver = get_driver(graph_url, graph_auth)
     with driver.session() as session:
