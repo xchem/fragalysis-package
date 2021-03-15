@@ -1,5 +1,5 @@
 ---
-name: build latest
+name: Build Latest
 
 # Actions that take place after every commit the master/main branch.
 # Here every commit is built, tagged as 'latest' and tested.
