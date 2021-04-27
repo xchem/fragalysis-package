@@ -71,12 +71,3 @@ jobs:
       run: >
         docker run xchem/fragalysis:${{ steps.vars.outputs.tag }}
         /bin/sh -c "cd /usr/local/fragalysis && nosetests"
-    - name: Login to DockerHub
-      if: steps.vars.outputs.push == 'true'
-      uses: docker/login-action@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-    - name: Push
-      if: steps.vars.outputs.push == 'true'
-      run: docker push ${{ steps.vars.outputs.STACK_NAMESPACE }}/fragalysis:${{ steps.vars.outputs.tag }}
