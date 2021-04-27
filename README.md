@@ -1,6 +1,8 @@
 # Fragalysis
 
-[![Build Status](https://travis-ci.org/xchem/fragalysis.svg?branch=master)](https://travis-ci.org/xchem/fragalysis)
+[![build latest](https://github.com/alanbchristie/fragalysis/actions/workflows/build-latest.yml/badge.svg)](https://github.com/alanbchristie/fragalysis/actions/workflows/build-latest.yml)
+[![pip release](https://github.com/alanbchristie/fragalysis/actions/workflows/pip-release.yml/badge.svg)](https://github.com/alanbchristie/fragalysis/actions/workflows/pip-release.yml)
+
 [![stable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges)
 [![Version](http://img.shields.io/badge/version-0.0.38-blue.svg?style=flat)](https://github.com/xchem/fragalysis)
 [![License](http://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat)](https://github.com/xchem/fragalysis/blob/master/LICENSE.txt)
