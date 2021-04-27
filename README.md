@@ -1,6 +1,6 @@
 # Fragalysis
 
-[![build latest](https://github.com/alanbchristie/fragalysis/actions/workflows/build-latest.yml/badge.svg)](https://github.com/alanbchristie/fragalysis/actions/workflows/build-latest.yml)
+[![build latest](https://github.com/xchem/fragalysis/actions/workflows/build-latest.yml/badge.svg)](https://github.com/xchem/fragalysis/actions/workflows/build-latest.yml)
 [![pip release](https://github.com/alanbchristie/fragalysis/actions/workflows/pip-release.yml/badge.svg)](https://github.com/alanbchristie/fragalysis/actions/workflows/pip-release.yml)
 
 [![stable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges)
