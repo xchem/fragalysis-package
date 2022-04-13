@@ -309,12 +309,10 @@ def get_driver(url='neo4j', neo4j_auth='neo4j/neo4j'):
     authentication is assumed.
     :return: the driver for the graph database
     """
-    # No auth on the database
-    from neo4j.v1 import GraphDatabase
+    from neo4j import GraphDatabase
 
     auth_parts = neo4j_auth.split('/')
     if len(auth_parts) == 2:
-        print('Getting driver for user "{}"...'.format(auth_parts[0]))
         driver = GraphDatabase.driver('bolt://' + url + ':7687',
                                       auth=(auth_parts[0], auth_parts[1]))
     else:
