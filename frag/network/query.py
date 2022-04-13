@@ -184,7 +184,7 @@ def get_picks(smiles, num_picks, graph_url="neo4j", graph_auth="neo4j/neo4j"):
         for record in session.run(find_proximal_query(smiles)):
             ans = define_proximal_type(record)
             records.append(ans)
-        for record in session.rrun(find_double_edge_query(smiles)):
+        for record in session.run(find_double_edge_query(smiles)):
             ans = define_double_edge_type(record)
             records.append(ans)
         for label in list(set([x.label for x in records])):
