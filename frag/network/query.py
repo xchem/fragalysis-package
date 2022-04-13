@@ -1,5 +1,9 @@
 import random
+import logging
+
 from frag.utils.network_utils import write_results, get_driver, canon_input
+
+logger = logging.getLogger(__name__)
 
 
 class ReturnObject(object):
@@ -30,69 +34,53 @@ class ReturnObject(object):
         return "_".join(out_list)
 
 
-def find_double_edge(tx, input_str):
-    return tx.run(
-        "MATCH (sta:F2 {smiles:$smiles})-[nm:FRAG]-(mid:F2)-[ne:FRAG]-(end:Mol) where"
-        " abs(sta.hac-end.hac) <= 3 and abs(sta.chac-end.chac) <= 1"
-        " and sta.smiles <> end.smiles "
-        "RETURN sta, nm, mid, ne, end "
-        "order by split(nm.label, '|')[4], split(ne.label, '|')[2];",
-        smiles=input_str,
-    )
+def find_double_edge_query(smiles):
+    return "MATCH (sta:F2 {smiles:'%(smiles)s'})-[nm:FRAG]-(mid:F2)-[ne:FRAG]-(end:Mol)" \
+           " where abs(sta.hac-end.hac) <= 3 and abs(sta.chac-end.chac) <= 1"\
+           " and sta.smiles <> end.smiles"\
+           " RETURN sta, nm, mid, ne, end"\
+           " order by split(nm.label, '|')[4]," \
+           " split(ne.label, '|')[2];" % {'smiles': smiles}
 
 
-def find_triple_edge_growth(
-    tx,
-    input_str,
+def find_triple_edge_growth_query(
+    smiles,
     heavy_atom_diff_min=6,
     heavy_atom_diff_max=10,
     mid_heavy_atom_diff_min=-1,
     mid_heavy_atom_diff_max=3,
 ):
-    return tx.run(
-        "MATCH (sta:F2 {smiles:$smiles})-[nm:FRAG]-(mid_one:F2)-[ne:FRAG]-(mid:Mol)-[nm2:FRAG]-(mid_two:F2)-[ne2:FRAG]-(end:Mol) where"
-        " end.hac-sta.hac > $hacmin and end.hac-sta.hac <= $hacmax"
-        " and mid.hac-sta.hac > $chacmin and mid.hac-sta.hac <= $chacmax"
-        " and sta.smiles <> mid.smiles and sta.smiles <> end.smiles "
-        " WITH collect("
-        "{"
-        "end: end.smiles,"
-        "mid: mid.smiles,"
-        "frag_one: mid_one.smiles,"
-        "frag_two: mid_two.smiles"
-        "}"
-        ") AS edges"
-        " RETURN edges",
-        smiles=input_str,
-        hacmin=heavy_atom_diff_min,
-        hacmax=heavy_atom_diff_max,
-        chacmin=mid_heavy_atom_diff_min,
-        chacmax=mid_heavy_atom_diff_max,
-    )
+    return "MATCH (sta:F2 {smiles:'%(smiles)s'})-[nm:FRAG]-(mid_one:F2)-[ne:FRAG]-(mid:Mol)-[nm2:FRAG]-(mid_two:F2)-[ne2:FRAG]-(end:Mol)"\
+           " where end.hac-sta.hac > %(hacmin)d and end.hac-sta.hac <= %(hacmax)d"\
+           " and mid.hac-sta.hac > %(chacmin)d and mid.hac-sta.hac <= %(chacmax)d"\
+           " and sta.smiles <> mid.smiles and sta.smiles <> end.smiles "\
+           " WITH collect("\
+           "{"\
+           "end: end.smiles,"\
+           "mid: mid.smiles,"\
+           "frag_one: mid_one.smiles,"\
+           "frag_two: mid_two.smiles"\
+           "}"\
+           ") AS edges"\
+           " RETURN edges" % {'smiles': smiles,
+                              'hacmin': heavy_atom_diff_min,
+                              'hacmax': heavy_atom_diff_max,
+                              'chacmin': mid_heavy_atom_diff_min,
+                              'chacmax': mid_heavy_atom_diff_max}
 
 
-def add_follow_ups(tx, input_str):
-    return tx.run(
-        "MATCH (sta:F2 {smiles:$smiles})-[nm:FRAG]-(mid:F2)-[ne:FRAG]-(end:Mol) where"
-        " abs(sta.hac-end.hac) <= 3 and abs(sta.chac-end.chac) <= 1"
-        " and sta.smiles <> end.smiles "
-        " MERGE (end)-[:FOLLOW_UP]->(sta)",
-        smiles=input_str,
-    )
+def add_follow_ups_query(smiles):
+    return "MATCH (sta:F2 {smiles:'%(smiles)s'})-[nm:FRAG]-(mid:F2)-[ne:FRAG]-(end:Mol)"\
+           " where abs(sta.hac-end.hac) <= 3 and abs(sta.chac-end.chac) <= 1"\
+           " and sta.smiles <> end.smiles "\
+           " MERGE (end)-[:FOLLOW_UP]->(sta)" % {'smiles': smiles}
 
 
-def find_proximal(tx, input_str):
-    return tx.run(
-        "match p = (n:F2{smiles:$smiles})-[nm]-(m:Mol)"
-        "where abs(n.hac-m.hac) <= 3 and abs(n.chac-m.chac) <= 1 "
-        "return n, nm, m "
-        "order by split(nm.label, '|')[4];",
-        smiles=input_str,
-    )
-
-
-def find_custom(tx, input_str):
-    return tx.run(input_str)
+def find_proximal_query(smiles):
+    return "match p = (n:F2{smiles:'%(smiles)s'})-[nm]-(m:Mol)"\
+           " where abs(n.hac-m.hac) <= 3 and abs(n.chac-m.chac) <= 1"\
+           " return n, nm, m"\
+           " order by split(nm.label, '|')[4];" % {'smiles': smiles}
 
 
 def get_type(r_group_form, sub_one, sub_two):
@@ -193,10 +181,10 @@ def get_picks(smiles, num_picks, graph_url="neo4j", graph_auth="neo4j/neo4j"):
     driver = get_driver(graph_url, graph_auth)
     with driver.session() as session:
         records = []
-        for record in session.read_transaction(find_proximal, smiles):
+        for record in session.run(find_proximal_query(smiles)):
             ans = define_proximal_type(record)
             records.append(ans)
-        for record in session.read_transaction(find_double_edge, smiles):
+        for record in session.rrun(find_double_edge_query(smiles)):
             ans = define_double_edge_type(record)
             records.append(ans)
         for label in list(set([x.label for x in records])):
@@ -222,32 +210,50 @@ def get_full_graph(smiles,
     :param: isomericSmiles True/False
     :return: Output dictionary - This is returned "as-is" from the Fragalysis-Backend api/graph query.
     """
+
+    msg = f"get_full_graph(\"{smiles}\", graph_url={graph_url}, isomericSmiles={isomericSmiles})"
     smiles = canon_input(smiles, isomericSmiles)
+    msg += f" canon_smiles=\"{smiles}\""
+
     driver = get_driver(graph_url, graph_auth)
+    records = []
     with driver.session() as session:
-        records = []
-        for record in session.read_transaction(find_proximal, smiles):
+
+        debug_proximal_num_records = 0
+        for record in session.run(find_proximal_query(smiles)):
+            debug_proximal_num_records += 1
             ans = define_proximal_type(record)
             records.append(ans)
-        for record in session.read_transaction(find_double_edge, smiles):
+        msg += f" n_proximals={debug_proximal_num_records}"
+        debug_double_edge_num_records = 0
+        for record in session.run(find_double_edge_query(smiles)):
+            debug_double_edge_num_records += 0
             ans = define_double_edge_type(record)
             records.append(ans)
+        msg += f" n_double_edge={debug_double_edge_num_records}"
         for label in list(set([x.label for x in records])):
             # Linkers are meaningless
             if "." in label:
                 continue
-        if records:
-            orga_dict = organise(records, None)
-            return orga_dict
-        else:
-            print("Nothing found for input: " + smiles)
+
+    if records:
+        orga_dict = organise(records, None)
+        orga_dict_len = len(orga_dict)
+
+        msg += f" orga_dict_len={orga_dict_len}"
+        logger.info(f"GRAPH -> {msg}")
+        return orga_dict
+
+    msg += f" (fall-through) ret=None"
+    logger.info(f"GRAPH -> {msg}")
+    return None
 
 
 def custom_query(query, graph_url="neo4j", graph_auth="neo4j/neo4j"):
     driver = get_driver(graph_url, graph_auth)
     records = []
     with driver.session() as session:
-        for record in session.read_transaction(find_custom, query):
+        for record in session.run(query):
             records.append(record)
     return records
 
