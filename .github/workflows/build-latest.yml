@@ -30,37 +30,27 @@ name: Build Latest
 # Environment             (none)
 
 on:
-- push
+  push:
+    branches:
+    - 'master'
+    - 'main'
+    tags:
+    - '**'
+  schedule:
+  # Build every Sunday (0) at 4:45pm
+  - cron: '45 16 * * 0'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Inject slug/short variables
-      uses: rlespinasse/github-slug-action@v4
-    - name: Initialise workflow variables
-      id: vars
-      env:
-        DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      run: |
-        # Do we push, i.e. is DOCKERHUB_USERNAME defined?
-        echo set-output name=push::${{ env.DOCKERHUB_USERNAME != '' }}
-        echo ::set-output name=push::${{ env.DOCKERHUB_USERNAME != '' }}
-
-        # What image tag are we using? 'latest' (if not tagged) or a GitHub tag?
-        TAG="latest"
-        if [[ "${{ github.ref }}" =~ ^refs/tags/ ]]; then TAG="${{ env.GITHUB_REF_SLUG }}"; fi
-        echo set-output name=tag::${TAG}
-        echo ::set-output name=tag::${TAG}
-
     - name: Checkout
       uses: actions/checkout@v3
     - name: Build
       uses: docker/build-push-action@v4
       with:
         context: .
-        tags: xchem/fragalysis:${{ steps.vars.outputs.tag }}
+        tags: xchem/fragalysis:latest
     - name: Test
       run: >
-        docker run xchem/fragalysis:${{ steps.vars.outputs.tag }}
-        /bin/sh -c "cd /usr/local/fragalysis && python -m unittest"
+        docker run xchem/fragalysis:latest /bin/sh -c "cd /usr/local/fragalysis && python -m unittest"
