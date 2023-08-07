@@ -30,15 +30,7 @@ name: Build Latest
 # Environment             (none)
 
 on:
-  push:
-    branches:
-    - 'master'
-    - 'main'
-    tags:
-    - '**'
-  schedule:
-  # Build every Sunday (0) at 4:45pm
-  - cron: '45 16 * * 0'
+- push
 
 jobs:
   build:
