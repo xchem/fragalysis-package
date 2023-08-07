@@ -63,4 +63,4 @@ jobs:
     - name: Test
       run: >
         docker run xchem/fragalysis:${{ steps.vars.outputs.tag }}
-        /bin/sh -c "cd /usr/local/fragalysis && nosetests"
+        /bin/sh -c "cd /usr/local/fragalysis && python -m unittest"

@@ -110,4 +110,4 @@ class ResTest(unittest.TestCase):
     def test_get_res(self):
         mol  = Chem.MolFromPDBBlock(PDB_DATA)
         out_dict = _get_res(mol)
-        self.assertListEqual(out_dict.keys(),["174_A_HIS"])
+        self.assertListEqual(list(out_dict.keys()),["174_A_HIS"])

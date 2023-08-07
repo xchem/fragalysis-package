@@ -4,6 +4,9 @@ USER root
 RUN apt-get --allow-releaseinfo-change update && \
     apt-get install -y \
         git \
+        libfontconfig1 \
+        libsm6 \
+        libxrender1 \
         procps && \
     pip install rdkit==2023.3.2 && \
     git clone https://github.com/rdkit/mmpdb /usr/local/mmpdb && \

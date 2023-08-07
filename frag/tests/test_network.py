@@ -196,15 +196,15 @@ class NetworksTest(unittest.TestCase):
         input_data = ["Oc1ccc(cc1)c2ccccc2", "c1ccccc1", "c1ccncc1", "c1cccnc1"]
         output_data = [
             [
-                "Oc1ccc(-c2ccccc2[At])cc1",
-                "Oc1ccc(-c2ccccc2)c([At])c1",
-                "Oc1ccc(-c2ccc([At])cc2)cc1",
-                "Oc1ccc(-c2ccccc2)cc1[At]",
-                "Oc1ccc(-c2cccc([At])c2)cc1",
+                'Oc1ccc(-c2ccccc2)cc1[At]',
+                'Oc1ccc(-c2ccccc2)c([At])c1',
+                'Oc1ccc(-c2ccccc2[At])cc1',
+                'Oc1ccc(-c2cccc([At])c2)cc1',
+                'Oc1ccc(-c2ccc([At])cc2)cc1',
             ],
             ["[At]c1ccccc1"],
-            ["[At]c1cccnc1", "[At]c1ccccn1", "[At]c1ccncc1"],
-            ["[At]c1cccnc1", "[At]c1ccccn1", "[At]c1ccncc1"],
+            ["[At]c1ccncc1", "[At]c1cccnc1", "[At]c1ccccn1"],
+            ["[At]c1cccnc1", "[At]c1ccncc1", "[At]c1ccccn1"],
         ]
         for i, smi in enumerate(input_data):
             self.assertListEqual(list(decorate_smi(smi).keys()), output_data[i])
