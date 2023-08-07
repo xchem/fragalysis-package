@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Inject slug/short variables
-      uses: rlespinasse/github-slug-action@v3.x
+      uses: rlespinasse/github-slug-action@v4
     - name: Initialise workflow variables
       id: vars
       env:
@@ -62,9 +62,9 @@ jobs:
         echo ::set-output name=tag::${TAG}
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Build
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v4
       with:
         tags: xchem/fragalysis:${{ steps.vars.outputs.tag }}
     - name: Test
