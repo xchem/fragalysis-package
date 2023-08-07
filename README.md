@@ -26,6 +26,7 @@ from the project root: -
 
     export TWINE_USERNAME=PyPiUsername
     export TWINE_PASSWORD=PyPiPassword
+    export FRAGALYSIS_VERSION=1.0.1
     pip install -r package-requirements.txt
     rm dist/*
     python setup.py bdist_wheel

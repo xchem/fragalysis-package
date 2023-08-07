@@ -2,7 +2,7 @@ name: fragalysis
 channels:
   - rdkit
 dependencies:
-  - python=3.6
-  - rdkit=2018.03.2
+  - python=3.11
+  - rdkit=2023.3.2
   - pip:
     - fragalysis
