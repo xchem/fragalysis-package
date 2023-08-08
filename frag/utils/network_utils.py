@@ -188,14 +188,14 @@ def get_num_ring_atoms(input_mol):
 
 def simplified_graph(input_smiles, iso_flag=True):
     """
-    The simplified graph representation for the edge uses the daylight
-function dt_molgraph to
-1) set all bond orders to one, 2) remove aromaticity, 3) set the hydrogen count,
-4) remove charges and set masses to zero. 5)  Additionally we set every ring atom element to carbon.
-This is Anthony Bradley's version of the algorithm.
-    :param input_smiles: the input smiles to simplify
-    :param iso_flag: a boolean to determine if we should include chirality etc
-    :return:
+        The simplified graph representation for the edge uses the daylight
+    function dt_molgraph to
+    1) set all bond orders to one, 2) remove aromaticity, 3) set the hydrogen count,
+    4) remove charges and set masses to zero. 5)  Additionally we set every ring atom element to carbon.
+    This is Anthony Bradley's version of the algorithm.
+        :param input_smiles: the input smiles to simplify
+        :param iso_flag: a boolean to determine if we should include chirality etc
+        :return:
     """
     mol = Chem.MolFromSmiles(input_smiles)
     for atom in mol.GetAtoms():
@@ -301,7 +301,7 @@ def get_type(smiles):
     return "FG"
 
 
-def get_driver(url='neo4j', neo4j_auth='neo4j/neo4j'):
+def get_driver(url="neo4j", neo4j_auth="neo4j/neo4j"):
     """
     Get the driver to the network connection using the bolt service
     at the URI provided. If an authentication string is provided
@@ -311,12 +311,13 @@ def get_driver(url='neo4j', neo4j_auth='neo4j/neo4j'):
     """
     from neo4j import GraphDatabase
 
-    auth_parts = neo4j_auth.split('/')
+    auth_parts = neo4j_auth.split("/")
     if len(auth_parts) == 2:
-        driver = GraphDatabase.driver('bolt://' + url + ':7687',
-                                      auth=(auth_parts[0], auth_parts[1]))
+        driver = GraphDatabase.driver(
+            "bolt://" + url + ":7687", auth=(auth_parts[0], auth_parts[1])
+        )
     else:
-        driver = GraphDatabase.driver('bolt://' + url + ':7687')
+        driver = GraphDatabase.driver("bolt://" + url + ":7687")
 
     return driver
 
@@ -406,7 +407,9 @@ def canon_input(smi, isomericSmiles=True):
     iso_smiles = NeutraliseCharges(Chem.MolFromSmiles(str(smi)))[0]
     if not isomericSmiles:
         # need to add isomericSmiles=False back in...
-        return Chem.MolToSmiles(Chem.MolFromSmiles(iso_smiles)) #, isomericSmiles=False)
+        return Chem.MolToSmiles(
+            Chem.MolFromSmiles(iso_smiles)
+        )  # , isomericSmiles=False)
     else:
         return iso_smiles
 

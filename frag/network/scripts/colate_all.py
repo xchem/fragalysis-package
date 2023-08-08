@@ -25,20 +25,17 @@ def do_for_dir(input_dir):
             attrs[line_parts[1]] = line_parts[3]
 
     for f_name in prop_dict:
-
         if LINE_REMINDER:
-            print('%s Processing %s/%s...' %
-                  (datetime.now(), input_dir, f_name))
+            print("%s Processing %s/%s..." % (datetime.now(), input_dir, f_name))
         line_num = 0
 
         out_f = open(f_name.replace(".txt", ".csv"), "w")
         with open(f_name) as in_f:
             for line in in_f:
-
                 if LINE_REMINDER:
                     line_num += 1
                     if line_num % LINE_REMINDER == 0:
-                        print('%s ...%d' % (datetime.now(), line_num))
+                        print("%s ...%d" % (datetime.now(), line_num))
 
                 line_spl = line.split()
                 out_l = []
@@ -60,7 +57,7 @@ def do_for_dir(input_dir):
                     out_f.write(",".join(out_l) + "\n")
 
         if LINE_REMINDER:
-            print('%s Processed (%d)' % (datetime.now(), line_num))
+            print("%s Processed (%d)" % (datetime.now(), line_num))
         out_f.flush()
         out_f.close()
 

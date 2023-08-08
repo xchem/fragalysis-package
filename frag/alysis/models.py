@@ -84,7 +84,6 @@ class ClusterStuff(object):
 
 
 class Object(object):
-
     def __init__(self, value_array, object_desc):
         """
         An Object will have a type and a value arrays
@@ -98,7 +97,6 @@ class Object(object):
 
 
 class Owner(object):
-
     def __init__(self, object_list, title):
         """
         An Owner will own multiple objects. E.g. PDB 4CUP owns waters.
@@ -110,7 +108,6 @@ class Owner(object):
 
 
 class Cluster(Object):
-
     def __init__(self, value_array, object_desc, index):
         """
         An Object will have a type and a value arrays

@@ -6,15 +6,25 @@ from rdkit.Chem.FeatMaps import FeatMaps
 from rdkit import RDConfig
 
 
-fdef = AllChem.BuildFeatureFactory(os.path.join(RDConfig.RDDataDir, 'BaseFeatures.fdef'))
+fdef = AllChem.BuildFeatureFactory(
+    os.path.join(RDConfig.RDDataDir, "BaseFeatures.fdef")
+)
 
 fmParams = {}
 for k in fdef.GetFeatureFamilies():
     fparams = FeatMaps.FeatMapParams()
     fmParams[k] = fparams
 
-keep = ('Donor', 'Acceptor', 'NegIonizable', 'PosIonizable', 'ZnBinder',
-        'Aromatic', 'Hydrophobe', 'LumpedHydrophobe')
+keep = (
+    "Donor",
+    "Acceptor",
+    "NegIonizable",
+    "PosIonizable",
+    "ZnBinder",
+    "Aromatic",
+    "Hydrophobe",
+    "LumpedHydrophobe",
+)
 
 
 def get_FeatureMapScore(small_m, large_m, score_mode=FeatMaps.FeatMapScoreMode.All):
@@ -23,9 +33,14 @@ def get_FeatureMapScore(small_m, large_m, score_mode=FeatMaps.FeatMapScoreMode.A
         rawFeats = fdef.GetFeaturesForMol(m)
         # filter that list down to only include the ones we're intereted in
         featLists.append([f for f in rawFeats if f.GetFamily() in keep])
-    fms = [FeatMaps.FeatMap(feats=x, weights=[1] * len(x), params=fmParams) for x in featLists]
+    fms = [
+        FeatMaps.FeatMap(feats=x, weights=[1] * len(x), params=fmParams)
+        for x in featLists
+    ]
     fms[0].scoreMode = score_mode
-    fm_score = fms[0].ScoreFeats(featLists[1]) / min(fms[0].GetNumFeatures(), len(featLists[1]))
+    fm_score = fms[0].ScoreFeats(featLists[1]) / min(
+        fms[0].GetNumFeatures(), len(featLists[1])
+    )
     return fm_score
 
 
@@ -39,14 +54,14 @@ def score(reflig, prb_mols, ids, score_mode=FeatMaps.FeatMapScoreMode.All, p=Fal
     smi_mol = Chem.MolToSmiles(prb_mols)
 
     for i in ids:
-
         prb = Chem.AddHs(Chem.MolFromMolBlock(Chem.MolToMolBlock(prb_mols, confId=i)))
 
         fm_score = get_FeatureMapScore(ref, prb, score_mode)
         fm_score = np.clip(fm_score, 0, 1)
 
-        protrude_dist = rdShapeHelpers.ShapeProtrudeDist(ref, prb,
-                                                         allowReordering=False)
+        protrude_dist = rdShapeHelpers.ShapeProtrudeDist(
+            ref, prb, allowReordering=False
+        )
         protrude_dist = np.clip(protrude_dist, 0, 1)
 
         SuCOS_score = 0.5 * fm_score + 0.5 * (1 - protrude_dist)
@@ -94,12 +109,11 @@ def gen_conf_from_vector(input_mol_block, elaborated_smiles):
     m = get_best_align(input_mol_block, elaborated_smiles)
     return m
 
+
 def generate_confs_for_vector(input_smiles, input_mol_block):
     confs = []
     for elaborated_smiles in input_smiles:
-        confs.append(
-            gen_conf_from_vector(input_mol_block, elaborated_smiles)
-        )
+        confs.append(gen_conf_from_vector(input_mol_block, elaborated_smiles))
     return confs
 
 

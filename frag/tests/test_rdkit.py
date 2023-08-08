@@ -1,4 +1,11 @@
-from frag.utils.rdkit_utils import RDKitPh4,_get_c_of_mass,find_dist,_get_res_rmsds,get_res_atom_name,_get_res
+from frag.utils.rdkit_utils import (
+    RDKitPh4,
+    _get_c_of_mass,
+    find_dist,
+    _get_res_rmsds,
+    get_res_atom_name,
+    _get_res,
+)
 import unittest
 from rdkit import Chem
 
@@ -38,8 +45,8 @@ ATOM   1323  CE1 HIS A 174      28.658 -42.202  96.324  1.00 66.58           C
 ATOM   1324  NE2 HIS A 174      28.725 -43.467  95.945  1.00 69.74           N
 """
 
-class Ph4Test(unittest.TestCase):
 
+class Ph4Test(unittest.TestCase):
     def test_ph4_parser(self):
         """
         Test the pharmacophore generation.
@@ -49,50 +56,57 @@ class Ph4Test(unittest.TestCase):
         rdmol = Chem.MolFromMolBlock(SDF_DATA)
         rdkit_ph4 = RDKitPh4()
         feats = rdkit_ph4.generate_ph4_for_mol(rdmol=rdmol)
-        self.assertEqual(len(feats),5)
-        self.assertLessEqual([x[3] for x in feats],
-                             ['SingleAtomDonor', 'BasicGroup', 'Arom6', 'ThreeWayAttach', 'RH6_6'])
-        self.assertAlmostEqual([x[1] for x in feats][1],
-                               -0.195)
+        self.assertEqual(len(feats), 5)
+        self.assertLessEqual(
+            [x[3] for x in feats],
+            ["SingleAtomDonor", "BasicGroup", "Arom6", "ThreeWayAttach", "RH6_6"],
+        )
+        self.assertAlmostEqual([x[1] for x in feats][1], -0.195)
+
 
 class CentreOfMassTest(unittest.TestCase):
     def test_centre_of_mass(self):
         rdmol = Chem.MolFromMolBlock(SDF_DATA)
         centre_of_mass = _get_c_of_mass(rdmol)
-        self.assertAlmostEqual(centre_of_mass[0],-1.2499999999970868e-05)
-        self.assertAlmostEqual(centre_of_mass[1],1.2499999999995154e-05)
-        self.assertAlmostEqual(centre_of_mass[2],-1.2499999999984746e-05)
+        self.assertAlmostEqual(centre_of_mass[0], -1.2499999999970868e-05)
+        self.assertAlmostEqual(centre_of_mass[1], 1.2499999999995154e-05)
+        self.assertAlmostEqual(centre_of_mass[2], -1.2499999999984746e-05)
+
 
 class MathTest(unittest.TestCase):
-
     def test_square_dist(self):
-        self.assertEqual(find_dist(8,22,12,4,6,6),308.0)
+        self.assertEqual(find_dist(8, 22, 12, 4, 6, 6), 308.0)
+
 
 class ResTest(unittest.TestCase):
-
     def test_get_res_rmsd(self):
         input_data = [
-                       {"A": [1.0, 2.0, 3.0],
-                        "B": [1.0, 2.0, 3.0],
-                        "C": [1.0, 2.0, 3.0],
-                        },
-                       {"A": [2.0, 3.0, 4.0],
-                        "B": [1.0, 2.0, 3.0],
-                        "C": [4.0, 3.0, 2.0],
-                        },
-                        {"A": [-0.2375, 1.2479, -0.2221],
-                         "B": [-1.5033, 1.0878, 0.3249],
-                         "C": [-1.9231, -0.1960, 0.6598],
-                        }
+            {
+                "A": [1.0, 2.0, 3.0],
+                "B": [1.0, 2.0, 3.0],
+                "C": [1.0, 2.0, 3.0],
+            },
+            {
+                "A": [2.0, 3.0, 4.0],
+                "B": [1.0, 2.0, 3.0],
+                "C": [4.0, 3.0, 2.0],
+            },
+            {
+                "A": [-0.2375, 1.2479, -0.2221],
+                "B": [-1.5033, 1.0878, 0.3249],
+                "C": [-1.9231, -0.1960, 0.6598],
+            },
         ]
-        output_data = [[2.160246899469287, 3.8977444101257674],
-                       [2.160246899469287, 5.392922351255084],
-                       [3.8977444101257674, 5.392922351255084]]
+        output_data = [
+            [2.160246899469287, 3.8977444101257674],
+            [2.160246899469287, 5.392922351255084],
+            [3.8977444101257674, 5.392922351255084],
+        ]
         test_output = _get_res_rmsds(input_data)
         print(test_output)
-        for i,output in enumerate(test_output):
-            self.assertEqual(len(output),2)
-            self.assertEqual(output_data[i][0],output[0])
+        for i, output in enumerate(test_output):
+            self.assertEqual(len(output), 2)
+            self.assertEqual(output_data[i][0], output[0])
 
     def test_get_res_name(self):
         pdb_mol = Chem.MolFromPDBBlock(PDB_DATA)
@@ -100,14 +114,14 @@ class ResTest(unittest.TestCase):
         atoms = pdb_mol.GetAtoms()
         for atom in atoms:
             atom
-        unique_name, atom_name, position = get_res_atom_name(atom,conf)
-        self.assertEqual(unique_name,"174_A_HIS")
-        self.assertEqual(atom_name,"NE2")
-        self.assertAlmostEqual(position[0],28.725)
-        self.assertAlmostEqual(position[1],-43.467)
-        self.assertAlmostEqual(position[2],95.945)
+        unique_name, atom_name, position = get_res_atom_name(atom, conf)
+        self.assertEqual(unique_name, "174_A_HIS")
+        self.assertEqual(atom_name, "NE2")
+        self.assertAlmostEqual(position[0], 28.725)
+        self.assertAlmostEqual(position[1], -43.467)
+        self.assertAlmostEqual(position[2], 95.945)
 
     def test_get_res(self):
-        mol  = Chem.MolFromPDBBlock(PDB_DATA)
+        mol = Chem.MolFromPDBBlock(PDB_DATA)
         out_dict = _get_res(mol)
-        self.assertListEqual(list(out_dict.keys()),["174_A_HIS"])
+        self.assertListEqual(list(out_dict.keys()), ["174_A_HIS"])

@@ -46,6 +46,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+    - name: Lint
+      run: |
+        pip install -r build-requirements.txt
+        pre-commit run --all-files
     - name: Build
       uses: docker/build-push-action@v4
       with:

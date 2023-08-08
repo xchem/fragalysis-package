@@ -3,6 +3,7 @@ from frag.utils import parser
 from frag.utils.parser import _get_c_of_mass_list
 from rdkit import Chem
 
+
 class ParserTest(unittest.TestCase):
     water_data = """HETATM 2008  O   HOH B 184      53.034 -39.489  96.872  1.00 67.70           O
 HETATM 2010  O   HOH B 186      39.366 -30.950  88.735  1.00 66.27           O
@@ -77,22 +78,22 @@ $$$$
   6  1  1  0
 M  END"""
 
-
     def test_water_parser(self):
         out_data = parser._get_waters(self.water_data.split("\n"))
-        self.assertEqual(len(out_data),14)
+        self.assertEqual(len(out_data), 14)
         out_data = parser._get_waters(self.single_water.split("\n"))
-        self.assertEqual(len(out_data),1)
+        self.assertEqual(len(out_data), 1)
 
     def test_water_reader(self):
         out_data = parser._get_waters(self.water_data.split("\n"))
         water_coords = parser._get_water_coords(out_data)
-        self.assertEqual(len(water_coords),14)
-        self.assertAlmostEqual(water_coords[4][2],77.866)
+        self.assertEqual(len(water_coords), 14)
+        self.assertAlmostEqual(water_coords[4][2], 77.866)
         out_data = parser._get_waters(self.single_water.split("\n"))
         water_coords = parser._get_water_coords(out_data)
         self.assertEqual(len(water_coords), 1)
-        self.assertAlmostEqual(water_coords[0][1],-39.489)
+        self.assertAlmostEqual(water_coords[0][1], -39.489)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
