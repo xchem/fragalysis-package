@@ -1,10 +1,19 @@
-FROM informaticsmatters/rdkit-python-debian:Release_2018_09_1
-ADD requirements.txt requirements.txt
+FROM python:3.11.4-slim-bullseye
+
 USER root
-RUN pip install -r requirements.txt
 RUN apt-get --allow-releaseinfo-change update && \
-    apt-get install -y git procps
-RUN git clone https://github.com/rdkit/mmpdb /usr/local/mmpdb
-RUN pip install /usr/local/mmpdb 
+    apt-get install -y \
+        git \
+        libfontconfig1 \
+        libsm6 \
+        libxrender1 \
+        procps && \
+    pip install rdkit==2023.3.2 && \
+    git clone https://github.com/rdkit/mmpdb /usr/local/mmpdb && \
+    pip install /usr/local/mmpdb
+
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
+
 ADD . /usr/local/fragalysis
 RUN pip install /usr/local/fragalysis

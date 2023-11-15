@@ -32,7 +32,6 @@ def header_slit(input_file, output_base, output_size, extension=".smi"):
     """
 
     with open(input_file) as smiles_file:
-
         # Get the input file's header
         smiles_file.seek(0, 0)
         header = smiles_file.readline()
@@ -42,7 +41,6 @@ def header_slit(input_file, output_base, output_size, extension=".smi"):
         output_file = None
         line = smiles_file.readline()
         while line and line.strip():
-
             if file_line_count == 0:
                 # Start a new file and write the header
                 name = output_base + "_" + str(file_number) + extension

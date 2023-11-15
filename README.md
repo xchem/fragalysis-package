@@ -8,6 +8,8 @@
 
 ![PyPI](https://img.shields.io/pypi/v/fragalysis)
 
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+
 Basic RDKit based Python tools for analysis of protein-ligand interactions.
 
 Currently contains: -
@@ -18,6 +20,28 @@ Currently contains: -
 3. Conformer generation code - based on known X-ray structures
 4. Support for the neo4j 4.4.2 graph database
 
+## Pre-commit
+The project uses [pre-commit] to enforce linting of files prior to committing
+them to the upstream repository.
+
+To get started review the pre-commit utility and then set-up your local clone
+by following the **Installation** and **Quick Start** sections of the
+pre-commit documentation.
+
+Ideally from a Python environment...
+
+    python -m venv venv
+    source venv/bin/activate
+
+    pip install --upgrade pip
+    pip install -r build-requirements.txt
+    pre-commit install -t commit-msg -t pre-commit
+
+Now the project's rules will run on every commit and you can check the
+state of the repository as it stands with...
+
+    pre-commit run --all-files
+
 ## Publishing (to PyPI)
 The version of the package is hard-coded in `setup.py`. Change that value
 to something appropriate and then, armed with PyPi account credentials,
@@ -26,7 +50,12 @@ from the project root: -
 
     export TWINE_USERNAME=PyPiUsername
     export TWINE_PASSWORD=PyPiPassword
+    export FRAGALYSIS_VERSION=1.0.1
     pip install -r package-requirements.txt
     rm dist/*
     python setup.py bdist_wheel
     twine upload dist/*
+
+---
+
+[pre-commit]: https://pre-commit.com

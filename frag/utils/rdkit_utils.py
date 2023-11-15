@@ -3,9 +3,9 @@ import math
 from rdkit.Chem import ChemicalFeatures
 from rdkit import Chem
 
+
 # Generate ph4s for a molecule
 class RDKitPh4(object):
-
     factory = None
 
     def __init__(self):
@@ -38,7 +38,6 @@ class RDKitPh4(object):
 
 
 class RDKitAtom(object):
-
     def generate_atoms_for_mol(self, rdmol):
         """
         Generate the atoms from an input molecule and a feature factory.

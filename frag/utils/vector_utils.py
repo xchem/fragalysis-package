@@ -35,7 +35,7 @@ def get_best_fit_plane(pts, weights=None):
 
 def get_pbf(plane, pts):
     denom = np.dot(plane[:3], plane[:3])
-    denom = denom ** 0.5
+    denom = denom**0.5
     # add up the distance from the plane for each point:
     res = 0.0
     for pt in pts:
@@ -77,7 +77,7 @@ def plane_best_fit_exit_vector(scaffold, repl_smarts, confId):
     # Calculate angles between exit vectors and the murcko plane of best fit
     exitVectors = {}
     denom = np.dot(plane[:3], plane[:3])
-    denom = denom ** 0.5
+    denom = denom**0.5
     for n, match in enumerate(matches):
         out_isotope = scaffold.GetAtomWithIdx(match[0]).GetIsotope()
         evCoords = conf.GetAtomPosition(match[0])

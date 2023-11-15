@@ -44,30 +44,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Inject slug/short variables
-      uses: rlespinasse/github-slug-action@v4
-    - name: Initialise workflow variables
-      id: vars
-      env:
-        DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      run: |
-        # Do we push, i.e. is DOCKERHUB_USERNAME defined?
-        echo set-output name=push::${{ env.DOCKERHUB_USERNAME != '' }}
-        echo ::set-output name=push::${{ env.DOCKERHUB_USERNAME != '' }}
-
-        # What image tag are we using? 'latest' (if not tagged) or a GitHub tag?
-        TAG="latest"
-        if [[ "${{ github.ref }}" =~ ^refs/tags/ ]]; then TAG="${{ env.GITHUB_REF_SLUG }}"; fi
-        echo set-output name=tag::${TAG}
-        echo ::set-output name=tag::${TAG}
-
     - name: Checkout
       uses: actions/checkout@v3
+    - name: Lint
+      run: |
+        pip install -r build-requirements.txt
+        pre-commit run --all-files
     - name: Build
       uses: docker/build-push-action@v4
       with:
-        tags: xchem/fragalysis:${{ steps.vars.outputs.tag }}
+        context: .
+        tags: xchem/fragalysis:latest
     - name: Test
       run: >
-        docker run xchem/fragalysis:${{ steps.vars.outputs.tag }}
-        /bin/sh -c "cd /usr/local/fragalysis && nosetests"
+        docker run xchem/fragalysis:latest /bin/sh -c "cd /usr/local/fragalysis && python -m unittest"

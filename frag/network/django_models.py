@@ -35,6 +35,7 @@ class Compound(BaseMolecule):
     """
     A molecule - a real purchasable molecule
     """
+
     fragments = RelationshipTo("Fragment", "FRAG")
     conformers = RelationshipTo("Conformer", "CONFEDGE")
     parent_molecules = RelationshipTo("Compound", "PARENTEDGE")
@@ -44,6 +45,7 @@ class Fragment(BaseMolecule):
     """
     A fragment - not a real molecule
     """
+
     molecules = RelationshipFrom(Compound, "FRAG", model=F2Edge)
 
 
@@ -51,6 +53,7 @@ class Conformer(StructuredNode):
     """
     The 3D conformer of a molecule - either Docked or imaginary
     """
+
     # Going to go with uuid - seems as good as anything - this connects to the Django database for 3D information
     unique_string = StringProperty(unique_index=True)
     conformer = RelationshipFrom(Compound, "CONFEDGE")
@@ -65,6 +68,7 @@ class ConformerFeature(StructuredNode):
     """
     A pharmacophore feature for a given Conformer
     """
+
     # Unique id - uuid:PHARMAFEATURE:INDEX
     unique_string = StringProperty(unique_index=True)
     pharma_feature = StringProperty()
@@ -76,6 +80,7 @@ class Target(StructuredNode):
     """
     A target is defined as a unique Uniprot accessiion
     """
+
     # A given uniprot accession
     uniprot_id = StringProperty(unique_index=True)
     # Now a series of properties
@@ -87,6 +92,7 @@ class Protein(StructuredNode):
     """
     A unique set of 3D coordinates for a protein structure
     """
+
     # A given protein structure
     sequence = StringProperty()
     # Connect Protein-Target and Protein-Protein annotate by they're sequence identity
@@ -96,6 +102,7 @@ class GeneralResidue(StructuredNode):
     """
     A unique residue type - as defined by PDB RES codes
     """
+
     # A particular type of residue (defined by PDB RES code)
     res_code = StringProperty(unique_index=True)
     # Connect Residue to Residue based on their similarity. Human defined at first
@@ -105,6 +112,7 @@ class SpecificResidue(StructuredNode):
     """
     A specific 3D coords for a given residue
     """
+
     # Unique id - PDBID:CHAINID:RES_NUM:ALTLOC
     unique_string = StringProperty(unique_index=True)
     pdb_id = StringProperty()
@@ -119,6 +127,7 @@ class SpecificResidueFeature(StructuredNode):
     """
     A pharmacophore feature for a given SpecificResidue
     """
+
     # Unique id - PDBID:CHAINID:RES_NUM:ALTLOC:PHARMATYPE:INDEX
     unique_string = StringProperty(unique_index=True)
     # The 3 Letter code residue id
