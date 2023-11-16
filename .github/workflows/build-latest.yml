@@ -45,13 +45,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Lint
       run: |
         pip install -r build-requirements.txt
         pre-commit run --all-files
     - name: Build
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v5
       with:
         context: .
         tags: xchem/fragalysis:latest
