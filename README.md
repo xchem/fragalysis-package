@@ -4,11 +4,12 @@
 [![pip release](https://github.com/xchem/fragalysis/actions/workflows/pip-release.yml/badge.svg)](https://github.com/xchem/fragalysis/actions/workflows/pip-release.yml)
 
 [![License](http://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat)](https://github.com/xchem/fragalysis/blob/master/LICENSE.txt)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/xchem/fragalysis.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/xchem/fragalysis/context:python)
+[![CodeFactor](https://www.codefactor.io/repository/github/xchem/fragalysis/badge)](https://www.codefactor.io/repository/github/xchem/fragalysis)
 
 ![PyPI](https://img.shields.io/pypi/v/fragalysis)
 
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Basic RDKit based Python tools for analysis of protein-ligand interactions.
 
@@ -43,18 +44,10 @@ state of the repository as it stands with...
     pre-commit run --all-files
 
 ## Publishing (to PyPI)
-The version of the package is hard-coded in `setup.py`. Change that value
-to something appropriate and then, armed with PyPi account credentials,
-ideally from within a Python 3 virtual environment, run the following
-from the project root: -
-
-    export TWINE_USERNAME=PyPiUsername
-    export TWINE_PASSWORD=PyPiPassword
-    export FRAGALYSIS_VERSION=1.0.1
-    pip install -r package-requirements.txt
-    rm dist/*
-    python setup.py bdist_wheel
-    twine upload dist/*
+If the repository has been provided with a `PYPI_APIKEY` **Secret**
+the GitHub `pip-release` workflow action will automatically publish the package to
+PyPI when you create a new **Release**. The package version will be set using
+the release `tag_name`.
 
 ---
 
