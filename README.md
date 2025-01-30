@@ -4,14 +4,19 @@
 [![pip release](https://github.com/xchem/fragalysis-package/actions/workflows/pip-release.yml/badge.svg)](https://github.com/xchem/fragalysis-package/actions/workflows/pip-release.yml)
 
 [![License](http://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat)](https://github.com/xchem/fragalysis-package/blob/master/LICENSE.txt)
-[![CodeFactor](https://www.codefactor.io/repository/github/xchem/fragalysis-package/badge)](https://www.codefactor.io/repository/github/xchem/fragalysis-package)
 
-![PyPI](https://img.shields.io/pypi/v/fragalysis)
+![PyPI](https://img.shields.io/pypi/v/fragalysis-package)
 
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Basic RDKit based Python tools for analysis of protein-ligand interactions.
+
+>   This was originally the fragalysis GitHub repository, which is now being used for
+    another purpose. You can still find the original package on PyPI at
+    https://pypi.org/project/fragalysis/ where the latest version posted was v1.1.0.
+    All new releases of this package will come from here, with the new name
+    `fragalysis-package`.
 
 Currently contains: -
 
