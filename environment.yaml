@@ -1,5 +1,5 @@
 ---
-name: fragalysis
+name: fragalysis-package
 channels:
 - rdkit
 dependencies:

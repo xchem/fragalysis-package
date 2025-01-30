@@ -1,5 +1,5 @@
-Fragalysis
-==========
+Fragalysis Package
+==================
 
 Basic RDKit based Python tools for analysis of protein-ligand interactions.
 

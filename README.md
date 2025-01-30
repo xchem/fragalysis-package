@@ -1,10 +1,10 @@
-# Fragalysis
+# Fragalysis Package
 
-[![build latest](https://github.com/xchem/fragalysis/actions/workflows/build-latest.yml/badge.svg)](https://github.com/xchem/fragalysis/actions/workflows/build-latest.yml)
-[![pip release](https://github.com/xchem/fragalysis/actions/workflows/pip-release.yml/badge.svg)](https://github.com/xchem/fragalysis/actions/workflows/pip-release.yml)
+[![build latest](https://github.com/xchem/fragalysis-package/actions/workflows/build-latest.yml/badge.svg)](https://github.com/xchem/fragalysis-package/actions/workflows/build-latest.yml)
+[![pip release](https://github.com/xchem/fragalysis-package/actions/workflows/pip-release.yml/badge.svg)](https://github.com/xchem/fragalysis-package/actions/workflows/pip-release.yml)
 
-[![License](http://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat)](https://github.com/xchem/fragalysis/blob/master/LICENSE.txt)
-[![CodeFactor](https://www.codefactor.io/repository/github/xchem/fragalysis/badge)](https://www.codefactor.io/repository/github/xchem/fragalysis)
+[![License](http://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat)](https://github.com/xchem/fragalysis-package/blob/master/LICENSE.txt)
+[![CodeFactor](https://www.codefactor.io/repository/github/xchem/fragalysis-package/badge)](https://www.codefactor.io/repository/github/xchem/fragalysis-package)
 
 ![PyPI](https://img.shields.io/pypi/v/fragalysis)
 

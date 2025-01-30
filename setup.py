@@ -15,18 +15,18 @@ with open("requirements.txt") as f:
     required = f.read().splitlines()
 
 setup(
-    name="fragalysis",
+    name="fragalysis-package",
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=environ.get("FRAGALYSIS_VERSION", "1.0.0"),
+    version=environ.get("FRAGALYSIS_PACKAGE_VERSION", "1.0.0"),
     description="Library for fragment based analysis",
     long_description=long_description,
     # The project's main homepage.
     url="https://github.com/xchem/fragalysis.git",
     # Author details
-    author="Rachael Skyner",
-    author_email="rachael.skyner@diamond.ac.uk",
+    author="Max Winokan",
+    author_email="max.winokan@diamond.ac.uk",
     # Choose your license
     license="Apache 2.0",
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
